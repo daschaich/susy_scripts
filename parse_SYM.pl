@@ -20,6 +20,7 @@ my $i;
 my $junk;
 my $temp;
 open ERRFILE, ">> ERRORS" or die "Error opening ERRORS ($!)\n";
+open MISSINGFILES, "> MISSING" or die "Error opening MISSING ($!)\n";
 
 # Set up header lines in new data/ files
 open KEY, "> $path/data/key.csv" or die "Error opening $path/data/key.csv ($!)\n";
@@ -63,7 +64,7 @@ print DET "MDTU,|det-1|,|Re(det)-1|\n";
 print CG_ITERS "t,cg_iters\n";
 print WALLTIME "t,walltime\n";
 print WALLTU "t,cost\n";
-print EIG "MDTU,0,4,8,12,16,20\n";
+print EIG "MDTU,0,2,4,6,8,10\n";
 print BILIN "MDTU,susyTrans\n";
 # ------------------------------------------------------------------
 
@@ -385,6 +386,7 @@ EIGEN:
   $check = open EIG_IN, "< $infile";
   # File may not be present if configuration was not saved
   if (!$check) {
+    print MISSINGFILES "$infile\n";
     goto CORR;
   }
   my @eig_in = <EIG_IN>;
@@ -408,19 +410,19 @@ EIGEN:
     elsif ($line =~ /^EIGENVALUE 0 /) {
       ($junk, $junk, $eig[0], $junk) = split /\s+/, $line;
     }
-    elsif ($line =~ /^EIGENVALUE 4 /) {
+    elsif ($line =~ /^EIGENVALUE 2 /) {
       ($junk, $junk, $eig[1], $junk) = split /\s+/, $line;
     }
-    elsif ($line =~ /^EIGENVALUE 8 /) {
+    elsif ($line =~ /^EIGENVALUE 4 /) {
       ($junk, $junk, $eig[2], $junk) = split /\s+/, $line;
     }
-    elsif ($line =~ /^EIGENVALUE 12 /) {
+    elsif ($line =~ /^EIGENVALUE 6 /) {
       ($junk, $junk, $eig[3], $junk) = split /\s+/, $line;
     }
-    elsif ($line =~ /^EIGENVALUE 16 /) {
+    elsif ($line =~ /^EIGENVALUE 8 /) {
       ($junk, $junk, $eig[4], $junk) = split /\s+/, $line;
     }
-    elsif ($line =~ /^EIGENVALUE 20 /) {
+    elsif ($line =~ /^EIGENVALUE 10 /) {
       ($junk, $junk, $eig[5], $junk) = split /\s+/, $line;
     }
     elsif ($line =~ /WARNING/) {
@@ -449,6 +451,7 @@ CORR:
   $check = open CORR_IN, "< $infile";
   # File may not be present if configuration was not saved
   if (!$check) {
+    print MISSINGFILES "$infile\n";
     next FILE;
   }
   my @corr_in = <CORR_IN>;
@@ -469,8 +472,9 @@ CORR:
       ($junk, $bilin, $junk) = split /\s+/, $line;
     }
     elsif ($line =~ /^SUSY /) {
-      ($junk, $trace, $junk, $gauge, $susy) = split /\s+/, $line;
-      $trace -= $bilin;
+      ($junk, $trace, $junk, $gauge, $temp) = split /\s+/, $line;
+      $susy = $temp / ($trace + $gauge);    # Relative susy breaking
+      $trace -= $bilin;                     # Isolate U(1) piece
     }
     elsif ($line =~ /RUNNING COMPLETED/) {
       $check = 1;
@@ -491,6 +495,7 @@ CORR:
 # ------------------------------------------------------------------
 # Clean up and close down
 close ERRFILE;
+close MISSINGFILES;
 close KEY;
 close STEPSIZE;
 close NSTEP;

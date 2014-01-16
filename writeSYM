@@ -158,7 +158,7 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Eigenvalues ('$tag')</th><th>susy transformation ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Eigenvalues ('$tag')</th><th>Relative susy breaking (diff/sum) ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="eig"></div>' >> $out

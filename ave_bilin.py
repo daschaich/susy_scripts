@@ -48,12 +48,12 @@ cut = cfgs[0]
 # Construct arrays of blocked measurements for each observable
 # Ignore stochastic noise in measurements
 # S = SU(2) part of bilinear, U = U(1) part of bilinear, G = gauge piece,
-# D = susy transform (diff G - S - U), A = all (sum G + S + U)
+# O = susy transform (G - S - U), R = relative (G - S - U)/(G + S + U)
 Sdat = []
 Udat = []
 Gdat = []
-Ddat = []
-Adat = []
+Odat = []
+Rdat = []
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -64,16 +64,16 @@ begin = cut       # Where each block begins, to be incremented
 tS = 0.0
 tU = 0.0
 tG = 0.0
-tD = 0.0
-tA = 0.0
+tO = 0.0
+tR = 0.0
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
     Sdat.append(tS / float(count))
     Udat.append(tU / float(count))
     Gdat.append(tG / float(count))
-    Ddat.append(tD / float(count))
-    Adat.append(tA / float(count))
+    Odat.append(tO / float(count))
+    Rdat.append(tR / float(count))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
@@ -83,8 +83,8 @@ for MDTU in cfgs:
     tS = 0.0
     tU = 0.0
     tG = 0.0
-    tD = 0.0
-    tA = 0.0
+    tO = 0.0
+    tR = 0.0
 
   # Running averages
   filename = 'Out/corr.' + str(MDTU)
@@ -105,8 +105,8 @@ for MDTU in cfgs:
       temp = line.split()
       tU += float(temp[1]) - dat    # Only accumulate U(1) piece
       tG += float(temp[3])
-      tD += float(temp[4])
-      tA += float(temp[1]) + float(temp[3])
+      tO += float(temp[4])
+      tR += float(temp[4]) / (float(temp[1]) + float(temp[3]))
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
@@ -114,8 +114,8 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   Sdat.append(tS / float(count))
   Udat.append(tU / float(count))
   Gdat.append(tG / float(count))
-  Ddat.append(tD / float(count))
-  Adat.append(tA / float(count))
+  Odat.append(tO / float(count))
+  Rdat.append(tR / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -135,9 +135,19 @@ if Nblocks == 1:
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 outfile = open('results/bilin.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# diff err SU(N) err U(1) err gauge err sum err"
+print >> outfile, "# diff err rel err gauge err SU(N) err U(1) err"
 
-dat = np.array(Ddat)
+dat = np.array(Odat)
+ave = np.mean(dat, dtype = np.float64)
+err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+print >> outfile, "%.6g %.4g" % (ave, err),
+
+dat = np.array(Rdat)
+ave = np.mean(dat, dtype = np.float64)
+err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+print >> outfile, "%.6g %.4g" % (ave, err),
+
+dat = np.array(Gdat)
 ave = np.mean(dat, dtype = np.float64)
 err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
 print >> outfile, "%.6g %.4g" % (ave, err),
@@ -148,16 +158,6 @@ err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
 print >> outfile, "%.6g %.4g" % (ave, err),
 
 dat = np.array(Udat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Gdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Adat)
 ave = np.mean(dat, dtype = np.float64)
 err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
 print >> outfile, "%.6g %.4g # %d" % (ave, err, Nblocks)
