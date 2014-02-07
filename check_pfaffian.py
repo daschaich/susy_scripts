@@ -11,11 +11,7 @@ if len(sys.argv) < 2:
   print "Usage:", str(sys.argv[0]), "<file>"
   sys.exit(1)
 toCheck = str(sys.argv[1])
-# ------------------------------------------------------------------
 
-
-
-# ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isfile(toCheck):
   print "ERROR: %s does not exist" % toCheck

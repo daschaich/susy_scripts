@@ -170,8 +170,8 @@ Stot = np.array([sum(Sdat[t]) for t in range(Npts - 1)])
 StotSq = np.array([sum(SdatSq[t]) for t in range(Npts - 1)])
 
 # Monitor how many times the fits don't converge
-Kfails = 0
-Sfails = 0
+NK = 0;     Kfails = 0
+NS = 0;     Sfails = 0
 
 # Fit results for all jk samples
 Kout = np.empty((len(K_in), Nblocks), dtype = np.float)
@@ -200,6 +200,7 @@ for i in range(Nblocks):    # Jackknife samples
   if success in (1, 2, 3, 4):         # Fit succeeded
     for j in range(len(K_in)):
       Kout[j][i] = np.fabs(temp[j])   # Cosh is symmetric under -m<-->m
+    NK += 1
   else:                               # Ignore failed fits
     print mesg
     Kfails += 1
@@ -208,6 +209,7 @@ for i in range(Nblocks):    # Jackknife samples
   if success in (1, 2, 3, 4):         # Fit succeeded
     for j in range(len(S_in)):
       Sout[j][i] = np.fabs(temp[j])   # Cosh is symmetric under -m<-->m
+    NS += 1
   else:                               # Ignore failed fits
     print mesg
     Sfails += 1
@@ -218,8 +220,6 @@ for i in range(Nblocks):    # Jackknife samples
 # ------------------------------------------------------------------
 # Now we can average over jackknife samples and print out results
 # Ignore any failed fits
-NK = Nblocks - Kfails
-NS = Nblocks - Sfails
 print "Fitting with %d blocks of length %d MDTU..." % (Nblocks, block_size)
 print "%d of %d Konishi fits succeeded" % (NK, Nblocks)
 print "%d of %d SUGRA fits succeeded" % (NS, Nblocks)
