@@ -2,7 +2,6 @@
 import os
 import sys
 import glob
-import math
 import numpy as np
 # ------------------------------------------------------------------
 # Parse dygraph data files to construct averages and standard errors
@@ -119,7 +118,7 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det']:
   dat = np.array(datList)
   N = np.size(dat)
   ave = np.mean(dat, dtype = np.float64)
-  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
   print >> outfile, "%.8g %.4g # %d" % (ave, err, N)

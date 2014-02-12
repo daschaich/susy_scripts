@@ -6,28 +6,43 @@ import numpy as np
 # ------------------------------------------------------------------
 # Compute pfaffian from printed diagonal elements of Q, as a sanity check
 
-# Parse argument: the file to check
+# Parse argument: the file(s) to check
 if len(sys.argv) < 2:
   print "Usage:", str(sys.argv[0]), "<file>"
   sys.exit(1)
-toCheck = str(sys.argv[1])
+toCheck = []
+for i in range(1, len(sys.argv)):
+  toCheck.append(str(sys.argv[i]))
 
 # First make sure we're calling this from the right place
-if not os.path.isfile(toCheck):
-  print "ERROR: %s does not exist" % toCheck
-  sys.exit(1)
+for i in range(len(toCheck)):
+  if not os.path.isfile(toCheck[i]):
+    print "ERROR: %s does not exist" % toCheck[i]
+    sys.exit(1)
 
 # Average over SUGRA components for each measurement
-phase = 0.
-log_mag = 0.
-for line in open(toCheck):
-  if line.startswith('Columns '):
-    temp = line.split()
-    re = float(temp[9])
-    im = float(temp[10])
+matvecs = 0    # Make sure all columns are accounted for
+phase = 0.0
+log_mag = 0.0
+for i in range(len(toCheck)):
+  for line in open(toCheck[i]):
+    # Format: Q has # columns --> # matvecs and # MBytes per core...
+    if line.startswith('Q has '):
+      temp = line.split()
+      total = int(temp[5])
 
-    log_mag += np.log(re**2 + im**2) / 2.0
-    phase += np.angle(re + 1j * im)
+    # Format: Columns #--# of #: # matvecs in # seconds re im
+    elif line.startswith('Columns '):
+      temp = line.split()
+      matvecs += int(temp[4])
+      re = float(temp[9])
+      im = float(temp[10])
+
+      log_mag += np.log(re**2 + im**2) / 2.0
+      phase += np.angle(re + 1j * im)
+
+if matvecs != total:
+  print "ERROR: Only counted %d of %d matvecs" % (matvecs, total)
 
 tr = np.fmod(-1.0 * phase, 2.0 * np.pi)
 if tr < 0:
