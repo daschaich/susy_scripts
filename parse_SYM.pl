@@ -468,13 +468,15 @@ CORR:
         print ERRFILE "$infile: loaded $meas_stamp doesn't match saved $oldstamp\n";
       }
     }
-    elsif ($line =~ /^BILIN /) {
-      ($junk, $bilin, $junk) = split /\s+/, $line;
-    }
+#    elsif ($line =~ /^BILIN /) {
+#      ($junk, $bilin, $junk) = split /\s+/, $line;
+#    }
     elsif ($line =~ /^SUSY /) {
       ($junk, $trace, $junk, $gauge, $temp) = split /\s+/, $line;
-      $susy = $temp / ($trace + $gauge);    # Relative susy breaking
-      $trace -= $bilin;                     # Isolate U(1) piece
+#      print STDERR "hacking kappa vs. lambda for N=3...\n";
+#      $trace *= 1.5;    # kappa vs. lambda...
+      $susy = ($gauge - $trace) / ($gauge + $trace);    # Relative susy breaking
+#      $trace -= $bilin;                     # Isolate U(1) piece
     }
     elsif ($line =~ /RUNNING COMPLETED/) {
       $check = 1;

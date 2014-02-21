@@ -47,13 +47,12 @@ cut = cfgs[0]
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each observable
 # Ignore stochastic noise in measurements
-# S = SU(2) part of bilinear, U = U(1) part of bilinear, G = gauge piece,
-# O = susy transform (G - S - U), R = relative (G - S - U)/(G + S + U)
-Sdat = []
-Udat = []
+# F = fermion bilinear piece, G = gauge piece,
+# D = susy transform (difference G - F), N = normalized (G - F)/(G + F)
+Fdat = []
 Gdat = []
-Odat = []
-Rdat = []
+Ddat = []
+Ndat = []
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -61,30 +60,27 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tS = 0.0
-tU = 0.0
+tF = 0.0
 tG = 0.0
-tO = 0.0
-tR = 0.0
+tD = 0.0
+tN = 0.0
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    Sdat.append(tS / float(count))
-    Udat.append(tU / float(count))
+    Fdat.append(tF / float(count))
     Gdat.append(tG / float(count))
-    Odat.append(tO / float(count))
-    Rdat.append(tR / float(count))
+    Ddat.append(tD / float(count))
+    Ndat.append(tN / float(count))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tS = 0.0
-    tU = 0.0
+    tF = 0.0
     tG = 0.0
-    tO = 0.0
-    tR = 0.0
+    tD = 0.0
+    tN = 0.0
 
   # Running averages
   filename = 'Out/corr.' + str(MDTU)
@@ -93,35 +89,29 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
-    # Format: BILIN dat imag (last should average to zero)
-    if line.startswith('BILIN '):
-      temp = line.split()
-      count += 1    # Only increment once per measurement!
-      dat = float(temp[1])
-      tS += dat
     # Format: SUSY f_dat imag g_dat diff
-    # As above, imaginary component should average to zero
-    elif line.startswith('SUSY '):
+    # Imaginary component should average to zero
+    if line.startswith('SUSY '):
+      count += 1
       temp = line.split()
-      tU += float(temp[1]) - dat    # Only accumulate U(1) piece
+      tF += float(temp[1])
       tG += float(temp[3])
-      tO += float(temp[4])
-      tR += float(temp[4]) / (float(temp[1]) + float(temp[3]))
+      tD += float(temp[4])
+      tN += float(temp[4]) / (float(temp[1]) + float(temp[3]))
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  Sdat.append(tS / float(count))
-  Udat.append(tU / float(count))
+  Fdat.append(tF / float(count))
   Gdat.append(tG / float(count))
-  Odat.append(tO / float(count))
-  Rdat.append(tR / float(count))
+  Ddat.append(tD / float(count))
+  Ndat.append(tN / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(Sdat)
+Nblocks = len(Fdat)
 # ------------------------------------------------------------------
 
 
@@ -135,32 +125,14 @@ if Nblocks == 1:
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 outfile = open('results/bilin.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# diff err rel err gauge err SU(N) err U(1) err"
+print >> outfile, "# diff err rel err gauge err bilin err"
 
-dat = np.array(Odat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Rdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Gdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Sdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
-
-dat = np.array(Udat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g # %d" % (ave, err, Nblocks)
+for obs in [Ddat, Ndat, Gdat, Fdat]:
+  dat = np.array(obs)
+  ave = np.mean(dat, dtype = np.float64)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+  print >> outfile, "%.6g %.4g" % (ave, err),
+print >> outfile, "# %d" % Nblocks
 
 # More detailed block information
 #for i in range(Nblocks):
