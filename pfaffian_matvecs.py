@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 # ------------------------------------------------------------------
-# Count how many 4nt6 columns we can hope to get through
+# Count how many columns we can hope to get through
 # from the given starting point
 
 # Parse argument: the column at which we're starting
@@ -13,7 +13,8 @@ matvec_per_sec = int(sys.argv[2])
 iter = int(sys.argv[3])
 
 # Total number of columns is volume * Ndat, Ndat=16DIMF
-size = volume * 16 * 4
+size = volume * 16 * 4    # U(2)
+#size = volume * 16 * 9    # U(3)
 
 N = 0
 while N < matvec_per_sec * 24 * 3600 and iter < size:   # Total for 24 hours

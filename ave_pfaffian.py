@@ -12,16 +12,15 @@ if len(sys.argv) > 1:
   print "Usage:", str(sys.argv[0])
   sys.exit(1)
 
-# First make sure we're calling this from the right place
-if not os.path.isdir('Out'):
-  print "ERROR: Out/ does not exist"
-  sys.exit(1)
-
 # Cycle through both single-shot and checkpointed results
 # but don't waste time on intermediate checkpoints
 dat = []
-files = glob.glob('Out/phase.*')
-files += glob.glob('Out/phase_*-end.*')
+files = glob.glob('phase.*')
+files += glob.glob('phase_*-end.*')
+if len(files) == 0:
+  print "ERROR: no files phase.* phase_*-end.* in this directory"
+  sys.exit(1)
+
 for filename in files:
   for line in open(filename):
     # Format: PFAFF log_mag phase |cos(phase)| |sin(phase)|
@@ -56,7 +55,7 @@ ave_phase = np.average(jkphase)
 var_phase = (N - 1.0) * np.sum((jkphase - ave_phase)**2) / float(N)
 
 print "From %d measurements," % N,
-print "<e^{i alpha}> = (%.4g %.4g) = %.4g e^{%.4gi}" % \
+print "<e^{i alpha}> = (%.4g, %.4g) = %.4g e^{%.4gi}" % \
       (ave_re, ave_im, ave_mag, ave_phase)
 print "Real: %.6g +/- %.4g;" % (ave_re, np.sqrt(var_re)),
 print "Imag: %.6g +/- %.4g;" % (ave_im, np.sqrt(var_im))
