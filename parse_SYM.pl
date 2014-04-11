@@ -6,6 +6,7 @@ use warnings;
 # shuffling the extracted data into dedicated files for plotting.
 #
 # We normalize the Polyakov loop data by Nc
+# and the bosonic action by 9Nc^2 / 2
 # ------------------------------------------------------------------
 
 
@@ -167,11 +168,17 @@ FILE: for my $file (@files) {
       # but don't print nonsense wall clock time
       $walltime = -2;
     }
+    # Extract Nc for bosonic action and Polyakov loop normalizations
+    # Unfortunately, we switched conventions in early 2014
     elsif ($line =~ /^N=4 SYM /) {
-      # Extract Nc for Polyakov loop normalization
       ($junk, $junk, $Nc, $junk) = split /\s+/, $line;
       ($junk, $temp, $junk) = split /\(/, $Nc;
       ($Nc, $junk) = split /\)/, $temp;
+    }
+    elsif ($line =~ /^N=4 SYM, /) {
+      ($junk, $temp, $junk) = split /,/, $line;
+      # Funny business due to leading space
+      ($junk, $junk, $junk, $Nc) = split /\s+/, $temp;
     }
     elsif ($line =~ /^trajecs /) {
       ($junk, $traj_per_file) = split /\s+/, $line;
@@ -328,9 +335,11 @@ FILE: for my $file (@files) {
       ($junk, $ploop_r, $ploop_i, $iters, $plaq_ss, $plaq_st, $b_act) = split /\s+/, $line;
       print PLAQ "$MDTU,$plaq_ss,$plaq_st\n";
       print CG_ITERS "$traj,$iters\n";
+
+      # Normalize bosonic action and Polyakov loop using Nc extracted above
+      $b_act /= 4.5 * $Nc**2;
       print SB "$MDTU,$b_act\n";
 
-      # Normalize by Nc extracted above
       $ploop_r /= $Nc;
       $ploop_i /= $Nc;
       print POLY "$ploop_r,$ploop_i\n";
@@ -488,7 +497,6 @@ CORR:
   }
 #  print BILIN "$MDTU,$bilin,$trace,$gauge\n";
   print BILIN "$MDTU,$susy\n";
-  # ------------------------------------------------------------------
 } # Done cycling through files
 # ------------------------------------------------------------------
 

@@ -29,7 +29,7 @@ if not os.path.isdir('Out'):
 cfgs = []
 for filename in glob.glob('Out/corr.*'):
   cfg = int(filename.split('.')[-1])    # Number after last .
-  if cfg not in cfgs and cfg >= cut:
+  if cfg not in cfgs and cfg > cut:
     cfgs.append(cfg)
 cfgs.sort()
 

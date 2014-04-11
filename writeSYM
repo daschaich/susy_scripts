@@ -35,7 +35,7 @@ echo '  <h1><a name="phys"></a>Physical observables</h1>' >> $out
 echo '  <hr><br>' >> $out
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Plaquette ('$tag')</th><th>Bosonic action ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Plaquette ('$tag')</th><th>Normalized bosonic action ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="plaq"></div>' >> $out

@@ -5,16 +5,16 @@ import sys
 # from the given starting point
 
 # Parse argument: the column at which we're starting
-if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<volume> <MV/sec> <start>"
+if len(sys.argv) < 5:
+  print "Usage:", str(sys.argv[0]), "<N> <volume> <MV/sec> <start>"
   sys.exit(1)
-volume = int(sys.argv[1])
-matvec_per_sec = int(sys.argv[2])
-iter = int(sys.argv[3])
+Nc = int(sys.argv[1])
+volume = int(sys.argv[2])
+matvec_per_sec = int(sys.argv[3])
+iter = int(sys.argv[4])
 
 # Total number of columns is volume * Ndat, Ndat=16DIMF
-size = volume * 16 * 4    # U(2)
-#size = volume * 16 * 9    # U(3)
+size = volume * 16 * Nc * Nc
 
 N = 0
 while N < matvec_per_sec * 24 * 3600 and iter < size:   # Total for 24 hours

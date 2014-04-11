@@ -5,7 +5,7 @@ import glob
 import numpy as np
 # ------------------------------------------------------------------
 # Compute <e^{i alpha)> from pfaffian phase measurements
-# not doing any blocking at the moment
+# not doing any cutting or blocking at the moment
 
 # No arguments
 if len(sys.argv) > 1:

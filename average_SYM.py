@@ -63,16 +63,16 @@ for line in open(plaqfile):
     continue
   temp = line.split(',')
   MDTU = float(temp[0])
-  if MDTU < cut:
+  if MDTU <= cut:
     continue
-  elif MDTU >= begin and MDTU < (begin + block_size):
-    ave += (float(temp[1]) + float(temp[2])) / 2
+  elif MDTU > begin and MDTU < (begin + block_size):
+    ave += (float(temp[1]) + float(temp[2])) / 2.0
     count += 1
   elif MDTU >= (begin + block_size):  # Move on to next block
     datList.append(ave / count)
     begin += block_size
     count = 1                     # Next block begins with this line
-    ave = (float(temp[1]) + float(temp[2])) / 2
+    ave = (float(temp[1]) + float(temp[2])) / 2.0
 
 # Now print mean and standard error, assuming N>1
 dat = np.array(datList)
@@ -103,9 +103,9 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det']:
       continue
     temp = line.split(',')
     MDTU = float(temp[0])
-    if MDTU < cut:
+    if MDTU <= cut:
       continue
-    elif MDTU >= begin and MDTU < (begin + block_size):
+    elif MDTU > begin and MDTU < (begin + block_size):
       ave += float(temp[1])
       count += 1
     elif float(temp[0]) >= (begin + block_size):  # Move on to next block
