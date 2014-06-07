@@ -69,6 +69,7 @@ tmax = int(Nt / 2)   # Assume Nt is even
 # This constant factor will cancel out in the effective mass ratio
 # We lose two points in the ratio [C(t-1) + C(t+1)] / 2C(t)
 effm = [[] for x in range(tmax - 1)]
+warnings = 0
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -82,7 +83,11 @@ for MDTU in cfgs:
   if MDTU >= (begin + block_size):
     for t in range(1, tmax):
       temp = (tM[t - 1] + tM[t + 1]) / (2.0 * tM[t])
-      if temp > 1:    # Skip any malformed effective masses
+      if temp < 1:    # Skip any malformed effective masses
+#        print "WARNING: Malformed m_eff for t=%d at block %d" \
+#              % (t, len(effm[t - 1]) + 1)
+        warnings += 1
+      else:
         effm[t - 1].append(np.arccosh(temp))
     # Record and reset block data
     block_data[0].append(count)
@@ -111,28 +116,36 @@ for MDTU in cfgs:
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   for t in range(1, tmax):
     temp = (tM[t - 1] + tM[t + 1]) / (2.0 * tM[t])
-    if temp > 1:    # Skip any malformed effective masses
+    if temp < 1:    # Skip any malformed effective masses
+#      print "WARNING: Malformed m_eff for t=%d at block %d" \
+#            % (t, len(effm[t - 1]) + 1)
+      warnings += 1
+    else:
       effm[t - 1].append(np.arccosh(temp))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(effm[1])
+Nblocks = len(block_data[0])
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Now print mean and standard error, requiring N>1
-if Nblocks == 1:
-  print "ERROR: need multiple blocks to take average"
-  sys.exit(1)
-
+# Now print mean and standard error
+# Allow different numbers of measurements for each t
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print "%d of %d eff_m results were malformed" % (warnings, Nblocks * len(effm))
 outfile = open('results/sugra_effm.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print >> outfile, "%d of %d eff_m results were malformed" % (warnings, Nblocks * len(effm))
 for t in range(1, tmax):
+  Nblocks = len(effm[t - 1])
+  if Nblocks <= 1:
+    print "ERROR: not enough valid measurements for t =", t
+    continue
+
   dat = np.array(effm[t - 1])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
