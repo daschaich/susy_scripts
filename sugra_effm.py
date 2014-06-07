@@ -5,6 +5,8 @@ import glob
 import numpy as np
 # ------------------------------------------------------------------
 # Compute SUGRA correlator effective masses, using a blocked jackknife
+# For C(t) = A (e^{-Mt} + e^{-M(T-t)}),
+# arccosh M = [C(t-1) + C(t+1)] / 2C(t)
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -56,8 +58,7 @@ else:                 # My runs
   Nt = int(temp[1][:2])                 # First two digits after 'nt'
 
 # We exploit t <--> Nt - t symmetry
-# To only print 0 through Nt / 2 (a total of Npts points)
-Npts = Nt / 2 + 1  # Assume Nt is even
+tmax = int(Nt / 2)   # Assume Nt is even
 # ------------------------------------------------------------------
 
 
@@ -66,7 +67,8 @@ Npts = Nt / 2 + 1  # Assume Nt is even
 # Construct arrays of blocked measurements for each correlator
 # For now just average over all 25 SUGRA components
 # This constant factor will cancel out in the effective mass ratio
-effm = [[] for x in range(Npts - 1)]
+# We lose two points in the ratio [C(t-1) + C(t+1)] / 2C(t)
+effm = [[] for x in range(tmax - 1)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -74,19 +76,21 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tM = [0 for x in range(Npts)]
+tM = [0 for x in range(tmax + 1)]   # Include x=tmax
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    for t in range(Npts - 1):
-      effm[t].append(np.log(tM[t] / tM[t + 1]))
+    for t in range(1, tmax):
+      temp = (tM[t - 1] + tM[t + 1]) / (2.0 * tM[t])
+      if temp > 1:    # Skip any malformed effective masses
+        effm[t - 1].append(np.arccosh(temp))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tM = [0 for x in range(Npts)]
+    tM = [0 for x in range(tmax + 1)]   # Include x=tmax
 
   # Running averages
   filename = 'Out/' + tag + '.' + str(MDTU)
@@ -105,14 +109,16 @@ for MDTU in cfgs:
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for t in range(Npts - 1):
-    effm[t].append(np.log(tM[t + 1] / tM[t]))
+  for t in range(1, tmax):
+    temp = (tM[t - 1] + tM[t + 1]) / (2.0 * tM[t])
+    if temp > 1:    # Skip any malformed effective masses
+      effm[t - 1].append(np.arccosh(temp))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(effm[0])
+Nblocks = len(effm[1])
 # ------------------------------------------------------------------
 
 
@@ -126,8 +132,8 @@ if Nblocks == 1:
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 outfile = open('results/sugra_effm.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-for t in range(Npts - 1):
-  dat = np.array(effm[t])
+for t in range(1, tmax):
+  dat = np.array(effm[t - 1])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
   print >> outfile, "%d %.6g %.4g # %d" % (t, ave, err, Nblocks)

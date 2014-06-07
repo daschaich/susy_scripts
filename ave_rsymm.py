@@ -43,18 +43,31 @@ if len(cfgs) == 0:
 # If we're missing some initial measurements,
 # increase thermalization cut
 cut = cfgs[0]
+
+# Determine largest Wilson loops from first output file
+firstfile = 'Out/' + tag + '.' + str(cfgs[0])
+if not os.path.isfile(firstfile):
+  print "ERROR:", firstfile, "does not exist"
+  sys.exit(1)
+for line in open(firstfile):
+  if line.startswith('rsymm: MAX = '):
+    MAX = int((line.split())[3])
+  elif line.startswith('INVLINK '):
+    break   # Done scanning through file
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each observable
-# P = usual plaquette, F = modified loop
-# D = difference (F - P), R = ratio (F - P)/(F + P)
-Pdat = []
-Fdat = []
-Ddat = []
-Rdat = []
+# Consider 1x1, ..., 1xMAX, 2x1, ..., MAXx1, ..., MAXxMAX
+# The second index (plus 1) gives the number of inverted links
+# W = usual Wilson loop, M = modified loop
+# D = difference (M - W), R = ratio (M - W)/(M + W)
+Wdat = [[[] for i in range(MAX)] for i in range(MAX)]
+Mdat = [[[] for i in range(MAX)] for i in range(MAX)]
+Ddat = [[[] for i in range(MAX)] for i in range(MAX)]
+Rdat = [[[] for i in range(MAX)] for i in range(MAX)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -62,78 +75,75 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tP = 0.0
-tF = 0.0
-tD = 0.0
-tR = 0.0
+tW = np.zeros((MAX, MAX), dtype = np.float)
+tM = np.zeros((MAX, MAX), dtype = np.float)
+tD = np.zeros((MAX, MAX), dtype = np.float)
+tR = np.zeros((MAX, MAX), dtype = np.float)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    Pdat.append(tP / float(count))
-    Fdat.append(tF / float(count))
-    Ddat.append(tD / float(count))
-    Rdat.append(tR / float(count))
-    # Record and reset block data
+    for i in range(MAX):
+      for j in range(MAX):
+        if count == 0:
+          print "ERROR: no data to average after file %s:" % toOpen
+          sys.exit(1)
+        Wdat[i][j].append(tW[i][j] / float(20. * count))
+        Mdat[i][j].append(tM[i][j] / float(20. * count))
+        Ddat[i][j].append(tD[i][j] / float(20. * count))
+        Rdat[i][j].append(tR[i][j] / float(20. * count))
+        tW[i][j] = 0.0
+        tM[i][j] = 0.0
+        tD[i][j] = 0.0
+        tR[i][j] = 0.0
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tP = 0.0
-    tF = 0.0
-    tD = 0.0
-    tR = 0.0
 
   # Running averages
-  dat = 0.0
   filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
-    # Format: GMES Re(Poly) Im(Poly) cg_iters ss_plaq st_plaq S_B
-    # Average over space--space and space--time plaquettes
-    # Until 17 January 2014, the plaquettes didn't involve the diagonal link
-    if line.startswith('GMES '):
-      temp = line.split()
-      sav = (float(temp[4]) + float(temp[5])) / 2.0
-      tP += sav
-      count += 1    # Only increment once per measurement!
-    # If we have smeared the configuration
-    # we need to overwrite sav to pick up the smeared plaquette!
-    elif line.startswith('AFTER  MIN_PLAQ '):
-      temp = line.split()
-      tP -= sav
-      sav = (float(temp[3]) + float(temp[4])) / 2.0
-      tP += sav
-    # Format: FLAVOR a b dat
+    # Format: RSYMM normal [dir] inverted [dir] usual transformed
     # This comes last in the output files,
     # so it will use the correct sav
-    elif line.startswith('FLAVOR '):
+    if line.startswith('RSYMM '):
       temp = line.split()
-      dat += float(temp[3])
-      # Average before comparing to plaquette, after this last one
-      if int(temp[1]) == 4 and int(temp[2]) == 3:
-        dat += float(temp[3])
-        dat /= 20.0
-        tF += dat
-        tD += (dat - sav)
-        tR += (dat - sav) / (dat + sav)
+      norm = int(temp[1]) - 1
+      inv = int(temp[3]) - 1
+      W_dat = float(temp[5])
+      M_dat = float(temp[6])
+      D_dat = (M_dat - W_dat) / float(2.0 * inv + 2.0)
+      tW[norm][inv] += W_dat
+      tM[norm][inv] += M_dat
+      tD[norm][inv] += D_dat
+      tR[norm][inv] += D_dat / (M_dat + W_dat)
+      # Only tick counter once per measurement
+      if norm == 1 and inv == 1 and temp[2] == '[0]' and temp[4] == '[1]':
+        count += 1
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  Pdat.append(tP / float(count))
-  Fdat.append(tF / float(count))
-  Ddat.append(tD / float(count))
-  Rdat.append(tR / float(count))
+  for i in range(MAX):
+    for j in range(MAX):
+      if count == 0:
+        print "ERROR: no data to average after file %s:" % toOpen
+        sys.exit(1)
+      Wdat[i][j].append(tW[i][j] / float(20. * count))
+      Mdat[i][j].append(tM[i][j] / float(20. * count))
+      Ddat[i][j].append(tD[i][j] / float(20. * count))
+      Rdat[i][j].append(tR[i][j] / float(20. * count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(Pdat)
+Nblocks = len(Wdat[0][0])
 # ------------------------------------------------------------------
 
 
@@ -145,29 +155,33 @@ if Nblocks == 1:
   sys.exit(1)
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-outfile = open('results/flavor.dat', 'w')
+outfile = open('results/rsymm.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# diff err rel err flavor err plaq err"
+print >> outfile, "# norm inv diff err rel err modified err usual err"
 
-dat = np.array(Ddat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
+for i in range(MAX):
+  for j in range(MAX):
+    print >> outfile, "%d %d" % (i + 1, j + 1),
 
-dat = np.array(Rdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
+    dat = np.array(Ddat[i][j])
+    ave = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+    print >> outfile, "%.6g %.4g" % (ave, err),
 
-dat = np.array(Fdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g" % (ave, err),
+    dat = np.array(Rdat[i][j])
+    ave = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+    print >> outfile, "%.6g %.4g" % (ave, err),
 
-dat = np.array(Pdat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-print >> outfile, "%.6g %.4g # %d" % (ave, err, Nblocks)
+    dat = np.array(Mdat[i][j])
+    ave = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+    print >> outfile, "%.6g %.4g" % (ave, err),
+
+    dat = np.array(Wdat[i][j])
+    ave = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+    print >> outfile, "%.6g %.4g # %d" % (ave, err, Nblocks)
 
 # More detailed block information
 #for i in range(Nblocks):
