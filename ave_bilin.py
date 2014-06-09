@@ -25,6 +25,12 @@ if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
 
+# Try to set C2 from path
+C2 = 1.0
+temp = os.getcwd()
+if '-c' in temp:
+  C2 = float((temp.split('-c'))[1])   # Everything after '-c'
+
 # Construct list of which configurations have been analyzed
 cfgs = []
 for filename in glob.glob('Out/corr.*'):
@@ -47,8 +53,10 @@ cut = cfgs[0]
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each observable
 # Ignore stochastic noise in measurements
+# Need to add factor of C2 to gauge piece
 # F = fermion bilinear piece, G = gauge piece,
-# D = susy transform (difference G - F), N = normalized (G - F)/(G + F)
+# D = susy transform (difference C2 * G - F),
+# N = normalized (C2 * G - F) / (C2 * G + F)
 Fdat = []
 Gdat = []
 Ddat = []
@@ -89,15 +97,16 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
-    # Format: SUSY f_dat imag g_dat diff
+    # Format: SUSY f_dat imag g_dat diff [with C2=1]
     # Imaginary component should average to zero
     if line.startswith('SUSY '):
       count += 1
       temp = line.split()
+      diff = C2 * float(temp[3]) - float(temp[1])
       tF += float(temp[1])
-      tG += float(temp[3])
-      tD += float(temp[4])
-      tN += float(temp[4]) / (float(temp[1]) + float(temp[3]))
+      tG += C2 * float(temp[3])
+      tD += diff
+      tN += diff / (C2 * float(temp[3]) + float(temp[1]))
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

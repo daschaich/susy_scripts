@@ -50,7 +50,9 @@ if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
-  if line.startswith('rsymm: MAX = '):
+  if line.startswith('N=4 SYM,'):
+    Nc = int((((line.split())[4]).split(','))[0])
+  elif line.startswith('rsymm: MAX = '):
     MAX = int((line.split())[3])
   elif line.startswith('INVLINK '):
     break   # Done scanning through file
@@ -108,10 +110,19 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
+    # Skip measurement if average link looks unreasonably large
+    # This seems to be due to occasional near-singular link matrix inversions
+    if line.startswith('INVLINK '):
+      temp = float((line.split())[6])
+      if temp > Nc:
+        print "WARNING: skipping %s due to large link inverse %.4g" \
+              % (toOpen[0], temp)
+        break
+
     # Format: RSYMM normal [dir] inverted [dir] usual transformed
     # This comes last in the output files,
     # so it will use the correct sav
-    if line.startswith('RSYMM '):
+    elif line.startswith('RSYMM '):
       temp = line.split()
       norm = int(temp[1]) - 1
       inv = int(temp[3]) - 1
