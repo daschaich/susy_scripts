@@ -6,16 +6,22 @@ import time
 import numpy as np
 from scipy import optimize
 # ------------------------------------------------------------------
-# Run jackknifed cosh fits of Konishi and SUGRA correlators
+# Run jackknifed fits of zero-momentum-projected Konishi and SUGRA correlators
+# C_K(t) = C + A(e^{-M_K t} + e^{-M_K (Nt - t)})
+# C_S(t) = A(e^{-M_S t} + e^{-M_S (Nt - t)})
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-if len(sys.argv) < 3:
-  print "Usage:", str(sys.argv[0]), "<cut> <block>"
+# Third argument is the minimum t to use in the fits (t_max = Nt / 2)
+# Fourth argument tells us whether to analyze "corr" or "stout" files
+if len(sys.argv) < 5:
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <tmin> <tag>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
+tmin = int(sys.argv[3])
+tag = str(sys.argv[4])
 runtime = -time.time()
 # ------------------------------------------------------------------
 
@@ -29,58 +35,56 @@ if not os.path.isdir('Out'):
 
 # Construct list of which configurations have been analyzed
 cfgs = []
-for filename in glob.glob('Out/corr.*'):
+files = 'Out/' + tag + '.*'
+for filename in glob.glob(files):
   cfg = int(filename.split('.')[-1])    # Number after last .
   if cfg not in cfgs and cfg >= cut:
     cfgs.append(cfg)
 cfgs.sort()
 
 if len(cfgs) == 0:
-  print "ERROR: no files Out/corr.* found"
+  print "ERROR: no files", files, "found"
   sys.exit(1)
 
 # If we're missing some initial measurements,
 # increase thermalization cut
 cut = cfgs[0]
 
-# Extract lattice volume from path
-# For now only Nt is used; we assume it is a two-digit number!!!
-path = os.getcwd()
-if 'Gauge' in path:   # Tom's runs
-  temp = path.split('Gauge')
-  L = int(temp[1][:1])      # First digit after 'Gauge'
-  Nt = int(temp[1][1:3])    # Second and third digits after 'nt'
-else:                 # My runs
-  temp = path.split('nt')
-  L = int((temp[0].split('_'))[-1])     # Everything between '_' and 'nt'
-  Nt = int(temp[1][:2])                 # First two digits after 'nt'
+# Extract Nt from first output file
+firstfile = 'Out/' + tag + '.' + str(cfgs[0])
+if not os.path.isfile(firstfile):
+  print "ERROR:", firstfile, "does not exist"
+  sys.exit(1)
+for line in open(firstfile):
+  if line.startswith('nt'):
+    Nt = int((line.split())[1])
+    break
 
-# Now we can define the constant+cosh around Nt / 2
-# (We have some funny business with dropping t=0 but indexing from zero...)
+# Now we can define the fit functions for C_K(t) and C_S(t)
 # errfunc will be minimized via least-squares optimization
-Kcosh = lambda p, t: p[0] + p[1] * np.cosh(p[2] * (t + 1 - Nt / 2))
-Kerrfunc = lambda p, t, y, err: (Kcosh(p, t) - y) / err
+Kcorr = lambda p, t: p[0] + p[1] * (np.exp(-p[2] * t) + np.exp(-p[2] * (Nt - 1 - t)))
+Kerrfunc = lambda p, t, y, err: (Kcorr(p, t) - y) / err
 K_in = [20., 0.0001, 1.]          # Order-of-magnitude initial guesses
-Scosh = lambda p, t: p[0] * np.cosh(p[1] * (t + 1 - Nt / 2))
-Serrfunc = lambda p, t, y, err: (Scosh(p, t) - y) / err
-S_in = [0.00001, 0.5]             # Order-of-magnitude initial guesses
+Scorr = lambda p, t: p[0] * (np.exp(-p[1] * t) + np.exp(-p[1] * (Nt - 1 - t)))
+Serrfunc = lambda p, t, y, err: (Scorr(p, t) - y) / err
+S_in = [0.001, 0.1]               # Order-of-magnitude initial guesses
 
 # We exploit t <--> Nt - t symmetry to only print 0 through Nt / 2
-Npts = Nt / 2 + 1  # Assume Nt is even
+Npts = Nt / 2 + 1 - tmin  # Assume Nt is even
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
-# Ignore t=0, which is always well off from any curve
-# (However, array will start at zero, so we shift things when reading in...)
+# There is some funny business with indexing from zero despite tmin>0
+# We need to shift things by tmin to deal with it
 # For now just average over all 25 SUGRA components
 # K = Konishi, S = SUGRA
-Kdat = [[] for x in range(Npts - 1)]
-KdatSq = [[] for x in range(Npts - 1)]
-Sdat = [[] for x in range(Npts - 1)]
-SdatSq = [[] for x in range(Npts - 1)]
+Kdat   = [[] for x in range(Npts)]
+KdatSq = [[] for x in range(Npts)]
+Sdat   = [[] for x in range(Npts)]
+SdatSq = [[] for x in range(Npts)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -88,14 +92,14 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK = [0 for x in range(Npts - 1)]
-tKSq = [0 for x in range(Npts - 1)]
-tS = [0 for x in range(Npts - 1)]
-tSSq = [0 for x in range(Npts - 1)]
+tK   = [0 for x in range(Npts)]
+tKSq = [0 for x in range(Npts)]
+tS   = [0 for x in range(Npts)]
+tSSq = [0 for x in range(Npts)]
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    for t in range(Npts - 1):
+    for t in range(Npts):
       Kdat[t].append(tK[t] / float(count))
       KdatSq[t].append(tKSq[t] / float(count))
       Sdat[t].append(tS[t] / float(25. * count))      # Average over all
@@ -106,13 +110,13 @@ for MDTU in cfgs:
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tK = [0 for x in range(Npts - 1)]
-    tKSq = [0 for x in range(Npts - 1)]
-    tS = [0 for x in range(Npts - 1)]
-    tSSq = [0 for x in range(Npts - 1)]
+    tK   = [0 for x in range(Npts)]
+    tKSq = [0 for x in range(Npts)]
+    tS   = [0 for x in range(Npts)]
+    tSSq = [0 for x in range(Npts)]
 
   # Running averages
-  filename = 'Out/corr.' + str(MDTU)
+  filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
@@ -122,26 +126,27 @@ for MDTU in cfgs:
     if line.startswith('KONISHI '):
       temp = line.split()
       t = int(temp[1])
-      if t == 0:
+      if t < tmin:
+        continue
+      elif t == tmin:
         count += 1    # Only increment once per measurement!
-        continue      # Ignore t=0
       dat = float(temp[2])
-      tK[t - 1] += dat
-      tKSq[t - 1] += dat**2
+      tK[t - tmin] += dat
+      tKSq[t - tmin] += dat**2
     # Format: SUGRA a b t dat
     elif line.startswith('SUGRA '):
       temp = line.split()
       t = int(temp[3])
-      if t == 0:      # Already incremented count above
-        continue      # Ignore t=0
+      if t < tmin:
+        continue
       dat = float(temp[4])
-      tS[t - 1] += dat
-      tSSq[t - 1] += dat**2
+      tS[t - tmin] += dat
+      tSSq[t - tmin] += dat**2
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for t in range(Npts - 1):
+  for t in range(Npts):
     Kdat[t].append(tK[t] / float(count))
     KdatSq[t].append(tKSq[t] / float(count))
     Sdat[t].append(tS[t] / float(25. * count))      # Average over all
@@ -163,52 +168,53 @@ if Nblocks == 1:
   print "ERROR: need multiple blocks to take average"
   sys.exit(1)
 
-times = np.array(range(Nt - 1))
-Ktot = np.array([sum(Kdat[t]) for t in range(Npts - 1)])
-KtotSq = np.array([sum(KdatSq[t]) for t in range(Npts - 1)])
-Stot = np.array([sum(Sdat[t]) for t in range(Npts - 1)])
-StotSq = np.array([sum(SdatSq[t]) for t in range(Npts - 1)])
+times  = np.arange(tmin, Nt / 2 + 1, dtype=np.int)
+Ktot   = np.array([sum(Kdat[t]) for t in range(Npts)])
+KtotSq = np.array([sum(KdatSq[t]) for t in range(Npts)])
+Stot   = np.array([sum(Sdat[t]) for t in range(Npts)])
+StotSq = np.array([sum(SdatSq[t]) for t in range(Npts)])
 
 # Monitor how many times the fits don't converge
 NK = 0;     Kfails = 0
 NS = 0;     Sfails = 0
 
 # Fit results for all jk samples
+#np.seterr(all='raise')
 Kout = np.empty((len(K_in), Nblocks), dtype = np.float)
 Sout = np.empty((len(S_in), Nblocks), dtype = np.float)
 for i in range(Nblocks):    # Jackknife samples
-  K = np.empty(Nt - 1, dtype = np.float)
-  Kerr = np.empty(Nt - 1, dtype = np.float)
-  S = np.empty(Nt - 1, dtype = np.float)
-  Serr = np.empty(Nt - 1, dtype = np.float)
-  for t in range(Npts - 1):
+  K    = np.empty(Npts, dtype = np.float)
+  Kerr = np.empty(Npts, dtype = np.float)
+  S    = np.empty(Npts, dtype = np.float)
+  Serr = np.empty(Npts, dtype = np.float)
+  for t in range(Npts):
     K[t] = (Ktot[t] - Kdat[t][i]) / (Nblocks - 1.)
     temp = (KtotSq[t] - KdatSq[t][i]) / (Nblocks - 1.)
     Kerr[t] = np.sqrt(temp - K[t]**2)
     S[t] = (Stot[t] - Sdat[t][i]) / (Nblocks - 1.)
     temp = (StotSq[t] - SdatSq[t][i]) / (Nblocks - 1.)
     Serr[t] = np.sqrt(temp - S[t]**2)
-  # Account for t <--> Nt - t symmetry
-  for t in range(Npts - 1, Nt - 1):
-    K[t] = K[Nt - 1 - t];
-    Kerr[t] = Kerr[Nt - 1 - t];
-    S[t] = S[Nt - 1 - t];
-    Serr[t] = Serr[Nt - 1 - t];
 
   # Fits!
-  temp, cov, infodict, mesg, success = optimize.leastsq(Kerrfunc, K_in[:], args=(times, K, Kerr), full_output=True)
-  if success in (1, 2, 3, 4):         # Fit succeeded
-    for j in range(len(K_in)):
-      Kout[j][i] = np.fabs(temp[j])   # Cosh is symmetric under -m<-->m
-    NK += 1
-  else:                               # Ignore failed fits
-    print mesg
-    Kfails += 1
+#  success = -1    # In case fit fails at runtime
+#  temp, cov, infodict, mesg, success = optimize.leastsq(Kerrfunc, K_in[:],
+#                                                        args=(times, K, Kerr),
+#                                                        full_output=True)
+#  if success in (1, 2, 3, 4):         # Fit succeeded
+#    for j in range(len(K_in)):
+#      Kout[j][i] = temp[j]
+#    NK += 1
+#  else:                               # Ignore failed fits
+#    print mesg
+#    Kfails += 1
 
-  temp, cov, infodict, mesg, success = optimize.leastsq(Serrfunc, S_in[:], args=(times, S, Serr), full_output=True)
+  success = -1    # In case fit fails at runtime
+  temp, cov, infodict, mesg, success = optimize.leastsq(Serrfunc, S_in[:],
+                                                        args=(times, S, Serr),
+                                                        full_output=True)
   if success in (1, 2, 3, 4):         # Fit succeeded
     for j in range(len(S_in)):
-      Sout[j][i] = np.fabs(temp[j])   # Cosh is symmetric under -m<-->m
+      Sout[j][i] = temp[j]
     NS += 1
   else:                               # Ignore failed fits
     print mesg

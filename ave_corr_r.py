@@ -17,6 +17,12 @@ if len(sys.argv) < 4:
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
+
+# Convenience constants for sanity check
+invSq2  = 1.0 / np.sqrt(2)
+invSq6  = 1.0 / np.sqrt(6)
+invSq12 = 1.0 / np.sqrt(12)
+invSq20 = 1.0 / np.sqrt(20)
 # ------------------------------------------------------------------
 
 
@@ -44,27 +50,56 @@ if len(cfgs) == 0:
 # increase thermalization cut
 cut = cfgs[0]
 
-# Extract Nt from first output file
+# Cycle through first output file to construct list of scalar distances
+# and determine their multiplicity
+r = []          # List of two-component lists: first value, then count
 firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
-  if line.startswith('nt'):
-    Nt = int((line.split())[1])
-    break
+  # Format: CORR_K x y z t dat
+  if line.startswith('CORR_K '):
+    temp = line.split()
+    x = float(temp[1])
+    y = float(temp[2])
+    z = float(temp[3])
+    t = float(temp[4])
+    this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
+                     - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
 
-# We exploit t <--> Nt - t symmetry
-# To only print 0 through Nt / 2 (a total of Npts points)
-Npts = Nt / 2 + 1  # Assume Nt is even
+    # Sanity check
+    x_a4 = (x - y) * invSq2
+    y_a4 = (x + y - 2.0 * z) * invSq6
+    z_a4 = (x + y + z - 3.0 * t) * invSq12
+    t_a4 = (x + y + z + t) * invSq20
+    check_r = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
+    if np.fabs(this_r - check_r) > 1.0e-6:
+      print "ERROR:", this_r, "isn't", check_r
+      sys.exit(1)
+
+    # Inefficient, but whatever
+    done = -1
+    for i in range(len(r)):
+      if np.fabs(r[i][0] - this_r) < 1.0e-6:
+        r[i][1] += 1
+        done = 1
+        break
+    if done < 0:
+      r.append([this_r, 1])
+Npts = len(r)
+
+# Sort by magnitude (column zero), not count
+r = sorted(r, key=lambda x: x[0])
+#for i in range(Npts):
+#  print r[i]
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
-# For now just average over all 25 SUGRA components
-# K = Konishi, S = SUGRA
+# K = Konishi, S = SUGRA (averaged over all 25 components)
 Kdat = [[] for x in range(Npts)]
 Sdat = [[] for x in range(Npts)]
 
@@ -79,9 +114,9 @@ tS = [0 for x in range(Npts)]
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    for t in range(Npts):
-      Kdat[t].append(tK[t] / float(count))
-      Sdat[t].append(tS[t] / float(25. * count))  # Average over all
+    for i in range(Npts):
+      Kdat[i].append(tK[i] / float(count * r[i][1]))
+      Sdat[i].append(tS[i] / float(count * r[i][1]))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
@@ -98,27 +133,41 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
-    # Format: KONISHI t dat
-    if line.startswith('KONISHI '):
+    # Format: CORR_[K,S] x y z t dat
+    if line.startswith('CORR'):
       temp = line.split()
-      time = int(temp[1])
-      if time == 0:
-        count += 1    # Only increment once per measurement!
-      dat = float(temp[2])
-      tK[time] += dat
-    # Format: SUGRA a b t dat
-    elif line.startswith('SUGRA '):
-      temp = line.split()
-      time = int(temp[3])
-      dat = float(temp[4])
-      tS[time] += dat
+      x = float(temp[1])
+      y = float(temp[2])
+      z = float(temp[3])
+      t = float(temp[4])
+      this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
+                       - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
+      if this_r < 1.0e-6:   # (0, 0, 0, 0) only
+        count += 1          # Only increment once per measurement!
+
+      # Inefficient, but whatever
+      done = -1
+      for i in range(len(r)):
+        if np.fabs(r[i][0] - this_r) < 1.0e-6:
+          if line.startswith('CORR_K '):
+            tK[i] += float(temp[5])
+          elif line.startswith('CORR_S '):
+            tS[i] += float(temp[5])
+          else:
+            print "ERROR: tag ", temp[0], "not recognized"
+            sys.exit(1)
+          done = 1
+          break
+      if done < 0:
+        print "ERROR: displacement", this_r, "not found"
+        sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for t in range(Npts):
-    Kdat[t].append(tK[t] / float(count))
-    Sdat[t].append(tS[t] / float(25. * count))  # Average over all
+  for i in range(Npts):
+    Kdat[i].append(tK[i] / float(count * r[i][1]))
+    Sdat[i].append(tS[i] / float(count * r[i][1]))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -140,18 +189,18 @@ Kfile = open('results/konishi.dat', 'w')
 print >> Kfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 Sfile = open('results/sugra.dat', 'w')
 print >> Sfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-for t in range(Npts):
+for i in range(Npts):
   # Konishi
-  dat = np.array(Kdat[t])
+  dat = np.array(Kdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print >> Kfile, "%d %.6g %.4g # %d" % (t, ave, err, Nblocks)
+  print >> Kfile, "%.4g %.6g %.4g # %d" % (r[i][0], ave, err, Nblocks)
 
   # SUGRA
-  dat = np.array(Sdat[t])
+  dat = np.array(Sdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print >> Sfile, "%d %.6g %.4g # %d" % (t, ave, err, Nblocks)
+  print >> Sfile, "%.4g %.6g %.4g # %d" % (r[i][0], ave, err, Nblocks)
 
 # More detailed block information
 #for i in range(Nblocks):

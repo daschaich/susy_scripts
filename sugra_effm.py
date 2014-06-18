@@ -45,17 +45,15 @@ if len(cfgs) == 0:
 # increase thermalization cut
 cut = cfgs[0]
 
-# Extract lattice volume from path
-# For now only Nt is used; we assume it is a two-digit number!!!
-path = os.getcwd()
-if 'Gauge' in path:   # Tom's runs
-  temp = path.split('Gauge')
-  L = int(temp[1][:1])      # First digit after 'Gauge'
-  Nt = int(temp[1][1:3])    # Second and third digits after 'nt'
-else:                 # My runs
-  temp = path.split('nt')
-  L = int((temp[0].split('_'))[-1])     # Everything between '_' and 'nt'
-  Nt = int(temp[1][:2])                 # First two digits after 'nt'
+# Extract Nt from first output file
+firstfile = 'Out/' + tag + '.' + str(cfgs[0])
+if not os.path.isfile(firstfile):
+  print "ERROR:", firstfile, "does not exist"
+  sys.exit(1)
+for line in open(firstfile):
+  if line.startswith('nt'):
+    Nt = int((line.split())[1])
+    break
 
 # We exploit t <--> Nt - t symmetry
 tmax = int(Nt / 2)   # Assume Nt is even

@@ -49,6 +49,8 @@ firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
+
+MAX = -1
 for line in open(firstfile):
   if line.startswith('N=4 SYM,'):
     Nc = int((((line.split())[4]).split(','))[0])
@@ -56,6 +58,10 @@ for line in open(firstfile):
     MAX = int((line.split())[3])
   elif line.startswith('INVLINK '):
     break   # Done scanning through file
+
+if MAX < 0:
+  print "ERROR:", firstfile, "did not use up-to-date R symmetry measurement"
+  sys.exit(1)
 # ------------------------------------------------------------------
 
 

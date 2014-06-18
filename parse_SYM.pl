@@ -466,6 +466,13 @@ CORR:
   my @corr_in = <CORR_IN>;
   close CORR_IN;
 
+  # Need to add factor of C2 to gauge piece
+  # Try to extract C2 from $path
+  my $C2 = 1.0;
+  if ($path =~ /-c/) {
+    ($junk, $C2) = split /-c/, $path;
+  }
+
   # We have a file, so let's cycle over its lines
   $check = -1;               # Check whether file completed successfully
   for my $line (@corr_in) {
@@ -482,9 +489,7 @@ CORR:
 #    }
     elsif ($line =~ /^SUSY /) {
       ($junk, $trace, $junk, $gauge, $temp) = split /\s+/, $line;
-#      print STDERR "hacking kappa vs. lambda for N=3...\n";
-#      $trace *= 1.5;    # kappa vs. lambda...
-      $susy = ($gauge - $trace) / ($gauge + $trace);    # Relative susy breaking
+      $susy = ($C2 * $gauge - $trace) / ($C2 * $gauge + $trace);
 #      $trace -= $bilin;                     # Isolate U(1) piece
     }
     elsif ($line =~ /RUNNING COMPLETED/) {
