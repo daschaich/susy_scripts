@@ -62,6 +62,8 @@ for line in open(firstfile):
   # Format: CORR_K x y z t dat
   elif line.startswith('POT_LOOP '):
     temp = line.split()
+    if int(temp[4]) > 1:
+      break                 # Only consider first t=1!
     x = float(temp[1])
     y = float(temp[2])
     z = float(temp[3])
