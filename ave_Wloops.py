@@ -3,7 +3,6 @@ import os
 import sys
 import glob
 import numpy as np
-from operator import itemgetter     # For list sorting
 # ------------------------------------------------------------------
 # Print blocked Wilson loops as function of t for each r on the A4* lattice
 # with blocked standard errors
@@ -196,7 +195,7 @@ print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, blo
 print >> outfile, "# t",
 for i in range(Npts - 1):
   print >> outfile, "%.4g err            " % r[i][0],
-print >> outfile, "%.4g err" % r[i][0]
+print >> outfile, "%.4g err" % r[Npts - 1][0]
 
 for t in range(MAX_T):
   print >> outfile, "%d" % (t + 1),     # Shift since indexed from zero
