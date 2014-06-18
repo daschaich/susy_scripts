@@ -84,14 +84,14 @@ Npts = len(r)
 # Sort by magnitude (column zero), not count
 r = sorted(r, key=lambda x: x[0])
 #for i in range(Npts):
-#  print r[0][i], r[1][i]
+#  print r[i]
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Construct arrays of blocked measurements for each correlator
-# W = usual Wilson loop, D = determinant-divided loop, P = polar-project loop
+# Construct arrays of blocked measurements for each observable
+# W = usual Wilson loop, D = determinant-divided loop, P = polar-projected loop
 Wdat = [[[] for i in range(MAX_T)] for i in range(Npts)]
 Ddat = [[[] for i in range(MAX_T)] for i in range(Npts)]
 Pdat = [[[] for i in range(MAX_T)] for i in range(Npts)]
@@ -140,7 +140,7 @@ for MDTU in cfgs:
       y_a4 = (x + y - 2.0 * z) * invSq6
       z_a4 = (x + y + z) * invSq12
       this_r = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
-      if this_r < 1.0e-6:   # (0, 0, 0) only
+      if line.startswith('POT_LOOP 0 0 0 1 '):
         count += 1          # Only increment once per measurement!
 
       # Inefficient, but whatever

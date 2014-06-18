@@ -142,7 +142,7 @@ for MDTU in cfgs:
       t = float(temp[4])
       this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
                        - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
-      if this_r < 1.0e-6:   # (0, 0, 0, 0) only
+      if line.startswith('CORR_K 0 0 0 0 '):
         count += 1          # Only increment once per measurement!
 
       # Inefficient, but whatever
