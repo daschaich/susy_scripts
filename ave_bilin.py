@@ -4,7 +4,7 @@ import sys
 import glob
 import numpy as np
 # ------------------------------------------------------------------
-# Print blocked fermion bilinear and susy transformation averages
+# Print blocked fermion bilinear and Ward identity violation averages
 # with blocked standard errors
 
 # Parse arguments: first is thermalization cut,

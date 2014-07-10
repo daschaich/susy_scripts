@@ -59,7 +59,7 @@ if not os.path.isfile(firstfile):
 for line in open(firstfile):
   if line.startswith('hvy_pot: MAX_T '):
     MAX_T = int((line.split())[3].rstrip(','))    # Strip ',' from end
-  # Format: CORR_K x y z t dat
+  # Format: POT_LOOP x y z t dat      (similarly for D_LOOP and POLAR_LOOP)
   elif line.startswith('POT_LOOP '):
     temp = line.split()
     if int(temp[4]) > 1:

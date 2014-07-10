@@ -58,13 +58,17 @@ if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
+  if line.startswith('d_correlator_r: MAX_T = '):
+    MAX_X = int((line.split())[6])
   # Format: CORR_K x y z t dat
-  if line.startswith('CORR_K '):
+  elif line.startswith('CORR_K '):
     temp = line.split()
     x = float(temp[1])
     y = float(temp[2])
     z = float(temp[3])
     t = float(temp[4])
+    if t > MAX_X:         # Drop large separations
+      continue
     this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
                      - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
 
@@ -92,7 +96,8 @@ Npts = len(r)
 # Sort by magnitude (column zero), not count
 r = sorted(r, key=lambda x: x[0])
 #for i in range(Npts):
-#  print r[i]
+#  print "%d x %.4g" % (r[i][1], r[i][0])
+#sys.exit(0)
 # ------------------------------------------------------------------
 
 
@@ -140,6 +145,8 @@ for MDTU in cfgs:
       y = float(temp[2])
       z = float(temp[3])
       t = float(temp[4])
+      if t > MAX_X:         # Drop large separations
+        continue
       this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
                        - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
       if line.startswith('CORR_K 0 0 0 0 '):
