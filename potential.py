@@ -296,7 +296,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
       jkV[j][index][i] = temp[0][1]
       rV[j] = r[j][0] * jkV[j][index][i]
       weight[j] = 1.0 / (rV[j] * np.sqrt(temp[1][1][1]))   # Squared in fit...
-      print x_r[j], jkV[j][index][i], weight[j]
+#      print x_r[j], jkV[j][index][i], weight[j]
 
     # Fit r * V(r) = A * r - C for all r
     # [A, -C] are the two parameters returned as temp
