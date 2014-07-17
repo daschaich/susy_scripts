@@ -10,7 +10,7 @@ from subprocess import call
 tags = ['KONISHI ', 'SUGRA ', 'd_correlator_r: ', 'CORR_', 'rsymm: ', \
         'INVLINK ', 'RSYMM ', 'hvy_pot', 'PLOT_LOOP ', 'DL_LOOP ', \
         'PLOLAR_LOOP ', 'Fixing ', 'GFIX ', 'BEFORE ', 'AFTER ', \
-        'POT_LOOP ', 'D_LOOP ', 'POLAR_LOOP ']
+        'POT_LOOP ', 'D_LOOP ', 'POLAR_LOOP ', 'FLAVOR ']
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
@@ -25,6 +25,7 @@ for filename in glob.glob('Out/corr.*'):
     for tag in tags:
       if line.startswith(tag):
         toPrint = -1
+        break   # No need to check rest of tags
     if toPrint > 0:
       print >> outfile, line.rstrip()
   outfile.close()
