@@ -265,19 +265,20 @@ for j in range(Npts):
 #print x_r
 
 # All jackknife results
-Nt = MAX_T - 1    # How many t_min we can consider
+Nt = MAX_T - 2    # How many t_min we can consider
 jkV = np.zeros((Npts, Nt, Nblocks), dtype = np.float)
 jkC = np.zeros((Nt, Nblocks), dtype = np.float)
 jkA = np.zeros_like(jkC)
 
 # All fits
-for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T
+for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
   index = t_min - 1
-  x_t = np.arange(t_min, MAX_T + 1)   # At least three points
+  x_t = np.arange(t_min, MAX_T + 1)       # At least three points
 #  print x_t
 
   for i in range(Nblocks):  # Jackknife samples
     rV = np.empty(Npts, dtype = np.float)
+    weight = np.empty_like(rV)
 
     # Fit W(r, t) = w * exp(-V(r) * t) for t_min <= t <= MAX_T
     # Recall that t is indexed from zero instead of one
@@ -289,15 +290,17 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T
         temp = (WtotSq[j][t - 1] - WdatSq[j][t - 1][i]) / (Nblocks - 1.0)
         WErr[t - t_min] = np.sqrt(temp - W[t - t_min]**2)
 
-      # V(r) is second of two parameters returned as temp
-      temp, success = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr))
-      jkV[j][index][i] = temp[1]
+      # V(r) is second of two parameters returned as temp[0]
+      temp = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr),
+                              full_output = 1)
+      jkV[j][index][i] = temp[0][1]
       rV[j] = r[j][0] * jkV[j][index][i]
-#      print x_r[j], jkV[j][index][i]
+      weight[j] = 1.0 / (rV[j] * np.sqrt(temp[1][1][1]))   # Squared in fit...
+      print x_r[j], jkV[j][index][i], weight[j]
 
     # Fit r * V(r) = A * r - C for all r
     # [A, -C] are the two parameters returned as temp
-    temp = np.polyfit(x_r, rV, 1, full=False, cov=False)
+    temp = np.polyfit(x_r, rV, 1, full=False, w=weight, cov=False)
     jkA[index][i] = temp[0]
     jkC[index][i] = -1.0 * temp[1]
 #    print jkC[index][i]
@@ -329,9 +332,9 @@ Vfile = open(Vfilename, 'w')
 print >> Vfile, "# Analyzing with %d blocks of length %d MDTU" \
                 % (Nblocks, block_size)
 print >> Vfile, "# r",
-for t_min in range(1, MAX_T - 1):
+for t_min in range(1, MAX_T - 2):
   print >> Vfile, "%d err            " % t_min,
-print >> Vfile, "%d err" % (MAX_T - 1)
+print >> Vfile, "%d err" % (MAX_T - 2)
 
 for j in range(Npts):
   print >> Vfile, "%.4g" % r[j][0],
