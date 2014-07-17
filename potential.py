@@ -30,8 +30,8 @@ if loop == 'POT':
   Vfilename = 'results/V.dat'
   outfilename = 'results/pot_loops.dat'
 elif loop == 'D':
-  Cfilename = 'results/CD.dat'
-  Vfilename = 'results/VD.dat'
+  Cfilename = 'results/Cdet.dat'
+  Vfilename = 'results/Vdet.dat'
   outfilename = 'results/det_loops.dat'
 elif loop == 'POLAR':
   Cfilename = 'results/Cpol.dat'
@@ -295,7 +295,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
                               full_output = 1)
       jkV[j][index][i] = temp[0][1]
       rV[j] = r[j][0] * jkV[j][index][i]
-      weight[j] = 1.0 / (rV[j] * np.sqrt(temp[1][1][1]))   # Squared in fit...
+      weight[j] = 1.0 / (r[j][0] * np.sqrt(temp[1][1][1]))   # Squared in fit...
 #      print x_r[j], jkV[j][index][i], weight[j]
 
     # Fit r * V(r) = A * r - C for all r
