@@ -6,15 +6,16 @@ import time
 import numpy as np
 from scipy import optimize
 # ------------------------------------------------------------------
-# Print blocked Wilson loops as function of t for each r on the A4* lattice
-# with blocked standard errors
+# Blocked fits of Wilson loops to W(r, t) = w * exp(-V(r) * t)
+# followed by fits of V(r) to the Coulomb form r * V(r) = A * r + C
+# Print out Coulomb coefficients C and every V(r) as functions of
+# t_min in the fits, as well as average W(r, t) themselves
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
 # Third argument tells us whether to analyze "corr" or "stout" files
-# Fourth argument tells us which type of loops to consider,
-# POT, D or POLAR
+# Fourth argument tells us which type of loops to consider: POT, D or POLAR
 if len(sys.argv) < 5:
   print "Usage:", str(sys.argv[0]), "<cut> <block> <tag> <loop>"
   sys.exit(1)
@@ -64,10 +65,20 @@ def A4map(x_in, y_in, z_in, L):
   for x in [x_in + L, x_in, x_in - L]:
     for y in [y_in + L, y_in, y_in - L]:
       for z in [z_in + L, z_in, z_in - L]:
-        x_a4 = (x - y) * invSq2
-        y_a4 = (x + y - 2.0 * z) * invSq6
-        z_a4 = (x + y + z) * invSq12
-        test = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
+        test = np.sqrt((x**2 + y**2 + z**2) * 0.75 \
+                       - (x * (y + z) + y * z) * 0.5)
+
+        # Sanity check -- can be commented out for more speed
+#        x_a4 = (x - y) * invSq2
+#        y_a4 = (x + y - 2.0 * z) * invSq6
+#        z_a4 = (x + y + z) * invSq12
+#        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
+#        if np.fabs(test - check) > TOL:
+#          print "ERROR: %.4g isn't %.4g for (%d, %d, %d)" \
+#                % (check, test, x, y, z)
+#          sys.exit(1)
+
+        # True r is the smallest
         if test < r:
           r = test
   return r
@@ -113,7 +124,7 @@ for line in open(firstfile):
   # Format: hvy_pot: MAX_T = #, MAX_X = #
   elif line.startswith('hvy_pot: MAX_T '):
     temp = line.split()
-    MAX_T = int(temp[3].rstrip(','))    # Strip ',' from end
+    MAX_T = int((temp[3]).rstrip(','))    # Strip ',' from end
     MAX_X = int(temp[6])
     num_y = 2 * MAX_X + 1
     lookup = np.empty((MAX_X + 1, num_y, num_y), dtype = np.float)
@@ -245,8 +256,8 @@ Nblocks = len(Wdat[0][0])
 
 # ------------------------------------------------------------------
 # Now we can construct jackknife samples through single-block elimination,
-# and fit each Wilson loop to W(r, t) = A * exp(-V(r) * t)
-# and then fit r * V(r) = B * r + C to find the Coulomb coefficients
+# and fit each Wilson loop to W(r, t) = w * exp(-V(r) * t)
+# and then fit r * V(r) = A * r + C to find the Coulomb coefficients
 # Require multiple blocks instead of worrying about error propagation
 if Nblocks == 1:
   print "ERROR: need multiple blocks to take average"
@@ -269,6 +280,11 @@ Nt = MAX_T - 2    # How many t_min we can consider
 jkV = np.zeros((Npts, Nt, Nblocks), dtype = np.float)
 jkC = np.zeros((Nt, Nblocks), dtype = np.float)
 jkA = np.zeros_like(jkC)
+
+# !!! Temporary hack to provide jackknife ratios
+# Will write each jackknife estimate to this file for post-processing
+#tempfilename = 'data/C' + loop + '.jk'
+#tempfile = open(tempfilename, 'w')
 
 # All fits
 for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
@@ -303,7 +319,11 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
     temp = np.polyfit(x_r, rV, 1, full=False, w=weight, cov=False)
     jkA[index][i] = temp[0]
     jkC[index][i] = -1.0 * temp[1]
-#    print jkC[index][i]
+
+    # !!! Temporary hack to provide jackknife ratios
+#    if t_min == 6:
+#      print >> tempfile, "%.6g" % jkC[index][i]
+#tempfile.close()
 # ------------------------------------------------------------------
 
 

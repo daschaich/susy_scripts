@@ -23,6 +23,41 @@ invSq12 = 1.0 / np.sqrt(12)
 
 
 # ------------------------------------------------------------------
+# Map (x, y, z) to r on L^3 reduction of A4* lattice
+# Check all possible periodic shifts to find true r
+def A4map(x_in, y_in, z_in, L):
+  r = np.sqrt((x_in**2 + y_in**2 + z_in**2) * 0.75 \
+              - (x_in * (y_in + z_in) + y_in * z_in) * 0.5)
+  for x in [x_in + L, x_in, x_in - L]:
+    for y in [y_in + L, y_in, y_in - L]:
+      for z in [z_in + L, z_in, z_in - L]:
+        test = np.sqrt((x**2 + y**2 + z**2) * 0.75 \
+                       - (x * (y + z) + y * z) * 0.5)
+
+        # Sanity check -- can be commented out for more speed
+        x_a4 = (x - y) * invSq2
+        y_a4 = (x + y - 2.0 * z) * invSq6
+        z_a4 = (x + y + z) * invSq12
+        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
+        if np.fabs(test - check) > TOL:
+          print "ERROR: %.6g isn't %.6g for (%d, %d, %d)" \
+                % (check, test, x, y, z)
+          sys.exit(1)
+
+        # True r is the smallest
+        # Try to avoid negative roundoff
+        # so that we can see when periodic shifts are really necessary
+        if test - r < -TOL:
+          print "|(%d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
+          print "--> |(%d, %d, %d)| = %.6g" % (x, y, z, test)
+          r = test
+  print "%d %d %d --> %.6g" % (x_in, y_in, z_in, r)
+  return r
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isfile(toOpen):
   print "ERROR:", toOpen, "does not exist"
@@ -35,39 +70,38 @@ r = []
 for line in open(toOpen):
   if line.startswith('nx '):
     L = int((line.split())[1])
+  # Format: hvy_pot: MAX_T = #, MAX_X = #
   elif line.startswith('hvy_pot: MAX_T '):
-    MAX_T = int((line.split())[3].rstrip(','))    # Strip ',' from end
+    temp = line.split()
+    MAX_T = int((temp[3]).rstrip(','))    # Strip ',' from end
+    MAX_X = int(temp[6])
+
+    # Find smallest r that is cut due to MAX_X
+    MAX_r = 100.0 * MAX_X   # To be overwritten
+    for y in range(MAX_X + 1):
+      for z in range(MAX_X + 1):
+        test = A4map(MAX_X + 1, y, z, L)
+        if test < MAX_r:
+          MAX_r = test
+    print "MAX_r = %.6g" % MAX_r
+    print "--------------------------------------"
+
   # Format: POT_LOOP x y z t dat      (similarly for D_LOOP and POLAR_LOOP)
   elif line.startswith('POT_LOOP '):
     temp = line.split()
     if int(temp[4]) > 1:
       break                 # Only consider a single value of t=1!
-    x = float(temp[1])
-    y = float(temp[2])
-    z = float(temp[3])
+    x = int(temp[1])
+    y = int(temp[2])
+    z = int(temp[3])
     dat = float(temp[5])
-    x_a4 = (x - y) * invSq2
-    y_a4 = (x + y - 2.0 * z) * invSq6
-    z_a4 = (x + y + z) * invSq12
-    this_r = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
+    this_r = A4map(x, y, z, L)
 
-    # Check all possible periodic shifts to find true r
-    for xx in [x + L, x, x - L]:
-      for yy in [y + L, y, y - L]:
-        for zz in [z + L, z, z - L]:
-          xx_a4 = (xx - yy) * invSq2
-          yy_a4 = (xx + yy - 2.0 * zz) * invSq6
-          zz_a4 = (xx + yy + zz) * invSq12
-          test_r = np.sqrt(xx_a4**2 + yy_a4**2 + zz_a4**2)
-          if test_r - this_r < -TOL:   # Avoid negative roundoff
-#            print "|(%d, %d, %d)| = %.6g -->" \
-#                  % (int(x), int(y), int(z), this_r),
-#            print "|(%d, %d, %d)| = %.6g" \
-#                  % (int(xx), int(yy), int(zz), test_r)
-            this_r = test_r
-    print x, y, z, "-->", this_r
 
-    # Inefficient, but whatever
+    # Accumulate multiplicities if 0.5 < this_r < MAX_r
+    # Try to avoid roundoff issues in latter comparison
+    if this_r < 0.5 or this_r - MAX_r > -TOL:
+      continue
     done = -1
     for i in range(len(r)):
       if np.fabs(r[i][0] - this_r) < TOL:
@@ -81,7 +115,8 @@ Npts = len(r)
 
 # Sort by magnitude (column zero), not count
 r = sorted(r, key=lambda x: x[0])
+print "--------------------------------------"
 for i in range(Npts):   # Print r and average
-  print "%.4g %.4g" % (r[i][0], r[i][2]  / r[i][1])
+  print "%.6g %.6g" % (r[i][0], r[i][2]  / r[i][1])
 # ------------------------------------------------------------------
 

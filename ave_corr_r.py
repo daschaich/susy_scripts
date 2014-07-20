@@ -78,8 +78,9 @@ for line in open(firstfile):
     z_a4 = (x + y + z - 3.0 * t) * invSq12
     t_a4 = (x + y + z + t) * invSq20
     check_r = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
-    if np.fabs(this_r - check_r) > 1.0e-6:
-      print "ERROR:", this_r, "isn't", check_r
+    if np.fabs(this_r - check_r) > TOL:
+      print "ERROR: %.4g isn't %.4g for (%d, %d, %d, %d)" \
+            % (check, test, x, y, z, t)
       sys.exit(1)
 
     # Inefficient, but whatever
