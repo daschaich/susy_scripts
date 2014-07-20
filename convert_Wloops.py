@@ -97,7 +97,6 @@ for line in open(toOpen):
     dat = float(temp[5])
     this_r = A4map(x, y, z, L)
 
-
     # Accumulate multiplicities if 0.5 < this_r < MAX_r
     # Try to avoid roundoff issues in latter comparison
     if this_r < 0.5 or this_r - MAX_r > -TOL:

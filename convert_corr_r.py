@@ -25,6 +25,44 @@ invSq20 = 1.0 / np.sqrt(20)
 
 
 # ------------------------------------------------------------------
+# Map (x, y, z, t) to r on L^3 x Nt A4* lattice
+# Check all possible periodic shifts to find true r
+def A4map(x_in, y_in, z_in, t_in, L, Nt):
+  r = np.sqrt((x_in**2 + y_in**2 + z_in**2 + t_in**2) * 0.8 \
+              - 2.0 * (x_in * (y_in + z_in + t_in) \
+                       + y_in * (z_in + t_in) + z_in * t_in) * 0.2)
+  for x in [x_in + L, x_in, x_in - L]:
+    for y in [y_in + L, y_in, y_in - L]:
+      for z in [z_in + L, z_in, z_in - L]:
+        for t in [t_in + Nt, t_in, t_in - Nt]:
+          test = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
+                         - 2.0 * (x * (y + z + t) \
+                                  + y * (z + t) + z * t) * 0.2)
+
+        # Sanity check -- can be commented out for more speed
+        x_a4 = (x - y) * invSq2
+        y_a4 = (x + y - 2.0 * z) * invSq6
+        z_a4 = (x + y + z - 3.0 * t) * invSq12
+        t_a4 = (x + y + z + t) * invSq20
+        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
+        if np.fabs(test - check) > TOL:
+          print "ERROR: %.6g isn't %.6g for (%d, %d, %d, %d)" \
+                % (check, test, x, y, z, t)
+          sys.exit(1)
+
+        # True r is the smallest
+        # Try to avoid negative roundoff
+        # so that we can see when periodic shifts are really necessary
+        if test - r < -TOL:
+          print "|(%d, %d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
+          print "--> |(%d, %d, %d, %d)| = %.6g" % (x, y, z, test)
+          r = test
+  print "%d %d %d %d --> %.6g" % (x_in, y_in, z_in, t_in, r)
+  return r
+# ------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isfile(toOpen):
   print "ERROR:", toOpen, "does not exist"
@@ -35,36 +73,43 @@ if not os.path.isfile(toOpen):
 # This list has three components: r, its multiplicity and the running sum
 r = []
 for line in open(toOpen):
-  if line.startswith('d_correlator_r: MAX_T = '):
+  if line.startswith('nx '):
+    L = int((line.split())[1])
+  elif line.startswith('nt '):
+    Nt = int((line.split())[1])
+  # Format: hvy_pot: MAX_T = #, MAX_X = #
+  # At least for now, forbid any component larger than MAX_X,
+  # which is no larger than MAX_T for all cases we've run so far
+  elif line.startswith('d_correlator_r: MAX_T = '):
     MAX_X = int((line.split())[6])
+
+    # Find smallest r that is cut due to MAX_X
+    MAX_r = 100.0 * MAX_X   # To be overwritten
+    for y in range(MAX_X + 1):
+      for z in range(MAX_X + 1):
+        for t in range(MAX_X + 1):
+          test = A4map(MAX_X + 1, y, z, t, L, Nt)
+          if test < MAX_r:
+            MAX_r = test
+    print "MAX_r = %.6g" % MAX_r
+    print "--------------------------------------"
+
   # Format: CORR_S x y z t dat
   elif line.startswith('CORR_S '):
     temp = line.split()
-    x = float(temp[1])
-    y = float(temp[2])
-    z = float(temp[3])
-    t = float(temp[4])
+    x = int(temp[1])
+    y = int(temp[2])
+    z = int(temp[3])
+    t = int(temp[4])
     dat = float(temp[5])
     if t > MAX_X:         # Drop large separations
       continue
-    this_r = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
-                     - 2.0 * (x * (y + z + t) + y * (z + t) + z * t) * 0.2)
-#    print x, y, z, t, "-->", this_r
+    this_r = A4map(x, y, z, t, L, Nt)
 
-    # Sanity check
-    x_a4 = (x - y) * invSq2
-    y_a4 = (x + y - 2.0 * z) * invSq6
-    z_a4 = (x + y + z - 3.0 * t) * invSq12
-    t_a4 = (x + y + z + t) * invSq20
-    check_r = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
-    if np.fabs(this_r - check_r) > TOL:
-      print "ERROR:", this_r, "isn't", check_r
-      sys.exit(1)
-
-    # Wrapping check
-
-
-    # Inefficient, but whatever
+    # Accumulate multiplicities if this_r < MAX_r
+    # Try to avoid roundoff issues in comparison
+    if this_r - MAX_r > -TOL:
+      continue
     done = -1
     for i in range(len(r)):
       if np.fabs(r[i][0] - this_r) < TOL:
@@ -78,7 +123,8 @@ Npts = len(r)
 
 # Sort by magnitude (column zero), not count
 r = sorted(r, key=lambda x: x[0])
+print "--------------------------------------"
 for i in range(Npts):   # Print r and average
-  print "%.4g %.4g" % (r[i][0], r[i][2]  / r[i][1])
+  print "%.6g %.6g" % (r[i][0], r[i][2]  / r[i][1])
 # ------------------------------------------------------------------
 
