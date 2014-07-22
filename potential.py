@@ -257,6 +257,7 @@ Nblocks = len(Wdat[0][0])
 # ------------------------------------------------------------------
 # Now we can construct jackknife samples through single-block elimination,
 # and fit each Wilson loop to W(r, t) = w * exp(-V(r) * t)
+# and then fit r * V(r) = A * r + C to find the Coulomb coefficients
 # Require multiple blocks instead of worrying about error propagation
 if Nblocks == 1:
   print "ERROR: need multiple blocks to take average"
@@ -269,55 +270,16 @@ for j in range(Npts):
     Wtot[j][t] = sum(Wdat[j][t])
     WtotSq[j][t] = sum(WdatSq[j][t])
 
-# Care about number of different t_min rather than total MAX_T
-Nt = MAX_T - 2
-jkV = np.empty((Npts, Nt, Nblocks), dtype = np.float)
-jkVSq = np.empty_like(jkV)
-
-# All Wilson loop fits
-for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
-  index = t_min - 1
-  x_t = np.arange(t_min, MAX_T + 1)       # At least three points
-#  print x_t
-
-  for i in range(Nblocks):  # Jackknife samples
-    # Fit W(r, t) = w * exp(-V(r) * t) for t_min <= t <= MAX_T
-    # Recall that t is indexed from zero instead of one
-    for j in range(Npts):
-      W = np.empty(len(x_t), dtype = np.float)
-      WErr = np.empty_like(W)
-      for t in range(t_min, MAX_T + 1):
-        W[t - t_min] = (Wtot[j][t - 1] - Wdat[j][t - 1][i]) / (Nblocks - 1.0)
-        temp = (WtotSq[j][t - 1] - WdatSq[j][t - 1][i]) / (Nblocks - 1.0)
-        WErr[t - t_min] = np.sqrt(temp - W[t - t_min]**2)
-
-      # V(r) is second of two parameters returned as temp
-      temp, success = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr))
-      dat = float(temp[1])
-      jkV[j][index][i] = dat
-      jkVSq[j][index][i] = dat**2
-# ------------------------------------------------------------------
-
-
-
-# ------------------------------------------------------------------
-# Again construct jackknife samples through single-block elimination,
-# to fit r * V(r) = A * r + C to find the Coulomb coefficients
-Vtot = np.empty((Npts, Nt), dtype = np.float)
-VtotSq = np.empty_like(Vtot)
-for j in range(Npts):
-  for t in range(Nt):
-    Vtot[j][t] = sum(jkV[j][t])
-    VtotSq[j][t] = sum(jkVSq[j][t])
-
 x_r = np.empty(Npts, dtype = np.float)
 for j in range(Npts):
   x_r[j] = r[j][0]
 #print x_r
 
-# Also print asymptotic A so we can see what V(r) looks like
-jkC = np.empty((Nt, Nblocks), dtype = np.float)
-jkA = np.empty_like(jkC)
+# All jackknife results
+Nt = MAX_T - 2    # How many t_min we can consider
+jkV = np.zeros((Npts, Nt, Nblocks), dtype = np.float)
+jkC = np.zeros((Nt, Nblocks), dtype = np.float)
+jkA = np.zeros_like(jkC)
 
 # !!! Temporary hack to provide jackknife ratios
 # Will write each jackknife estimate to this file for post-processing
@@ -327,14 +289,50 @@ tempfile = open(tempfilename, 'w')
 # All fits
 for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
   index = t_min - 1
+  x_t = np.arange(t_min, MAX_T + 1)       # At least three points
+#  print x_t
+
   for i in range(Nblocks):  # Jackknife samples
+    jkVlist = [[] for x in range(Npts)]
     rV = np.empty(Npts, dtype = np.float)
-    weight = np.empty_like(rV)            # Will be squared in fit
+    weight = np.empty_like(rV)
+
+    # Inner jackknife:
+    # Fit W(r, t) = w * exp(-V(r) * t) for t_min <= t <= MAX_T
+    # Recall that t is indexed from zero instead of one
+    Ninner = Nblocks - 1
+    WIn = np.empty_like(Wtot)
+    WInSq = np.empty_like(Wtot)
     for j in range(Npts):
-      rV[j] = r[j][0] * (Vtot[j][index] - jkV[j][index][i]) / (Nblocks - 1.0)
-      temp = (VtotSq[j][index] - jkVSq[j][index][i]) / (Nblocks - 1.0)
-      weight[j] = 1.0 / np.sqrt(r[j][0]**2 * temp - rV[j]**2)
-#    print rV, weight
+      for t in range(MAX_T):
+        WIn[j][t] = Wtot[j][t] - Wdat[j][t][i]
+        WInSq[j][t] = WtotSq[j][t] - WdatSq[j][t][i]
+    for ii in range(Nblocks):
+      if ii == i:
+        continue
+      for j in range(Npts):
+        W = np.empty(len(x_t), dtype = np.float)
+        WErr = np.empty_like(W)
+        for t in range(t_min, MAX_T + 1):
+          W[t - t_min] = (WIn[j][t - 1] - Wdat[j][t - 1][ii]) / (Ninner - 1.0)
+          temp = (WInSq[j][t - 1] - WdatSq[j][t - 1][ii]) / (Ninner - 1.0)
+          WErr[t - t_min] = np.sqrt(temp - W[t - t_min]**2)
+
+        # V(r) is second of two parameters returned as temp
+        temp, success = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr))
+        jkVlist[j].append(float(temp[1]))
+
+    # Now we have an estimate of jkV, rV and weight
+    if not len(jkVlist[0]) == Ninner:
+      print "ERROR: Wrong number of samples in inner jackknife", Ninner,
+      print "vs.", len(jkVlist[0])
+    for j in range(Npts):
+      temp = np.array(jkVlist[j])
+      jkV[j][index][i] = np.average(temp)
+      rV[j] = r[j][0] * jkV[j][index][i]
+      var = (Ninner - 1.0) * np.sum((temp - jkV[j][index][i])**2) / float(Ninner)
+      weight[j] = 1.0 / (r[j][0] * np.sqrt(var))    # Squared in fit
+#     print x_r[j], jkV[j][index][i], weight[j]
 
     # Fit r * V(r) = A * r - C for all r
     # [A, -C] are the two parameters returned as temp
