@@ -4,7 +4,6 @@ import sys
 import glob
 import time
 import numpy as np
-from scipy import optimize
 # ------------------------------------------------------------------
 # Blocked fits of Wilson loops to W(r, t) = w * exp(-V(r) * t)
 # followed by fits of V(r) to the Coulomb form r * V(r) = A * r + C
@@ -48,11 +47,6 @@ TOL = 1.0e-6
 invSq2  = 1.0 / np.sqrt(2)
 invSq6  = 1.0 / np.sqrt(6)
 invSq12 = 1.0 / np.sqrt(12)
-
-# errfunc will be minimized via least-squares optimization
-expfunc = lambda p, x: p[0] * np.exp(-p[1] * x)
-errfunc = lambda p, x, y, err: (expfunc(p, x) - y) / err
-p_in = [0.01, 0.1]   # Order-of-magnitude initial guesses
 # ------------------------------------------------------------------
 
 
@@ -312,15 +306,17 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
         continue
       for j in range(Npts):
         W = np.empty(len(x_t), dtype = np.float)
-        WErr = np.empty_like(W)
+        Wweight = np.empty_like(W)
         for t in range(t_min, MAX_T + 1):
-          W[t - t_min] = (WIn[j][t - 1] - Wdat[j][t - 1][ii]) / (Ninner - 1.0)
+          dat = (WIn[j][t - 1] - Wdat[j][t - 1][ii]) / (Ninner - 1.0)
           temp = (WInSq[j][t - 1] - WdatSq[j][t - 1][ii]) / (Ninner - 1.0)
-          WErr[t - t_min] = np.sqrt(temp - W[t - t_min]**2)
+          err = np.sqrt(temp - dat**2)
+          W[t - t_min] = -1.0 * np.log(dat)
+          Wweight[t - t_min] = err / dat   # 1 / err with err(log x) = dx / x
 
-        # V(r) is second of two parameters returned as temp
-        temp, success = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr))
-        jkVlist[j].append(float(temp[1]))
+        # V(r) is first of two parameters returned as temp
+        temp = np.polyfit(x_t, W, 1, full=False, w=Wweight)
+        jkVlist[j].append(float(temp[0]))
 
     # Now we have an estimate of jkV, rV and weight
     if not len(jkVlist[0]) == Ninner:
@@ -336,7 +332,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
 
     # Fit r * V(r) = A * r - C for all r
     # [A, -C] are the two parameters returned as temp
-    temp = np.polyfit(x_r, rV, 1, full=False, w=weight, cov=False)
+    temp = np.polyfit(x_r, rV, 1, full=False, w=weight)
     jkA[index][i] = temp[0]
     jkC[index][i] = -1.0 * temp[1]
 
