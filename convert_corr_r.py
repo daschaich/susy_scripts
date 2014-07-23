@@ -39,27 +39,28 @@ def A4map(x_in, y_in, z_in, t_in, L, Nt):
                          - 2.0 * (x * (y + z + t) \
                                   + y * (z + t) + z * t) * 0.2)
 
-        # Sanity check -- can be commented out for more speed
-        x_a4 = (x - y) * invSq2
-        y_a4 = (x + y - 2.0 * z) * invSq6
-        z_a4 = (x + y + z - 3.0 * t) * invSq12
-        t_a4 = (x + y + z + t) * invSq20
-        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
-        if np.fabs(test - check) > TOL:
-          print "ERROR: %.6g isn't %.6g for (%d, %d, %d, %d)" \
-                % (check, test, x, y, z, t)
-          sys.exit(1)
+          # Sanity check -- can be commented out for more speed
+          x_a4 = (x - y) * invSq2
+          y_a4 = (x + y - 2.0 * z) * invSq6
+          z_a4 = (x + y + z - 3.0 * t) * invSq12
+          t_a4 = (x + y + z + t) * invSq20
+          check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
+          if np.fabs(test - check) > TOL:
+            print "ERROR: %.6g isn't %.6g for (%d, %d, %d, %d)" \
+                  % (check, test, x, y, z, t)
+            sys.exit(1)
 
-        # True r is the smallest
-        # Try to avoid negative roundoff
-        # so that we can see when periodic shifts are really necessary
-        if test - r < -TOL:
-          print "|(%d, %d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
-          print "--> |(%d, %d, %d, %d)| = %.6g" % (x, y, z, test)
-          r = test
-  print "%d %d %d %d --> %.6g" % (x_in, y_in, z_in, t_in, r)
+          # True r is the smallest
+          # Try to avoid negative roundoff
+          # so that we can see when periodic shifts are really necessary
+          if test - r < -TOL:
+            print "|(%d, %d, %d, %d)| = %.6g" % (x_in, y_in, z_in, t_in, r),
+            print "--> |(%d, %d, %d, %d)| = %.6g" % (x, y, z, t, test)
+            r = test
+#  print "%d %d %d %d --> %.6g" % (x_in, y_in, z_in, t_in, r)
   return r
 # ------------------------------------------------------------------
+
 
 
 # ------------------------------------------------------------------
