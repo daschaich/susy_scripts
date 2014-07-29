@@ -24,7 +24,7 @@ for filename in glob.glob('Out/eig.*'):
       if evenodd == 0:
         even = float(temp[2])
       elif evenodd == 1:
-        diff = float(temp[2]) - even
+        diff = np.fabs(float(temp[2]) - even)
         if diff / even > TOL:
           print "Apparent pairing breakdown for", filename
           break
