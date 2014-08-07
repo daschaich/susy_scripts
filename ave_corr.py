@@ -2,9 +2,10 @@
 import os
 import sys
 import glob
+import time
 import numpy as np
 # ------------------------------------------------------------------
-# Print blocked Konishi and SUGRA correlator averages
+# Print blocked Konishi and SUGRA correlator C(t) averages
 # with blocked standard errors
 
 # Parse arguments: first is thermalization cut,
@@ -17,6 +18,7 @@ if len(sys.argv) < 4:
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
+runtime = -time.time()
 # ------------------------------------------------------------------
 
 
@@ -63,7 +65,6 @@ Npts = Nt / 2 + 1  # Assume Nt is even
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
-# For now just average over all 25 SUGRA components
 # K = Konishi, S = SUGRA
 Kdat = [[] for x in range(Npts)]
 Sdat = [[] for x in range(Npts)]
@@ -81,7 +82,7 @@ for MDTU in cfgs:
   if MDTU >= (begin + block_size):
     for t in range(Npts):
       Kdat[t].append(tK[t] / float(count))
-      Sdat[t].append(tS[t] / float(25. * count))  # Average over all
+      Sdat[t].append(tS[t] / float(count))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
@@ -101,24 +102,24 @@ for MDTU in cfgs:
     # Format: KONISHI t dat
     if line.startswith('KONISHI '):
       temp = line.split()
-      time = int(temp[1])
-      if time == 0:
+      t = int(temp[1])
+      if t == 0:
         count += 1    # Only increment once per measurement!
       dat = float(temp[2])
-      tK[time] += dat
-    # Format: SUGRA a b t dat
+      tK[t] += dat
+    # Format: SUGRA t dat
     elif line.startswith('SUGRA '):
       temp = line.split()
-      time = int(temp[3])
-      dat = float(temp[4])
-      tS[time] += dat
+      t = int(temp[1])
+      dat = float(temp[2])
+      tS[t] += dat
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   for t in range(Npts):
     Kdat[t].append(tK[t] / float(count))
-    Sdat[t].append(tS[t] / float(25. * count))  # Average over all
+    Sdat[t].append(tS[t] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -136,9 +137,9 @@ if Nblocks == 1:
   sys.exit(1)
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-Kfile = open('results/konishi.dat', 'w')
+Kfile = open('results/konishi_t.dat', 'w')
 print >> Kfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-Sfile = open('results/sugra.dat', 'w')
+Sfile = open('results/sugra_t.dat', 'w')
 print >> Sfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 for t in range(Npts):
   # Konishi
@@ -161,4 +162,7 @@ for t in range(Npts):
 #          % (i + 1, block_data[0][i], block_data[1][i], block_data[2][i])
 Kfile.close()
 Sfile.close()
+
+runtime += time.time()
+print "Runtime: %0.1f seconds" % runtime
 # ------------------------------------------------------------------

@@ -204,7 +204,7 @@ for MDTU in cfgs:
       z = int(temp[3])
       t = int(temp[4])
       dat = float(temp[5])
-      if t > MAX_X:         # Drop large separations, assumed by lookup
+      if t > MAX_X:         # Drop large separations, as assumed by lookup
         continue
       if line.startswith('CORR_K 0 0 0 0 '):
         count += 1          # Only increment once per measurement!
@@ -253,9 +253,9 @@ if Nblocks == 1:
   sys.exit(1)
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-Kfile = open('results/konishi.dat', 'w')
+Kfile = open('results/konishi_r.dat', 'w')
 print >> Kfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-Sfile = open('results/sugra.dat', 'w')
+Sfile = open('results/sugra_r.dat', 'w')
 print >> Sfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 for i in range(Npts):
   # Konishi
