@@ -96,12 +96,12 @@ for t in range(Nt):
   dat = np.array(corr[t])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print "# %d %.6g %.4g" % (t, ave, err)
+  print "%d %.6g %.4g" % (t, ave, err)
 
 print "# Delta C / Delta t:"
 for t in range(Nt - 1):
   dat = np.array(diff[t])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print "%.2g %.6g %.4g" % (float(t) + 0.5, ave, err)
+  print "# %.2g %.6g %.4g" % (float(t) + 0.5, ave, err)
 # ------------------------------------------------------------------

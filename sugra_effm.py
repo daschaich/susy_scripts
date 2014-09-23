@@ -102,11 +102,11 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   for line in open(toOpen[0]):
-    # Format: SUGRA a b t dat
+    # Format: SUGRA t dat
     if line.startswith('SUGRA '):
       temp = line.split()
-      time = int(temp[3])
-      dat = float(temp[4])
+      time = int(temp[1])
+      dat = float(temp[2])
       tM[time] += dat
 
 # Check special case that last block is full
@@ -136,8 +136,10 @@ Nblocks = len(block_data[0])
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 print "%d of %d eff_m results were malformed" % (warnings, Nblocks * len(effm))
 outfile = open('results/sugra_effm.dat', 'w')
-print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "%d of %d eff_m results were malformed" % (warnings, Nblocks * len(effm))
+print >> outfile, "# Averaging with %d blocks of length %d MDTU" \
+                  % (Nblocks, block_size)
+print >> outfile, "# %d of %d eff_m results were malformed" \
+                  % (warnings, Nblocks * len(effm))
 for t in range(1, tmax):
   Nblocks = len(effm[t - 1])
   if Nblocks <= 1:

@@ -198,7 +198,7 @@ for i in range(MAX):
     dat = np.array(Wdat[i][j])
     ave = np.mean(dat, dtype = np.float64)
     err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-    print >> outfile, "%.6g %.4g # %d" % (ave, err, Nblocks)
+    print >> outfile, "%.6g %.4g" % (ave, err)
 
 # More detailed block information
 #for i in range(Nblocks):

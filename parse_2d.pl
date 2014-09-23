@@ -168,14 +168,8 @@ FILE: for my $file (@files) {
       $walltime = -2;
     }
     # Extract Nc for bosonic action and Polyakov loop normalizations
-    # Unfortunately, we switched conventions in early 2014
-    elsif ($line =~ /^N=4 SYM /) {
-      ($junk, $junk, $Nc, $junk) = split /\s+/, $line;
-      ($junk, $temp, $junk) = split /\(/, $Nc;
-      ($Nc, $junk) = split /\)/, $temp;
-    }
-    elsif ($line =~ /^N=4 SYM, /) {
-      ($junk, $temp, $junk) = split /,/, $line;
+    elsif ($line =~ /^N=\(2, 2\) SYM, /) {
+      ($junk, $junk, $temp, $junk) = split /,/, $line;
       # Funny business due to leading space
       ($junk, $junk, $junk, $Nc) = split /\s+/, $temp;
     }
