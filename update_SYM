@@ -13,7 +13,7 @@ path=/nfs/beowulf02/schaich/SYM/$dir
 
 
 # ------------------------------------------------------------------
-# Construct list of files in given ensemble, for parse_SYM.pl
+# Construct list of files in given ensemble, for parse_SYM.py
 rm -f list.txt
 for i in $path/Out/out.* ; do
   echo ${i##*.} >> temp    # Strip everything up to and including the last "."
@@ -24,10 +24,10 @@ rm -f temp
 # Use list of files in given ensemble to extract time series data
 rm -f data/*.csv ERRORS
 date=`date`
-#echo 'Last update: '$date > ERRORS
-#echo >> ERRORS
-echo "parse_SYM.pl $dir"
-~schaich/scripts/parse_SYM.pl $dir
+echo "python ~schaich/scripts/parse_SYM.py"
+python ~schaich/scripts/parse_SYM.py
+#echo "~schaich/scripts/parse_SYM.pl $dir"
+#~schaich/scripts/parse_SYM.pl $dir
 chmod 664 data/*.csv
 rm -f list.txt            # Done with this
 
