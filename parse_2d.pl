@@ -2,16 +2,10 @@
 use strict;
 use warnings;
 # ------------------------------------------------------------------
-# This script parses N=(2, 2) SYM output files for a single ensemble,
-# shuffling the extracted data into dedicated files for plotting.
-#
-# We normalize the Polyakov loop data by Nc
-# and the bosonic action by 3Nc^2 / 2
-# ------------------------------------------------------------------
+# Parse N=(2, 2) SYM output files for a single ensemble,
+# shuffling the extracted data into dedicated files for plotting
+# Normalize the Polyakov loop data by Nc and the bosonic action by 3Nc^2 / 2
 
-
-
-# ------------------------------------------------------------------
 die "Usage: $0 <path>\n"
   if (@ARGV != 1);
 
@@ -23,50 +17,53 @@ my $temp;
 open ERRFILE, ">> ERRORS" or die "Error opening ERRORS ($!)\n";
 open MISSINGFILES, "> MISSING" or die "Error opening MISSING ($!)\n";
 
-# Set up header lines in new data/ files
-open KEY, "> $path/data/key.csv" or die "Error opening $path/data/key.csv ($!)\n";
-open STEPSIZE, "> $path/data/stepsize.csv" or die "Error opening $path/data/stepsize.csv ($!)\n";
-open NSTEP, "> $path/data/Nstep.csv" or die "Error opening $path/data/Nstep.csv ($!)\n";
-open TLENGTH, "> $path/data/tlength.csv" or die "Error opening $path/data/tlength.csv ($!)\n";
-open TU, "> $path/data/TU.csv" or die "Error opening $path/data/TU.csv ($!)\n";
-open DELTAS, "> $path/data/deltaS.csv" or die "Error opening $path/data/deltaS.csv ($!)\n";
-open EXP_DS, "> $path/data/exp_dS.csv" or die "Error opening $path/data/exp_dS.csv ($!)\n";
-open ABS_DS, "> $path/data/abs_dS.csv" or die "Error opening $path/data/abs_dS.csv ($!)\n";
-open ACCP, "> $path/data/accP.csv" or die "Error opening $path/data/accP.csv ($!)\n";
-open FORCE, "> $path/data/force.csv" or die "Error opening $path/data/force.csv ($!)\n";
+# Physical observables
 open PLAQ, "> $path/data/plaq.csv" or die "Error opening $path/data/plaq.csv ($!)\n";
-open SB, "> $path/data/SB.csv" or die "Error opening $path/data/SB.csv ($!)\n";
-open POLY, "> $path/data/poly.csv" or die "Error opening $path/data/poly.csv ($!)\n";
-open POLY_MOD, "> $path/data/poly_mod.csv" or die "Error opening $path/data/poly_mod.csv ($!)\n";
-open FLINK, "> $path/data/Flink.csv" or die "Error opening $path/data/Flink.csv ($!)\n";
-open DET, "> $path/data/det.csv" or die "Error opening $path/data/det.csv ($!)\n";
-open CG_ITERS, "> $path/data/cg_iters.csv" or die "Error opening $path/data/cg_iters.csv ($!)\n";
-open WALLTIME, "> $path/data/walltime.csv" or die "Error opening $path/data/walltime.csv ($!)\n";
-open WALLTU, "> $path/data/wallTU.csv" or die "Error opening $path/data/wallTU.csv ($!)\n";
-open EIG, "> $path/data/eig.csv" or die "Error opening $path/data/eig.csv ($!)\n";
-open BILIN, "> $path/data/bilin.csv" or die "Error opening $path/data/bilin.csv ($!)\n";
-
-print KEY "t,file\n";
-print STEPSIZE "t,eps_f,eps_g\n";
-print NSTEP "t,N_f,N_g\n";
-print TLENGTH "t,L\n";
-print TU "t,MDTU\n";
-print DELTAS "t,deltaS\n";
-print EXP_DS "t,e^(-dS)\n";
-print ABS_DS "t,|deltaS|\n";
-print ACCP "t,accP\n";
-print FORCE "t,G,F\n";
 print PLAQ "MDTU,plaq\n";
+open SB, "> $path/data/SB.csv" or die "Error opening $path/data/SB.csv ($!)\n";
 print SB "MDTU,S_B\n";
+open POLY, "> $path/data/poly.csv" or die "Error opening $path/data/poly.csv ($!)\n";
 print POLY "ReTr(L),ImTr(L)\n";
+open POLY_MOD, "> $path/data/poly_mod.csv" or die "Error opening $path/data/poly_mod.csv ($!)\n";
 print POLY_MOD "MDTU,|Tr(L)|,ReTr(L),ImTr(L)\n";
+open FLINK, "> $path/data/Flink.csv" or die "Error opening $path/data/Flink.csv ($!)\n";
 print FLINK "MDTU,link\n";
+open DET, "> $path/data/det.csv" or die "Error opening $path/data/det.csv ($!)\n";
 print DET "MDTU,|det-1|,|Re(det)-1|\n";
-print CG_ITERS "t,cg_iters\n";
-print WALLTIME "t,walltime\n";
-print WALLTU "t,cost\n";
+open EIG, "> $path/data/eig.csv" or die "Error opening $path/data/eig.csv ($!)\n";
 print EIG "MDTU,0,2,4,6,8,10\n";
+open BILIN, "> $path/data/bilin.csv" or die "Error opening $path/data/bilin.csv ($!)\n";
 print BILIN "MDTU,susyTrans\n";
+
+# Evolution observables
+open ACCP, "> $path/data/accP.csv" or die "Error opening $path/data/accP.csv ($!)\n";
+print ACCP "t,accP\n";
+open EXP_DS, "> $path/data/exp_dS.csv" or die "Error opening $path/data/exp_dS.csv ($!)\n";
+print EXP_DS "t,e^(-dS)\n";
+open DELTAS, "> $path/data/deltaS.csv" or die "Error opening $path/data/deltaS.csv ($!)\n";
+print DELTAS "t,deltaS\n";
+open ABS_DS, "> $path/data/abs_dS.csv" or die "Error opening $path/data/abs_dS.csv ($!)\n";
+print ABS_DS "t,|deltaS|\n";
+open FORCE, "> $path/data/force.csv" or die "Error opening $path/data/force.csv ($!)\n";
+print FORCE "t,G,F\n";
+open CG_ITERS, "> $path/data/cg_iters.csv" or die "Error opening $path/data/cg_iters.csv ($!)\n";
+print CG_ITERS "t,cg_iters\n";
+open WALLTIME, "> $path/data/walltime.csv" or die "Error opening $path/data/walltime.csv ($!)\n";
+print WALLTIME "t,walltime\n";
+open WALLTU, "> $path/data/wallTU.csv" or die "Error opening $path/data/wallTU.csv ($!)\n";
+print WALLTU "t,cost\n";
+
+# Run parameters
+open NSTEP, "> $path/data/Nstep.csv" or die "Error opening $path/data/Nstep.csv ($!)\n";
+print NSTEP "t,N_f,N_g\n";
+open STEPSIZE, "> $path/data/stepsize.csv" or die "Error opening $path/data/stepsize.csv ($!)\n";
+print STEPSIZE "t,eps_f,eps_g\n";
+open TLENGTH, "> $path/data/tlength.csv" or die "Error opening $path/data/tlength.csv ($!)\n";
+print TLENGTH "t,L\n";
+open KEY, "> $path/data/key.csv" or die "Error opening $path/data/key.csv ($!)\n";
+print KEY "t,file\n";
+open TU, "> $path/data/TU.csv" or die "Error opening $path/data/TU.csv ($!)\n";
+print TU "t,MDTU\n";
 # ------------------------------------------------------------------
 
 
@@ -138,12 +135,12 @@ FILE: for my $file (@files) {
   chomp ($file);          # Get rid of linebreaks in filenames
   ($load, $cfg) = split /-/, $file;
   # Initialize running sums and set dummy walltime
-  # If the latter isn't overwritten, then the run died
+  # If the walltime isn't overwritten, then the run died
   # or its output file is corrupted
   $walltime = -1;
   $stamp = "start";
 
-  # Open file, which may be in one of two directories
+  # Open file
   # If not found, move on to next file instead of killing whole program,
   # but print error message so I know there is a problem
   $infile = "$path/Out/out.$file";
@@ -180,13 +177,13 @@ FILE: for my $file (@files) {
     }
   }
   if ($traj_per_file == -1) {
-    print STDERR "$infile: number of trajectories is never defined\n";
-    print ERRFILE "$infile: number of trajectories is never defined\n";
+    print STDERR "$infile never defines number of trajectories\n";
+    print ERRFILE "$infile never defines number of trajectories\n";
     next FILE;     # Skip this file, which appears malformed
   }
 
   if ($traj == 0 && $load > 0 || $load != $oldcfg) {
-    print STDERR "$infile: missing MDTU before $load\n";
+    print STDERR "$infile misses MDTU before $load\n";
     $traj = $load;
     $MDTU = $load;
     $endtraj = $traj + $traj_per_file;
@@ -198,16 +195,10 @@ FILE: for my $file (@files) {
   # --------------------------------------------------------------
   # Cycle through lines in the file
   for my $line (@in) {
-    # Check for unitarity problems
-    if ($line =~ /^Unitarity problem /) {
-      print STDERR "$infile: unitarity problem reported\n";
-      print ERRFILE "$infile: unitarity problem reported\n";
-      next FILE;     # Skip this file, which appears malformed
-    }
     # Check for premature termination (e.g., layout problem)
     if ($line =~ /^termination/) {
-      print STDERR "$infile: premature termination reported\n";
-      print ERRFILE "$infile: premature termination reported\n";
+      print STDERR "$infile reports premature termination\n";
+      print ERRFILE "$infile reports premature termination\n";
       next FILE;     # Skip this file, which appears malformed
     }
   }
@@ -216,7 +207,7 @@ FILE: for my $file (@files) {
   $oldcfg = $cfg;
   for my $line (@in) {
     # Extract constant run parameters
-    if ($line =~ /^traj_length/) {
+    if ($line =~ /^traj_length /) {
       ($junk, $tlength) = split /\s+/, $line;
       print TLENGTH "$endtraj,$tlength\n";
     }
@@ -236,9 +227,7 @@ FILE: for my $file (@files) {
     elsif ($line =~ /^Machine = /) {
       ($junk, $junk, $junk, $junk, $junk, $cpus, $junk) = split /\s+/, $line;
     }
-    # ------------------------------------------------------------
 
-    # ------------------------------------------------------------
     # Check that the file loaded the appropriate configuration
     elsif ($line =~ /^Time stamp /) {
       chomp ($line);              # Remove linebreak from end of line
@@ -362,8 +351,8 @@ FILE: for my $file (@files) {
   # ----------------------------------------------------------------
   # Check to see if run seems to have finished properly
   if ($walltime == -1) {
-    print STDERR "$infile: final timing never reported\n";
-    print ERRFILE "$infile: final timing never reported\n";
+    print STDERR "$infile didn't print final timing\n";
+    print ERRFILE "$infile didn't print final timing\n";
   }
   elsif ($walltime == -2) {
     # Placeholder file -- error has been addressed as well as possible,
@@ -395,9 +384,8 @@ EIGEN:
   close EIG_IN;
 
   # We have a file, so let's cycle over its lines
-  # Can't show all the eigenvalues, so let's focus on six
-  # These seem to come in quartets, though depending on the tolerance some quartet members can be missed
-  # If we look at eigenvalues 0, 4, 8, 12, 16, 20 and 24 we should be likely to sample one value from each quartet
+  # These are always paired (checked by check_eig_pairs.py)
+  # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
   $check = -1;               # Check whether file completed successfully
   my @eig = ("null", "null", "null", "null", "null", "null");
   for my $line (@eig_in) {

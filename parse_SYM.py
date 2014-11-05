@@ -247,7 +247,7 @@ for temp_tag in open('list.txt'):
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
       # Normalize bosonic action and Polyakov loop using Nc extracted above
-      print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * Nc * Nc))
+      print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * Nc**2))
 
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc

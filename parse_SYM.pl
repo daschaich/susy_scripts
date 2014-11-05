@@ -391,8 +391,8 @@ EIGEN:
   close EIG_IN;
 
   # We have a file, so let's cycle over its lines
-  # These are always paired (checked by check_eig_pairs.py),
-  # Focus on first six pairs, 0, 2, 4, 6, 8, and 10
+  # These are always paired (checked by check_eig_pairs.py)
+  # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
   $check = -1;               # Check whether file completed successfully
   my @eig = ("null", "null", "null", "null", "null", "null");
   for my $line (@eig_in) {
