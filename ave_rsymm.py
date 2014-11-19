@@ -90,11 +90,11 @@ tR = np.zeros((MAX, MAX), dtype = np.float)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
+    if count == 0:
+      print "ERROR: no data to average after file %s:" % toOpen
+      sys.exit(1)
     for i in range(MAX):
       for j in range(MAX):
-        if count == 0:
-          print "ERROR: no data to average after file %s:" % toOpen
-          sys.exit(1)
         Wdat[i][j].append(tW[i][j] / float(20. * count))
         Mdat[i][j].append(tM[i][j] / float(20. * count))
         Ddat[i][j].append(tD[i][j] / float(20. * count))
@@ -125,7 +125,7 @@ for MDTU in cfgs:
               % (toOpen[0], temp)
         break
 
-    # Format: RSYMM normal [dir] inverted [dir] usual transformed
+    # Format: RSYMM normal [dir] inverted [dir] usual mod
     # This comes last in the output files,
     # so it will use the correct sav
     elif line.startswith('RSYMM '):
