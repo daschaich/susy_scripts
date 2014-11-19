@@ -6,7 +6,6 @@ import time
 import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
-# Compute xi^4 by matching blocked plaquette
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -68,15 +67,12 @@ if blmax < 0:
 # Construct arrays of blocked and unblocked measurements
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two products for each operator
-# We also need (blmax - 1) 2x2 and 1x1 Wilson loops to determine xi^4
 Kdat = [[] for i in range(blmax + 1)]
 AKdat = [[] for i in range(blmax)]
 BKdat = [[] for i in range(blmax)]
 Sdat = [[] for i in range(blmax + 1)]
 ASdat = [[] for i in range(blmax)]
 BSdat = [[] for i in range(blmax)]
-L2dat = [[] for i in range(blmax)]
-L1dat = [[] for i in range(blmax)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -90,8 +86,6 @@ tBK = np.zeros(blmax, dtype = np.float)
 tS = np.zeros(blmax + 1, dtype = np.float)
 tAS = np.zeros(blmax, dtype = np.float)
 tBS = np.zeros(blmax, dtype = np.float)
-tL2 = np.zeros(blmax, dtype = np.float)
-tL1 = np.zeros(blmax, dtype = np.float)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
@@ -105,16 +99,12 @@ for MDTU in cfgs:
       Sdat[bl].append(tS[bl] / float(count))
       ASdat[bl].append(tAS[bl] / float(count))
       BSdat[bl].append(tBS[bl] / float(count))
-      L2dat[bl].append(tL2[bl] / float(20. * count))
-      L1dat[bl].append(tL2[bl] / float(20. * count))
       tK[bl] = 0.0
       tAK[bl] = 0.0
       tBK[bl] = 0.0
       tS[bl] = 0.0
       tAS[bl] = 0.0
       tBS[bl] = 0.0
-      tL2[bl] = 0.0
-      tL1[bl] = 0.0
     Kdat[blmax].append(tK[blmax] / float(count))
     Sdat[blmax].append(tS[blmax] / float(count))
     tK[blmax] = 0.0
@@ -167,19 +157,6 @@ for MDTU in cfgs:
       if bl == 0:
         savS = dat
 
-    # Format: BRSYMM bl normal [dir] inverted [dir] usual mod
-    elif line.startswith('BRSYMM '):
-      temp = line.split()
-      bl = int(temp[1])
-      norm = int(temp[2])
-      inv = int(temp[4])
-      # 2x2 loops on non-maximally blocked lattices
-      if bl < blmax and norm == 2 and inv == 2:
-        tL2[bl] += float(temp[6])
-      # 1x1 loops on blocked lattices -- note shifted index
-      elif bl > 0 and norm == 1 and inv == 1:
-        tL1[bl - 1] += float(temp[6])
-
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
@@ -188,9 +165,11 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
     sys.exit(1)
   for bl in range(blmax):
     Kdat[bl].append(tK[bl] / float(count))
+    AKdat[bl].append(tAK[bl] / float(count))
+    BKdat[bl].append(tBK[bl] / float(count))
     Sdat[bl].append(tS[bl] / float(count))
-    L2dat[bl].append(tL2[bl] / float(20. * count))
-    L1dat[bl].append(tL1[bl] / float(20. * count))
+    ASdat[bl].append(tAS[bl] / float(count))
+    BSdat[bl].append(tBS[bl] / float(count))
   Kdat[blmax].append(tK[blmax] / float(count))
   Sdat[blmax].append(tS[blmax] / float(count))
   # Record block data
@@ -214,13 +193,11 @@ if Nblocks == 1:
   sys.exit(1)
 
 Ktot = np.empty_like(tK)
-AKtot = np.empty_like(tL2)
-BKtot = np.empty_like(tL2)
-Stot = np.empty_like(tK)
-AStot = np.empty_like(tL2)
-BStot = np.empty_like(tL2)
-L2tot = np.empty_like(tL2)
-L1tot = np.empty_like(tL1)
+AKtot = np.empty_like(tAK)
+BKtot = np.empty_like(tBK)
+Stot = np.empty_like(tS)
+AStot = np.empty_like(tAS)
+BStot = np.empty_like(tBS)
 for bl in range(blmax):
   Ktot[bl] = sum(Kdat[bl])
   AKtot[bl] = sum(AKdat[bl])
@@ -228,48 +205,36 @@ for bl in range(blmax):
   Stot[bl] = sum(Sdat[bl])
   AStot[bl] = sum(ASdat[bl])
   BStot[bl] = sum(BSdat[bl])
-  L2tot[bl] = sum(L2dat[bl])
-  L1tot[bl] = sum(L1dat[bl])
 Ktot[blmax] = sum(Kdat[blmax])
 Stot[blmax] = sum(Sdat[blmax])
 
-# All jackknife results
-# Only care about Delta, but might be worthwhile to monitor xi^4
-jkXi = np.zeros((blmax, Nblocks), dtype = np.float)
+# All jackknife results -- only care about Delta = 4 - y
 jkDeltaK = np.zeros((blmax, Nblocks), dtype = np.float)
 jkDeltaS = np.zeros_like(jkDeltaK)
 
 for i in range(Nblocks):  # Jackknife samples
-  # Compute xi^4 for each blocking level
+  # It's a little awkward that the indices of the individual operators
+  # are shifted relative to all the others
   for bl in range(blmax):
-    L1 = L1tot[bl] - L1dat[bl][i]
-    L2 = L2tot[bl] - L2dat[bl][i]
-    print bl, L1, L2
-    jkXi[bl][i] = L1 / L2
-
-    # It's a little awkward that the indices of the individual operators
-    # are shifted relative to all the others
     temp = (Ktot[bl] - Kdat[bl][i]) / (Nblocks - 1.0)
-    if bl > 0:
-      temp *= jkXi[bl - 1][i]
-    K = jkXi[bl][i] * (Ktot[bl + 1] - Kdat[bl + 1][i]) / (Nblocks - 1.0)
-    AK = jkXi[bl][i] * (AKtot[bl] - AKdat[bl][i]) / (Nblocks - 1.0)
-    AK -= K * temp    # Subtract product of estimates
-    BK = jkXi[bl][i] * (BKtot[bl] - BKdat[bl][i]) / (Nblocks - 1.0)
-    BK -= K * K       # Subtract product of estimates
+    K = (Ktot[bl + 1] - Kdat[bl + 1][i]) / (Nblocks - 1.0)
+    AK = (AKtot[bl] - AKdat[bl][i]) / (Nblocks - 1.0) - K * temp
+    BK = (BKtot[bl] - BKdat[bl][i]) / (Nblocks - 1.0) - K * K
     TK = AK / BK
-    jkDeltaK[bl][i] = np.log(TK) / np.log(2.0)
+    if TK < 0.0:
+      print "WARNING: negative TK[%d][%d] = %.4g" % (bl + 1, i, TK)
+      TK *= -1.0
+    jkDeltaK[bl][i] = 4 - np.log(TK) / np.log(2.0)
 
     temp = (Stot[bl] - Sdat[bl][i]) / (Nblocks - 1.0)
-    if bl > 0:
-      temp *= jkXi[bl - 1][i]
-    S = jkXi[bl][i] * (Stot[bl + 1] - Sdat[bl + 1][i]) / (Nblocks - 1.0)
-    AS = jkXi[bl][i] * (AStot[bl] - ASdat[bl][i]) / (Nblocks - 1.0)
-    AS -= S * temp    # Subtract product of estimates
-    BS = jkXi[bl][i] * (BStot[bl] - BSdat[bl][i]) / (Nblocks - 1.0)
-    BS -= S * S       # Subtract product of estimates
+    S = (Stot[bl + 1] - Sdat[bl + 1][i]) / (Nblocks - 1.0)
+    AS = (AStot[bl] - ASdat[bl][i]) / (Nblocks - 1.0) - S * temp
+    BS = (BStot[bl] - BSdat[bl][i]) / (Nblocks - 1.0) - S * S
     TS = AS / BS
-    jkDeltaS[bl][i] = np.log(TS) / np.log(2.0)
+    if TS < 0.0:
+      print "WARNING: negative TS[%d][%d] = %.4g" % (bl + 1, i, TS)
+      TS *= -1.0
+    jkDeltaS[bl][i] = 4 - np.log(TS) / np.log(2.0)
 # ------------------------------------------------------------------
 
 
@@ -281,17 +246,13 @@ outfile = open('results/MCRG.dat', 'w')
 print >> outfile, "# Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
 
 for bl in range(blmax):
-  ave = np.average(jkXi[bl])
-  err = (Nblocks - 1.0) * np.sum((jkXi[bl] - ave)**2) / float(Nblocks)
-  print >> outfile, "xi^4 %d %.6g %.4g" % (bl, ave, err)
-
   ave = np.average(jkDeltaK[bl])
   err = (Nblocks - 1.0) * np.sum((jkDeltaK[bl] - ave)**2) / float(Nblocks)
-  print >> outfile, "DeltaK %d %.6g %.4g" % (bl, ave, err)
+  print >> outfile, "DeltaK %d %.6g %.4g" % (bl + 1, ave, err)
 
   ave = np.average(jkDeltaS[bl])
   err = (Nblocks - 1.0) * np.sum((jkDeltaS[bl] - ave)**2) / float(Nblocks)
-  print >> outfile, "DeltaS %d %.6g %.4g" % (bl, ave, err)
+  print >> outfile, "DeltaS %d %.6g %.4g" % (bl + 1, ave, err)
 
 # More detailed block information
 #for i in range(Nblocks):
