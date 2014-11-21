@@ -18,6 +18,7 @@ cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
 runtime = -time.time()
+xi = 1.0    # May eventually read this in from somewhere...
 # ------------------------------------------------------------------
 
 
@@ -132,11 +133,10 @@ for MDTU in cfgs:
       # Accumulate products as well as operator -- note shifted index
       # B(n) is easy, A(n) requires saving smaller blocking level
       if bl > 0:
-        tBK[bl - 1] = dat * dat
-        if bl < blmax:
-          tAK[bl - 1] = dat * savK
-          savK = dat
-      if bl == 0:
+        tBK[bl - 1] += dat * dat
+        tAK[bl - 1] += dat * savK
+        savK = dat
+      elif bl == 0:
         savK = dat
         count += 1          # Only tick counter once per measurement
 
@@ -150,11 +150,10 @@ for MDTU in cfgs:
       # Accumulate products as well as operator -- note shifted index
       # B(n) is easy, A(n) requires saving smaller blocking level
       if bl > 0:
-        tBS[bl - 1] = dat * dat
-        if bl < blmax:
-          tAS[bl - 1] = dat * savS
-          savS = dat
-      if bl == 0:
+        tBS[bl - 1] += dat * dat
+        tAS[bl - 1] += dat * savS
+        savS = dat
+      elif bl == 0:
         savS = dat
 
 # Check special case that last block is full
@@ -224,7 +223,7 @@ for i in range(Nblocks):  # Jackknife samples
     if TK < 0.0:
       print "WARNING: negative TK[%d][%d] = %.4g" % (bl + 1, i, TK)
       TK *= -1.0
-    jkDeltaK[bl][i] = 4 - np.log(TK) / np.log(2.0)
+    jkDeltaK[bl][i] = 4.0 - np.log(TK / xi) / np.log(2.0)
 
     temp = (Stot[bl] - Sdat[bl][i]) / (Nblocks - 1.0)
     S = (Stot[bl + 1] - Sdat[bl + 1][i]) / (Nblocks - 1.0)
@@ -234,7 +233,7 @@ for i in range(Nblocks):  # Jackknife samples
     if TS < 0.0:
       print "WARNING: negative TS[%d][%d] = %.4g" % (bl + 1, i, TS)
       TS *= -1.0
-    jkDeltaS[bl][i] = 4 - np.log(TS) / np.log(2.0)
+    jkDeltaS[bl][i] = 4.0 - np.log(TS / xi) / np.log(2.0)
 # ------------------------------------------------------------------
 
 
