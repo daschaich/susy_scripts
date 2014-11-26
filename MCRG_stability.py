@@ -10,28 +10,27 @@ import numpy as np
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-# Third argument tells us which files to analyze
+# Third argument tells us which files to analyze -- needs dir path
+# Optional fourth argument gives file holding xi^4 for each blocking level
 if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <dir/tag> [xi^4]"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
+load_xi = -1
+if len(sys.argv) > 4:
+  load_xi = 1
+  xi_file = str(sys.argv[4])
 runtime = -time.time()
-xi = 1.0    # May eventually read this in from somewhere...
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# First make sure we're calling this from the right place
-if not os.path.isdir('Out'):
-  print "ERROR: Out/ does not exist"
-  sys.exit(1)
-
 # Construct list of which configurations have been analyzed
 cfgs = []
-files = 'Out/' + tag + '.*'
+files = tag + '.*'
 for filename in glob.glob(files):
   cfg = int(filename.split('.')[-1])    # Number after last .
   if cfg not in cfgs and cfg > cut:
@@ -47,7 +46,7 @@ if len(cfgs) == 0:
 cut = cfgs[0]
 
 # Determine maximum blocking level from first output file
-firstfile = 'Out/' + tag + '.' + str(cfgs[0])
+firstfile = tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
@@ -65,7 +64,28 @@ if blmax < 0:
 
 
 # ------------------------------------------------------------------
-# Construct arrays of blocked and unblocked measurements
+# Either load xi array from file or set it to unity
+xi = np.zeros(blmax, dtype = np.float)
+if load_xi > 0:
+  if not os.path.isfile(xi_file):
+    print "ERROR: Can't find xi_file", xi_file
+    sys.exit(1)
+  for line in open(xi_file):
+    if line.startswith('# '):
+      continue
+    else:
+      temp = line.split()
+      bl = int(temp[0])
+      xi[bl] = float(temp[1])   # Ignore uncertainties for now
+else:
+  for i in range(blmax):
+    xi[i] = 1.0
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# Construct arrays of blocked measurements
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two products for each operator
 Kdat = [[] for i in range(blmax + 1)]
@@ -117,7 +137,7 @@ for MDTU in cfgs:
     block_data[2].append(begin)
 
   # Running averages
-  filename = 'Out/' + tag + '.' + str(MDTU)
+  filename = tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
@@ -188,7 +208,7 @@ Nblocks = len(Kdat[0])
 # for both Konishi and SUGRA
 # Require multiple blocks instead of worrying about error propagation
 if Nblocks == 1:
-  print "ERROR: need multiple blocks to take average"
+  print "ERROR: need multiple blocks to analyze"
   sys.exit(1)
 
 Ktot = np.empty_like(tK)
@@ -223,7 +243,7 @@ for i in range(Nblocks):  # Jackknife samples
     if TK < 0.0:
       print "WARNING: negative TK[%d][%d] = %.4g" % (bl + 1, i, TK)
       TK *= -1.0
-    jkDeltaK[bl][i] = 4.0 - np.log(TK / xi) / np.log(2.0)
+    jkDeltaK[bl][i] = 4.0 - np.log(TK / xi[bl]) / np.log(2.0)
 
     temp = (Stot[bl] - Sdat[bl][i]) / (Nblocks - 1.0)
     S = (Stot[bl + 1] - Sdat[bl + 1][i]) / (Nblocks - 1.0)
@@ -233,7 +253,7 @@ for i in range(Nblocks):  # Jackknife samples
     if TS < 0.0:
       print "WARNING: negative TS[%d][%d] = %.4g" % (bl + 1, i, TS)
       TS *= -1.0
-    jkDeltaS[bl][i] = 4.0 - np.log(TS / xi) / np.log(2.0)
+    jkDeltaS[bl][i] = 4.0 - np.log(TS / xi[bl]) / np.log(2.0)
 # ------------------------------------------------------------------
 
 
