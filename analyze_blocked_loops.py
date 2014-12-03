@@ -14,33 +14,64 @@ import numpy as np
 
 # ------------------------------------------------------------------
 # First make sure we're calling this from the right place
-for i in ['0.5', '1.0', '1.5']:
-  smallFile = 'Nc2_6nt6/l' + i + '_b0.5_f0.0_k0.5/results/rsymm.dat'
-  largeFile = 'Nc2_12nt12/l' + i + '_b0.5_f0.0_k0.5/results/rsymm.dat'
+#blmax = 2
+#for la in ['0.5', '1.0', '1.5']:
+#  smallFile = 'Nc2_6nt6/l' + i + '_b0.5_f0.0_k0.5/results/rsymm.dat'
+#  largeFile = 'Nc2_12nt12/l' + i + '_b0.5_f0.0_k0.5/results/rsymm.dat'
+blmax = 3
+for la in ['1.0']:
+  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
+  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
   if not os.path.isfile(smallFile) or not os.path.isfile(largeFile):
-    print "ERROR: missing file for lambda =", i
+    print "ERROR: missing file for lambda =", la
     sys.exit(1)
 
-  # Set rescaling parameter xi from 1x1 vs. 2x2 Wilson loops
+  # Print out rescaling parameter xi for each blocking level
+  # Require that n-times-blocked (2n)x(2n) Wilson loop
+  # matches (n-1)-times-blocked nxn Wilson loop
   # Regular Wilson loops are last two columns
   # Modified Wilson loops are the two before that
+  xi = np.zeros(blmax, dtype = np.float)
+  xiErr = np.zeros(blmax, dtype = np.float)
+  smallPlaq = np.zeros(blmax, dtype = np.float)
+  smallErr = np.zeros(blmax, dtype = np.float)
   for line in open(smallFile):
-    if line.startswith('1 1 '):
-      temp = line.split()
-      smallPlaq = float(temp[8])
-      smallErr = float(temp[9]) / smallPlaq
-      break                       # Done with file for now
-  for line in open(largeFile):
-    if line.startswith('2 2 '):
-      temp = line.split()
-      largePlaq = float(temp[8])
-      largeErr = float(temp[9]) / largePlaq
-      break                       # Done with file for now
-  xi = smallPlaq / largePlaq      # Technically xi^4
-  xi_err = xi * np.sqrt(smallErr**2 + largeErr**2)
-#  print "1 1 %.4g %.6g %.4g" % (float(i), xi, xi_err)
+    if line.startswith('# '):
+      continue
+    temp = line.split()
+    norm = int(temp[0])
+    inv  = int(temp[1])
+    if not norm == inv:
+      continue
+    if norm == 1:
+      smallPlaq[0] = float(temp[8])
+      smallErr[0] = float(temp[9]) / float(temp[8])
+    elif norm == 2:
+      smallPlaq[1] = float(temp[8])
+      smallErr[1] = float(temp[9]) / float(temp[8])
+    elif norm == 4:
+      smallPlaq[2] = float(temp[8])
+      smallErr[2] = float(temp[9]) / float(temp[8])
 
-  # Check other Wilson loops on 6nt6 and 12nt12
+  largePlaq = np.zeros(blmax, dtype = np.float)
+  largeErr = np.zeros(blmax, dtype = np.float)
+  for bl in range(blmax - 1):
+    largePlaq[bl] = smallPlaq[bl + 1]
+    largeErr[bl] = smallErr[bl + 1]
+  for line in open(largeFile):
+    if line.startswith('8 8 '):
+      temp = line.split()
+      largePlaq[-1] = float(temp[8])
+      largeErr[-1] = float(temp[9]) / float(temp[8])
+
+  print "0 1.0     0.0"
+  for bl in range(blmax):
+    xi[bl] = smallPlaq[bl] / largePlaq[bl]      # Technically xi^4
+    xiErr[bl] = xi[bl] * np.sqrt(smallErr[bl]**2 + largeErr[bl]**2)
+    print "%d %.6g %.4g" % (bl + 1, xi[bl], xiErr[bl])
+  sys.exit(0)
+
+  # Check other Wilson loops
   for line in open(smallFile):
     if line.startswith('1 1 ') or line.startswith('# '):
       continue
