@@ -12,15 +12,26 @@ import numpy as np
 
 
 # ------------------------------------------------------------------
-# First make sure we're calling this from the right place
+# 16nt32 --> 8nt16
+#for la in ['1.0']:
+#  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/ops.dat'
+#  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/ops.dat'
+# 12nt12 --> 6nt6
 #for la in ['0.5', '1.0', '1.5']:
 #  smallFile = 'Nc2_6nt6/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
 #  largeFile = 'Nc2_12nt12/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+# 8nt8 --> 4nt4
 for la in ['1.0']:
-  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/ops.dat'
-  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/ops.dat'
-  if not os.path.isfile(smallFile) or not os.path.isfile(largeFile):
-    print "ERROR: missing file for lambda =", la
+  smallFile = 'Nc2_4nt4/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+  largeFile = 'Nc2_8nt8/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+
+  # First make sure we're calling this from the right place
+  # Should be able to retain these independent of commenting out above
+  if not os.path.isfile(smallFile):
+    print "ERROR: missing file", smallFile
+    sys.exit(1)
+  if not os.path.isfile(largeFile):
+    print "ERROR: missing file", largeFile
     sys.exit(1)
 
   # Print out rescaling parameter xi for each blocking level
@@ -43,13 +54,15 @@ for la in ['1.0']:
     largeOp.append(float(temp[1]))
     largeErr.append(float(temp[2]) / float(temp[1]))
 
-  bl = len(smallOp)
-  if not len(largeOp) == bl:
-    print "ERROR: picked up different numbers of blockings..."
+  blmax = len(smallOp)
+  if not len(largeOp) == blmax:
+    print "ERROR: picked up different numbers of blockings...",
+    print len(largeOp), "vs.", blmax
     sys.exit(1)
 
-  for i in range(bl):
-    xi = smallOp[i] / largeOp[i]                    # Presumably xi^4
-    xi_err = xi * np.sqrt(smallErr[i]**2 + largeErr[i]**2)
-    print "%.4g %d %.6g %.4g" % (float(la), i, xi, xi_err)
+  print "0 1.0     0.0"
+  for bl in range(blmax):
+    xi = smallOp[bl] / largeOp[bl]                    # Presumably xi^4
+    xi_err = xi * np.sqrt(smallErr[bl]**2 + largeErr[bl]**2)
+    print "%d %.6g %.4g" % (bl + 1, xi, xi_err)
 # ------------------------------------------------------------------
