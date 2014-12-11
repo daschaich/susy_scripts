@@ -147,6 +147,7 @@ for MDTU in cfgs:
     if len(toOpen) > 1:
       print "ERROR: multiple files named %s:" % filename,
       print toOpen
+    check = -1
     for line in open(toOpen[0]):
       # Format: OK bl Tr(BB) Tr(BBB) Tr(BBBB) Tr(BB)Tr(BB)
       if line.startswith('OK '):
@@ -158,6 +159,11 @@ for MDTU in cfgs:
           dat[ops_per_dir * i + 1][bl] = float(temp[4])
         if ops_per_dir > 2:
           dat[ops_per_dir * i + 2][bl] = float(temp[5])
+      elif line.startswith('RUNNING COMPLETED'):
+        check = 1
+    if check == -1:
+      print toOpen[0], "did not complete"
+      sys.exit(1)
 
   # Accumulate operator and products A(n), B(n) -- note shifted index
   count += 1                        # Only tick once per measurement

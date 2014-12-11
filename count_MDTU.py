@@ -41,4 +41,7 @@ for i in cfgs:
   if done > 0:
     totMDTU += N * length
     print "%g MDTU after file %s" % (totMDTU, toOpen[0])
+  else:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 # ------------------------------------------------------------------

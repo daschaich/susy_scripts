@@ -8,11 +8,7 @@ import numpy as np
 # given a thermalization cut and block size
 # Assume one ensemble per directory
 # Assume Polyakov loop data are properly normalized by Nc
-# ------------------------------------------------------------------
 
-
-
-# ------------------------------------------------------------------
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end

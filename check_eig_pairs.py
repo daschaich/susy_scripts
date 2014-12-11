@@ -14,8 +14,8 @@ if not os.path.isdir('Out'):
 
 # Cycle over eigenvalue files
 for filename in glob.glob('Out/eig.*'):
-  fail = -1
   r = []          # List of real and imaginary parts of the matrix elements
+  check = -1
   for line in open(filename):
     # Format: EIGENVALUE # eig accuracy
     if line.startswith('EIGENVALUE ') or line.startswith('BIGEIGVAL '):
@@ -30,4 +30,9 @@ for filename in glob.glob('Out/eig.*'):
           break
       else:
         print "Something weird happened: evenodd =", evenodd
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print filename, "did not complete"
+    sys.exit(1)
 # ------------------------------------------------------------------

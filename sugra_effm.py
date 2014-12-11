@@ -101,6 +101,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  check = -1
   for line in open(toOpen[0]):
     # Format: SUGRA t dat
     if line.startswith('SUGRA '):
@@ -108,6 +109,11 @@ for MDTU in cfgs:
       time = int(temp[1])
       dat = float(temp[2])
       tM[time] += dat
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

@@ -20,6 +20,7 @@ if not os.path.isdir('Out'):
 # Cycle over measurement files
 for filename in glob.glob('Out/corr.*'):
   outfile = open('TEMP', 'w')
+  check = -1
   for line in open(filename):
     toPrint = 1
     for tag in tags:
@@ -28,6 +29,11 @@ for filename in glob.glob('Out/corr.*'):
         break   # No need to check rest of tags
     if toPrint > 0:
       print >> outfile, line.rstrip()
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print filename, "did not complete"
+    sys.exit(1)
   outfile.close()
   os.rename('TEMP', filename)
 # ------------------------------------------------------------------

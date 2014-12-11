@@ -48,6 +48,7 @@ log_mag = 0.0
 phase = 0.0
 check_log_mag = -1.0
 check_phase = -1.0
+check = -1
 for line in open(singleShot):
   # Format: Columns #--# of #: # matvecs in # seconds re im
   if line.startswith('Columns '):
@@ -67,6 +68,11 @@ for line in open(singleShot):
     temp = line.split()
     check_log_mag = float(temp[1])
     check_phase = float(temp[2])
+  elif line.startswith('RUNNING COMPLETED'):
+    check = 1
+if check == -1:
+  print singleshot, "did not complete"
+  sys.exit(1)
 
 if check_log_mag > 0:
   log_mag *= -1.0   # pf(M) = (det Q)^{-1}

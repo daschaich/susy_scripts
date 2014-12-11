@@ -63,6 +63,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "# WARNING: multiple files named %s:" % filename,
     print toOpen
+  check = -1
   for line in open(toOpen[0]):
     # Format: LABEL x y z t dat
     if line.startswith(tag):
@@ -76,6 +77,11 @@ for MDTU in cfgs:
           datarray[i].pop()
         break                 # Moves us on to next MDTU
       datarray[t].append(np.log(dat))
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check that all the arrays are the same length
 Ndat = len(datarray[0])

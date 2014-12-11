@@ -67,6 +67,7 @@ if not os.path.isfile(toOpen):
 # while we accumulate the corresponding data
 # This list has three components: r, its multiplicity and the running sum
 r = []
+check = -1
 for line in open(toOpen):
   if line.startswith('nx '):
     L = int((line.split())[1])
@@ -110,12 +111,16 @@ for line in open(toOpen):
         break
     if done < 0:
       r.append([this_r, 1, dat])
-Npts = len(r)
+  elif line.startswith('RUNNING COMPLETED'):
+    check = 1
+if check == -1:
+  print toOpen, "did not complete"
+  sys.exit(1)
 
 # Sort by magnitude (column zero), not count
 r = sorted(r, key=lambda x: x[0])
 print "--------------------------------------"
-for i in range(Npts):   # Print r and average
+for i in range(len(r)):   # Print r and average
   print "%.6g %.6g" % (r[i][0], r[i][2]  / r[i][1])
 # ------------------------------------------------------------------
 

@@ -22,11 +22,17 @@ if len(files) == 0:
   sys.exit(1)
 
 for filename in files:
+  check = -1
   for line in open(filename):
     # Format: PFAFF log_mag phase |cos(phase)| |sin(phase)|
     if line.startswith('PFAFF '):
       temp = line.split()
       dat.append(np.exp(1.j * float(temp[2])))
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print filename, "did not complete"
+    sys.exit(1)
 
 # Construct jackknife samples through single elimination
 tot = np.sum(dat)

@@ -88,6 +88,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  check = 1
   for line in open(toOpen[0]):
     if line.startswith('FLINK '):
       # Format: FLINK link[0] link[1] link[2] link[3] link[4] ave
@@ -100,6 +101,11 @@ for MDTU in cfgs:
       tL += np.sqrt((float(temp[1]))**2 + (float(temp[2]))**2)
       tP += (float(temp[4]) + float(temp[5])) / 2.0
       tB += float(temp[6])
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

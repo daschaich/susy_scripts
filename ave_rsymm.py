@@ -112,6 +112,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  check = -1
   for line in open(toOpen[0]):
     # Skip measurement if average link looks unreasonably large
     # This seems to be due to occasional near-singular link matrix inversions
@@ -121,6 +122,11 @@ for MDTU in cfgs:
         print "WARNING: skipping %s due to large link inverse %.4g" \
               % (toOpen[0], temp)
         break
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
     # Format: BRSYMM 0 normal [dir] inverted [dir] usual mod
     # This comes last in the output files,

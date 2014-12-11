@@ -26,6 +26,7 @@ phase = 0.0
 log_mag = 0.0
 total = -1    # In case we're just checking a subset without "Q has # columns"
 for i in range(len(toCheck)):
+  check = -1
   for line in open(toCheck[i]):
     # Format: Q has # columns --> # matvecs and # MBytes per core...
     if line.startswith('Q has '):
@@ -41,6 +42,11 @@ for i in range(len(toCheck)):
 
       log_mag += np.log(re**2 + im**2) / 2.0
       phase += np.angle(re + 1j * im)
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toCheck[i], "did not complete"
+    sys.exit(1)
 
 if total > 0 and matvecs != total:
   print "ERROR: Only counted %d of %d matvecs" % (matvecs, total)

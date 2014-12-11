@@ -96,6 +96,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  check = -1
   for line in open(toOpen[0]):
     # Format: SUSY f_dat imag g_dat diff [with C2=1]
     # Imaginary component should average to zero
@@ -107,6 +108,11 @@ for MDTU in cfgs:
       tG += C2 * float(temp[3])
       tD += diff
       tN += diff / (C2 * float(temp[3]) + float(temp[1]))
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

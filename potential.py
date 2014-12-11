@@ -209,6 +209,7 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  check = -1
   for line in open(toOpen[0]):
     # Format: *_LOOP x y z t dat
     if line.startswith(loop + '_LOOP '):
@@ -236,6 +237,11 @@ for MDTU in cfgs:
       if done < 0:
         print "ERROR: displacement", this_r, "not found"
         sys.exit(1)
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
