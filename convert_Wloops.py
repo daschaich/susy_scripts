@@ -51,7 +51,7 @@ def A4map(x_in, y_in, z_in, L):
           print "|(%d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
           print "--> |(%d, %d, %d)| = %.6g" % (x, y, z, test)
           r = test
-  print "%d %d %d --> %.6g" % (x_in, y_in, z_in, r)
+#  print "%d %d %d --> %.6g" % (x_in, y_in, z_in, r)
   return r
 # ------------------------------------------------------------------
 

@@ -34,5 +34,4 @@ for filename in glob.glob('Out/eig.*'):
       check = 1
   if check == -1:
     print filename, "did not complete"
-    sys.exit(1)
 # ------------------------------------------------------------------

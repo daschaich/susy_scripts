@@ -6,42 +6,40 @@ import time
 import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
-# Consider up to three operators per measurement
-# Limitation: The order Tr(BB) Tr(BBBB) Tr(BB)Tr(BB) is fixed
+# Consider up to four operators per measurement
+# Limitation: The order Tr(BB) Tr(CC) Tr(BB)Tr(BB) Tr(CC)Tr(CC) is fixed
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
 # Third argument tells us how many operators to consider per measurement
-# Fourth argument tells us how many directories to analyze,
-# which are listed as any remaining arguments
-# Each of these directories must contain mcrg files,
-# and optionally xi^4 files to load
+# Fourth argument tells us how many smearings to consider per measurement
+# Each smearing can have an optional results/xi#.dat file to load
+# Final argument tells us the directory to analyze
 if len(sys.argv) < 6:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# dirs> <dirs>"
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# smear> <dir>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
-ops_per_dir = int(sys.argv[3])
-num_dirs = int(sys.argv[4])
-num_ops = ops_per_dir * num_dirs
-dirs = []
-for i in range(num_dirs):
-  dirs.append(str(sys.argv[5 + i]))
+ops_per_smear = int(sys.argv[3])
+num_smear = int(sys.argv[4])
+smear = ['0', '5', '10', '15', '20']
+num_ops = ops_per_smear * num_smear
+tag = str(sys.argv[5])
 runtime = -time.time()
 
 # Quick sanity check
-if ops_per_dir < 1 or ops_per_dir > 3:
-  print "ERROR: Only have 1, 2 or 3 operators per measurement"
+if ops_per_smear < 1 or ops_per_smear > 4:
+  print "ERROR: Have at most 4 operators per measurement"
   sys.exit(1)
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Use first directory to construct list of analyzed configurations
+# Construct list of which configurations have been analyzed
 cfgs = []
-files = dirs[0] + '/mcrg.*'
+files = tag + '/mcrg.*'
 for filename in glob.glob(files):
   cfg = int(filename.split('.')[-1])    # Number after last .
   if cfg not in cfgs and cfg > cut:
@@ -57,7 +55,7 @@ if len(cfgs) == 0:
 cut = cfgs[0]
 
 # Determine maximum blocking level from first output file
-firstfile = dirs[0] + '/mcrg.' + str(cfgs[0])
+firstfile = tag + '/mcrg.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
@@ -77,8 +75,8 @@ if blmax < 0:
 # ------------------------------------------------------------------
 # Either load xi array from files (ignoring uncertainties) or set it to unity
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
-for i in range(num_dirs):
-  xi_file = dirs[i] + '/xi.dat'
+for i in range(num_smear):
+  xi_file = 'results/xi' + smear[i] + '.dat'
   if os.path.isfile(xi_file):
     print "Reading xi^4 from", xi_file
     for line in open(xi_file):
@@ -87,13 +85,13 @@ for i in range(num_dirs):
       else:
         temp = line.split()
         bl = int(temp[0])
-        for j in range(ops_per_dir):
-          xi[ops_per_dir * i + j][bl] = float(temp[1])
+        for j in range(ops_per_smear):
+          xi[ops_per_smear * i + j][bl] = float(temp[1])
   else:
-    print "Setting xi^4 to unity for directory", dirs[i]
+    print "Setting xi^4 to unity for directory", tag
     for bl in range(blmax + 1):
-      for j in range(ops_per_dir):
-        xi[ops_per_dir * i + j][bl] = 1.0
+      for j in range(ops_per_smear):
+        xi[ops_per_smear * i + j][bl] = 1.0
 # ------------------------------------------------------------------
 
 
@@ -141,29 +139,32 @@ for MDTU in cfgs:
 
   # Running averages require data from every directory
   dat = np.zeros((num_ops, blmax + 1), dtype = np.float)
-  for i in range(num_dirs):
-    filename = dirs[i] + '/mcrg.' + str(MDTU)
-    toOpen = glob.glob(filename)
-    if len(toOpen) > 1:
-      print "ERROR: multiple files named %s:" % filename,
-      print toOpen
-    check = -1
-    for line in open(toOpen[0]):
-      # Format: OK bl Tr(BB) Tr(BBB) Tr(BBBB) Tr(BB)Tr(BB)
-      if line.startswith('OK '):
-        temp = line.split()
-        bl = int(temp[1])
-        dat[ops_per_dir * i][bl] = float(temp[2])
-        if ops_per_dir > 1:
-          # Tr(BBB) in temp[3] always vanishes
-          dat[ops_per_dir * i + 1][bl] = float(temp[4])
-        if ops_per_dir > 2:
-          dat[ops_per_dir * i + 2][bl] = float(temp[5])
-      elif line.startswith('RUNNING COMPLETED'):
-        check = 1
-    if check == -1:
-      print toOpen[0], "did not complete"
-      sys.exit(1)
+  filename = tag + '/mcrg.' + str(MDTU)
+  toOpen = glob.glob(filename)
+  if len(toOpen) > 1:
+    print "ERROR: multiple files named %s:" % filename,
+    print toOpen
+  check = -1
+  for line in open(toOpen[0]):
+    # Format: OK smear bl Tr(BB) Tr(CC) Tr(BB)Tr(BB) Tr(CC)Tr(CC)
+    if line.startswith('OK '):
+      temp = line.split()
+      N = int(temp[1]) / 5
+      if N >= num_smear:
+        continue
+      bl = int(temp[2])
+      dat[ops_per_smear * N][bl] = float(temp[3])
+      if ops_per_smear > 1:
+        dat[ops_per_smear * N + 1][bl] = float(temp[5])
+      if ops_per_smear > 2:
+        dat[ops_per_smear * N + 2][bl] = float(temp[4])
+      if ops_per_smear > 3:
+        dat[ops_per_smear * N + 3][bl] = float(temp[6])
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
   # Accumulate operator and products A(n), B(n) -- note shifted index
   count += 1                        # Only tick once per measurement
