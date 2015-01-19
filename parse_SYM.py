@@ -28,7 +28,10 @@ print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
-print >> DET, "MDTU,|det-1|,|Re(det)-1|"
+if 'G' in os.getcwd():
+  print >> DET, "MDTU,|det-1|,|Re(det)-1|,|Im(det)|"
+else:
+  print >> DET, "MDTU,|det-1|,|Re(det)-1|"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 BILIN = open('data/bilin.csv', 'w')
@@ -263,7 +266,10 @@ for temp_tag in open('list.txt'):
       det_r = abs(float(temp[1]) - 1.0)
       det_i = float(temp[2])
       det = math.sqrt(det_r**2 + det_i**2)
-      print >> DET, "%g,%g,%g" % (MDTU, det, det_r)
+      if 'G' in os.getcwd():
+        print >> DET, "%g,%g,%g,%g" % (MDTU, det, det_r, det_i)
+      else:
+        print >> DET, "%g,%g,%g" % (MDTU, det, det_r)
 
     # Store total walltime to average at the end
     elif line.startswith('Time = '):

@@ -10,9 +10,9 @@ import numpy as np
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-# Third argument tells us which files to analyze -- needs dir path
+# Third argument tells us whether to analyze "corr" or "stout" files
 if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <dir/tag>"
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -22,9 +22,14 @@ tag = str(sys.argv[3])
 
 
 # ------------------------------------------------------------------
+# First make sure we're calling this from the right place
+if not os.path.isdir('Out'):
+  print "ERROR: Out/ does not exist"
+  sys.exit(1)
+
 # Construct list of which configurations have been analyzed
 cfgs = []
-files = tag + '.*'
+files = 'Out/' + tag + '.*'
 for filename in glob.glob(files):
   cfg = int(filename.split('.')[-1])    # Number after last .
   if cfg not in cfgs and cfg > cut:
@@ -40,7 +45,7 @@ if len(cfgs) == 0:
 cut = cfgs[0]
 
 # Determine largest Wilson loops from first output file
-firstfile = tag + '.' + str(cfgs[0])
+firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
@@ -51,10 +56,8 @@ for line in open(firstfile):
     Nc = int((((line.split())[4]).split(','))[0])
   elif line.startswith('rsymm: MAX = '):
     MAX = int((line.split())[3])
-  elif line.startswith('blocked_rsymm: MAX = '):
-    MAX = int((line.split())[3])
-  elif line.startswith('INVLINK ') or line.startswith('BINVLINK '):
-    break   # Make sure we only pick up the unblocked level
+  elif line.startswith('INVLINK '):
+    break   # Done scanning through file
 
 if MAX < 0:
   print "ERROR:", firstfile, "did not use up-to-date R symmetry measurement"
@@ -107,7 +110,7 @@ for MDTU in cfgs:
     block_data[2].append(begin)
 
   # Running averages
-  filename = tag + '.' + str(MDTU)
+  filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
@@ -122,29 +125,30 @@ for MDTU in cfgs:
         print "WARNING: skipping %s due to large link inverse %.4g" \
               % (toOpen[0], temp)
         break
-    elif line.startswith('RUNNING COMPLETED'):
-      check = 1
-  if check == -1:
-    print toOpen[0], "did not complete"
-    sys.exit(1)
 
-    # Format: BRSYMM 0 normal [dir] inverted [dir] usual mod
+    # Format: RSYMM normal [dir] inverted [dir] usual mod
     # This comes last in the output files,
     # so it will use the correct sav
-    elif line.startswith('BRSYMM 0 '):
+    elif line.startswith('RSYMM '):
       temp = line.split()
-      norm = int(temp[2]) - 1
-      inv = int(temp[4]) - 1
-      W_dat = float(temp[6])
-      M_dat = float(temp[7])
+      norm = int(temp[1]) - 1
+      inv = int(temp[3]) - 1
+      W_dat = float(temp[5])
+      M_dat = float(temp[6])
       D_dat = (M_dat - W_dat) / float(2.0 * inv + 2.0)
       tW[norm][inv] += W_dat
       tM[norm][inv] += M_dat
       tD[norm][inv] += D_dat
       tR[norm][inv] += D_dat / (M_dat + W_dat)
       # Only tick counter once per measurement
-      if norm == 1 and inv == 1 and temp[3] == '[0]' and temp[5] == '[1]':
+      if norm == 1 and inv == 1 and temp[2] == '[0]' and temp[4] == '[1]':
         count += 1
+
+    elif line.startswith('RUNNING COMPLETED'):
+      check = 1
+  if check == -1:
+    print toOpen[0], "did not complete"
+    sys.exit(1)
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

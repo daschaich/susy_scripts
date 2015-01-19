@@ -27,6 +27,7 @@ for filename in glob.glob('Out/eig.*'):
         diff = np.fabs(float(temp[2]) - even)
         if diff / even > TOL:
           print "Apparent pairing breakdown for", filename
+          check = 1   # Avoid spurious non-completion error
           break
       else:
         print "Something weird happened: evenodd =", evenodd

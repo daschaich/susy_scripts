@@ -3,5 +3,5 @@ if [ $# == 1 ]; then
   cd $1
 fi
 
-grep "EIGENVALUE 0 " Out/*eig.* | awk '{print $3}' | sort -n | head -n 1
-grep "BIGEIGVAL  0 " Out/*eig.* | awk '{print $3}' | sort -nr | head -n 1
+grep "EIGENVALUE 0 " Out/*eig.* | awk '{print $3}' | sort -g | head -n 1
+grep "BIGEIGVAL  0 " Out/*eig.* | awk '{print $3}' | sort -gr | head -n 1
