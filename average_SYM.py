@@ -84,11 +84,12 @@ outfile.close()
 
 
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action, average link and determinant
+# For the Polyakov loop, bosonic action, average link,
+# monopole world line density and plaquette determinant,
 # we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
 # For the determinant, this is |det - 1|
-for obs in ['poly_mod', 'SB', 'Flink', 'det']:
+for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
   count = 0
   ave = 0.          # Accumulate within each block
   datList = []

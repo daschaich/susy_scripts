@@ -124,6 +124,7 @@ for MDTU in cfgs:
       if temp > Nc:
         print "WARNING: skipping %s due to large link inverse %.4g" \
               % (toOpen[0], temp)
+        check = 1   # Avoid spurious non-completion error
         break
 
     # Format: RSYMM normal [dir] inverted [dir] usual mod
