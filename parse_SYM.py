@@ -110,6 +110,16 @@ for temp_tag in open('list.txt'):
       # but don't print nonsense wall clock time
       walltime = -2;
 
+    # Extract Nc for bosonic action and Polyakov loop normalizations
+    # Unfortunately, we switched formatting in early 2014
+    elif line.startswith('N=4 SYM '):
+      temp1 = line.split()
+      temp2 = (temp1[2]).split(')')
+      Nc = float(((temp2[0]).split('('))[-1])
+    elif line.startswith('N=4 SYM, '):
+      temp1 = line.split(',')
+      Nc = float(((temp1[1]).split())[2])
+
     # Extract volume for monopole world line density
     elif line.startswith('nx '):
       vol = float((line.split())[1])
@@ -118,16 +128,7 @@ for temp_tag in open('list.txt'):
     elif line.startswith('nt '):
       vol *= float((line.split())[1])
 
-    # Extract Nc for bosonic action and Polyakov loop normalizations
-    # Unfortunately, we switched conventions in early 2014
-    elif line.startswith('N=4 SYM '):
-      temp1 = line.split()
-      temp2 = (temp1[2]).split(')')
-      Nc = float(((temp2[0]).split('('))[-1])
-    elif line.startswith('N=4 SYM, '):
-      temp1 = line.split(',')
-      Nc = float(((temp1[1]).split())[2])
-    elif line.startswith('trajecs'):
+    elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
       break       # Don't go through whole file yet
@@ -165,9 +166,21 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
+  min_eig = 1
+  max_eig = -1
   for line in open(infile):
+    # Extract spectral range for eigenvalues
+    # Format: RHMC Norder # for spectral range [min, max]
+    if line.startswith('RHMC Norder '):
+      temp1 = line.rstrip()       # Kill newline
+      temp2 = temp1.rstrip(']')   # Kill ]
+      temp1 = (temp2.split('['))[-1]
+      temp2 = temp1.split(',')
+      min_eig = float(temp2[0])
+      max_eig = float(temp2[1])
+
     # Extract constant run parameters
-    if line.startswith('traj_length '):
+    elif line.startswith('traj_length '):
       tlength = float((line.split())[1])
       print >> TLENGTH, "%d,%g" % (endtraj, tlength)
     elif line.startswith('nstep '):
@@ -315,11 +328,27 @@ for temp_tag in open('list.txt'):
         if stamp != oldstamp:
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
+
       elif line.startswith('EIGENVALUE '):
         temp = line.split()
         index = int(temp[1])
+        dat = float(temp[2])
         if index < 11 and index % 2 == 0:
-          eig[index / 2] = float(temp[2])
+          eig[index / 2] = dat
+        if index == 0 and dat < min_eig:        # Check spectral range
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+
+      elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
+        dat = float((line.split())[2])
+        if dat > max_eig:
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+
       elif 'WARNING' in line:
         print infile, "saturated eigenvalue iterations"
         print >> ERRFILE, infile, "saturated eigenvalue iterations"
