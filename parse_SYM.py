@@ -29,9 +29,9 @@ FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
 if 'G' in os.getcwd():
-  print >> DET, "MDTU,|det-1|,|Re(det)-1|,|Im(det)|"
+  print >> DET, "MDTU,1-|det|,1-Re(det),Im(det)"
 else:
-  print >> DET, "MDTU,|det-1|,|Re(det)-1|"
+  print >> DET, "MDTU,1-|det|,1-Re(det)"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 BILIN = open('data/bilin.csv', 'w')
@@ -276,13 +276,13 @@ for temp_tag in open('list.txt'):
     # Finally, the determinant is only measured every once in a while
     elif line.startswith('DET '):
       temp = line.split()
-      det_r = abs(float(temp[1]) - 1.0)
+      det_r = float(temp[1])
       det_i = float(temp[2])
-      det = math.sqrt(det_r**2 + det_i**2)
+      det = 1.0 - math.sqrt(det_r**2 + det_i**2)
       if 'G' in os.getcwd():
-        print >> DET, "%g,%g,%g,%g" % (MDTU, det, det_r, det_i)
+        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
       else:
-        print >> DET, "%g,%g,%g" % (MDTU, det, det_r)
+        print >> DET, "%g,%g,%g" % (MDTU, det, 1.0 - det_r)
 
     # Store total walltime to average at the end
     elif line.startswith('Time = '):

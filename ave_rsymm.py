@@ -142,7 +142,7 @@ for MDTU in cfgs:
       tD[norm][inv] += D_dat
       tR[norm][inv] += D_dat / (M_dat + W_dat)
       # Only tick counter once per measurement
-      if norm == 1 and inv == 1 and temp[2] == '[0]' and temp[4] == '[1]':
+      if norm == 0 and inv == 0 and temp[2] == '[0]' and temp[4] == '[1]':
         count += 1
 
     elif line.startswith('RUNNING COMPLETED'):
