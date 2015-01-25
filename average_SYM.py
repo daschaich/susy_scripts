@@ -88,7 +88,7 @@ outfile.close()
 # monopole world line density and plaquette determinant,
 # we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-# For the determinant, this is |det - 1|
+# For the determinant, this is 1-|det|
 for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
   count = 0
   ave = 0.          # Accumulate within each block
@@ -105,10 +105,10 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
     elif MDTU > begin and MDTU < (begin + block_size):
       ave += float(temp[1])
       count += 1
-    elif float(temp[0]) >= (begin + block_size):  # Move on to next block
+    elif MDTU >= (begin + block_size):  # Move on to next block
       datList.append(ave / count)
       begin += block_size
-      count = 1                     # Next block begins with this line
+      count = 1                         # Next block begins here
       ave = float(temp[1])
 
   # Now print mean and standard error, assuming N>1
@@ -119,5 +119,47 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
   print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  outfile.close()
+# ------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------
+# For the plaquette and plaquette determinant susceptibilities
+# we're interested in all three data on each line
+for obs in ['suscept']:
+  count = 0
+  ave = [0.0, 0.0, 0.0]       # Accumulate within each block
+  datList = [[], [], []]
+  begin = cut       # Where each block begins, to be incremented
+  obsfile = 'data/' + obs + '.csv'
+  for line in open(obsfile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    MDTU = float(temp[0])
+    if MDTU <= cut:
+      continue
+    elif MDTU > begin and MDTU < (begin + block_size):
+      ave[0] += float(temp[1])
+      ave[1] += float(temp[2])
+      ave[2] += float(temp[3])
+      count += 1
+    elif MDTU >= (begin + block_size):  # Move on to next block
+      for i in range(len(ave)):
+        datList[i].append(ave[i] / count)
+        ave[i] = float(temp[i + 1])     # Next block begins here
+      begin += block_size
+      count = 1
+
+  # Now print mean and standard error, assuming N>1
+  outfilename = 'results/' + obs + '.dat'
+  outfile = open(outfilename, 'w')
+  for i in range(len(ave)):
+    dat = np.array(datList[i])
+    N = np.size(dat)
+    ave[i] = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+    print >> outfile, "%.8g %.4g" % (ave[i], err),
+  print >> outfile, "# %d" % N
   outfile.close()
 # ------------------------------------------------------------------

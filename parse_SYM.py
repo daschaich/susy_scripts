@@ -38,6 +38,8 @@ BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans"
 MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
+SUSCEPT = open('data/suscept.csv', 'w')
+print >> SUSCEPT, "MDTU,plaq,Re(det),Im(det)"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -405,9 +407,15 @@ for temp_tag in open('list.txt'):
       elif 'WARNING' in line:
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
-      elif line.startswith('MONOPOLE'):
+      elif line.startswith('MONOPOLE '):
         mono = float((line.split())[10])
         print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
+      elif line.startswith('PLAQ_VAR '):
+        temp = line.split()
+        plaq_var = float(temp[1])
+        re_var = float(temp[2])
+        im_var = float(temp[3])
+        print >> SUSCEPT, "%g,%g,%g,%g" % (MDTU, plaq_var, re_var, im_var)
       elif line.startswith('RUNNING COMPLETED'):
         if check == 1:    # Check that we have one measurement per file
           print infile, "reports two measurements"
@@ -433,6 +441,7 @@ DET.close()
 EIG.close()
 BILIN.close()
 MONO.close()
+SUSCEPT.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
