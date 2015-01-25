@@ -32,6 +32,9 @@ for filename in glob.glob('Out/eig.*'):
       else:
         print "Something weird happened: evenodd =", evenodd
     elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
+        print >> ERRFILE, infile, "reports two measurements"
       check = 1
   if check == -1:
     print filename, "did not complete"

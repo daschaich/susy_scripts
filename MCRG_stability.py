@@ -23,7 +23,7 @@ cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 ops_per_smear = int(sys.argv[3])
 num_smear = int(sys.argv[4])
-smear = ['0', '5', '10', '15', '20']
+smear = ['0', '1', '2', '3', '4']
 num_ops = ops_per_smear * num_smear
 tag = str(sys.argv[5])
 runtime = -time.time()
@@ -149,7 +149,7 @@ for MDTU in cfgs:
     # Format: OK smear bl Tr(BB) Tr(CC) Tr(BB)Tr(BB) Tr(CC)Tr(CC)
     if line.startswith('OK '):
       temp = line.split()
-      N = int(temp[1]) / 5
+      N = int(temp[1])
       if N >= num_smear:
         continue
       bl = int(temp[2])
@@ -161,6 +161,9 @@ for MDTU in cfgs:
       if ops_per_smear > 3:
         dat[ops_per_smear * N + 3][bl] = float(temp[6])
     elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
+        print >> ERRFILE, infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"

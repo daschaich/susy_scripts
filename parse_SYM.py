@@ -172,12 +172,16 @@ for temp_tag in open('list.txt'):
     # Extract spectral range for eigenvalues
     # Format: RHMC Norder # for spectral range [min, max]
     if line.startswith('RHMC Norder '):
-      temp1 = line.rstrip()       # Kill newline
-      temp2 = temp1.rstrip(']')   # Kill ]
-      temp1 = (temp2.split('['))[-1]
-      temp2 = temp1.split(',')
-      min_eig = float(temp2[0])
-      max_eig = float(temp2[1])
+      if 'spectral' in line:
+        temp1 = line.rstrip()       # Kill newline
+        temp2 = temp1.rstrip(']')   # Kill ]
+        temp1 = (temp2.split('['))[-1]
+        temp2 = temp1.split(',')
+        min_eig = float(temp2[0])
+        max_eig = float(temp2[1])
+      else:         # Original 15-pole format didn't state spectral range
+        min_eig = 1.0e-7
+        max_eig = 1000.0
 
     # Extract constant run parameters
     elif line.startswith('traj_length '):
@@ -353,6 +357,9 @@ for temp_tag in open('list.txt'):
         print infile, "saturated eigenvalue iterations"
         print >> ERRFILE, infile, "saturated eigenvalue iterations"
       elif line.startswith('RUNNING COMPLETED'):
+        if check == 1:    # Check that we have one measurement per file
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
         check = 1
     if check == -1:
       print infile, "did not complete"
@@ -402,6 +409,9 @@ for temp_tag in open('list.txt'):
         mono = float((line.split())[10])
         print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
       elif line.startswith('RUNNING COMPLETED'):
+        if check == 1:    # Check that we have one measurement per file
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
         check = 1
     if check == -1:
       print infile, "did not complete"

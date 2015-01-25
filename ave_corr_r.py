@@ -121,6 +121,9 @@ for MDTU in cfgs:
         print "ERROR: tag ", temp[0], "not recognized"
         sys.exit(1)
     elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
+        print >> ERRFILE, infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"

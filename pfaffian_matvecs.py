@@ -21,9 +21,11 @@ while N < matvec_per_sec * 24 * 3600 and iter < size:   # Total for 24 hours
  iter += 2
  toAdd = size - iter + 1
  N += toAdd
- print iter, N
 if iter >= size:
   time = N / (float)(matvec_per_sec * 3600.0)
   print "Estimated time to completion:",
   print "%.1f hours" % time
+else:
+  print "Should be able to reach %d (%d matvecs) in 24 hours" \
+        % (iter, N)
 # ------------------------------------------------------------------
