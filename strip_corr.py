@@ -22,6 +22,12 @@ for filename in glob.glob('Out/corr.*'):
   outfile = open('TEMP', 'w')
   check = -1
   for line in open(filename):
+    if line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print filename, "reports two measurements"
+        print >> ERRFILE, filename, "reports two measurements"
+      check = 1
+
     toPrint = 1
     for tag in tags:
       if line.startswith(tag):
@@ -29,11 +35,7 @@ for filename in glob.glob('Out/corr.*'):
         break   # No need to check rest of tags
     if toPrint > 0:
       print >> outfile, line.rstrip()
-    elif line.startswith('RUNNING COMPLETED'):
-      if check == 1:    # Check that we have one measurement per file
-        print infile, "reports two measurements"
-        print >> ERRFILE, infile, "reports two measurements"
-      check = 1
+
   if check == -1:
     print filename, "did not complete"
     sys.exit(1)

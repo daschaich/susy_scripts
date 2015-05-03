@@ -182,7 +182,7 @@ echo '            g = new Dygraph(document.getElementById("bilin"),' >> $out
 echo '                            "data/bilin.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
 #echo '                              colors: ["blue", "red", "green"],' >> $out
-echo '                              colors: ["red"],' >> $out
+echo '                              colors: ["red", "blue"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out

@@ -21,9 +21,14 @@ import numpy as np
 #  smallFile = 'Nc2_6nt6/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
 #  largeFile = 'Nc2_12nt12/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
 # 8nt8 --> 4nt4
+#for la in ['1.0']:
+#  smallFile = 'Nc2_4nt4/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+#  largeFile = 'Nc2_8nt8/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+
+# Improved action, 8nt8 --> 4nt4
 for la in ['1.0']:
-  smallFile = 'Nc2_4nt4/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
-  largeFile = 'Nc2_8nt8/l' + la + '_b0.5_f0.0_k0.5/results/ops.dat'
+  smallFile = 'Nc2_4nt4/l' + la + '_b0.4_G0.05/results/ops.dat'
+  largeFile = 'Nc2_8nt8/l' + la + '_b0.4_G0.05/results/ops.dat'
 
   # First make sure we're calling this from the right place
   # Should be able to retain these independent of commenting out above

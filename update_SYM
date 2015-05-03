@@ -31,6 +31,9 @@ python ~schaich/scripts/parse_SYM.py
 chmod 664 data/*.csv
 rm -f list.txt            # Done with this
 
+# Check eigenvalue measurements
+python ~schaich/scripts/check_eig_pairs.py
+
 # Replace Web page to update timestamp
 date=`date`
 rm -f index.html

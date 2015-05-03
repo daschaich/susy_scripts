@@ -3,13 +3,11 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
-from scipy.stats import norm
 # ------------------------------------------------------------------
 # Plot histogram of data in three files:
 #   plaq_$tag.dat, det_re_$tag.dat and det_im_$tag.dat
 # Construct these files to include only thermalized data
-# Save resulting plot as hist_$tag.pdf
+# Save resulting plot as distribution_$tag.pdf
 # Adapted from topological charge script from Meifeng
 
 # Parse argument: the tag specifying which files to analyze

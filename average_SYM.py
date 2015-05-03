@@ -28,7 +28,9 @@ if not os.path.isdir('data'):
   sys.exit(1)
 
 # Check that we actually have data to average
+# and convert thermalization cut from MDTU to trajectory number
 MDTUfile = 'data/TU.csv'
+sav = 0
 good = -1
 for line in open(MDTUfile):
   if line.startswith('t'):
@@ -36,7 +38,16 @@ for line in open(MDTUfile):
   temp = line.split(',')
   if float(temp[1]) > cut:
     good = 1
+    t_cut = sav
     break
+  sav = float(temp[0])
+
+# Guess whether we should also convert the block size
+# from MDTU to trajectory number
+# They differ when tau=2 trajectories are used...
+t_block = block_size
+if t_cut < float(cut) / 1.5:
+  t_block /= 2
 
 final_MDTU = float(temp[1])
 if good == -1:
@@ -73,23 +84,25 @@ for line in open(plaqfile):
 # Now print mean and standard error, assuming N>1
 dat = np.array(datList)
 N = np.size(dat)
-ave = np.mean(dat, dtype = np.float64)
-err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1)
-outfilename = 'results/plaq.dat'
-outfile = open(outfilename, 'w')
-print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
-outfile.close()
+if N == 0:
+  print "WARNING: No", obs, "data"
+else:
+  ave = np.mean(dat, dtype = np.float64)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1)
+  outfilename = 'results/plaq.dat'
+  outfile = open(outfilename, 'w')
+  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  outfile.close()
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action, average link,
-# monopole world line density and plaquette determinant,
+# For the Polyakov loop, bosonic action, fermion action, average link,
+# and monopole world line density
 # we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-# For the determinant, this is 1-|det|
-for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
+for obs in ['poly_mod', 'SB', 'SF', 'Flink', 'mono']:
   count = 0
   ave = 0.          # Accumulate within each block
   datList = []
@@ -106,6 +119,9 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
       ave += float(temp[1])
       count += 1
     elif MDTU >= (begin + block_size):  # Move on to next block
+      if count == 0:
+        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        sys.exit(1)
       datList.append(ave / count)
       begin += block_size
       count = 1                         # Next block begins here
@@ -114,6 +130,9 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
   # Now print mean and standard error, assuming N>1
   dat = np.array(datList)
   N = np.size(dat)
+  if N == 0:
+    print "WARNING: No", obs, "data"
+    continue
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
@@ -123,10 +142,58 @@ for obs in ['poly_mod', 'SB', 'Flink', 'det', 'mono']:
 # ------------------------------------------------------------------
 
 
+
 # ------------------------------------------------------------------
-# For the plaquette and plaquette determinant susceptibilities
+# For the core-minutes per MDTU
+# we're again interested in the first datum on each line
+# but have to work in terms of trajectories rather than MDTU
+for obs in ['wallTU', 'cg_iters', 'accP']:
+  count = 0
+  ave = 0.          # Accumulate within each block
+  datList = []
+  begin = t_cut     # Where each block begins, to be incremented
+  obsfile = 'data/' + obs + '.csv'
+  for line in open(obsfile):
+    if line.startswith('M') or line.startswith('t'):
+      continue
+    temp = line.split(',')
+    traj = float(temp[0])
+    if traj <= t_cut:
+      continue
+    elif traj > begin and traj < (begin + t_block):
+      ave += float(temp[1])
+      count += 1
+    elif traj >= (begin + t_block):     # Move on to next block
+      if count == 0:
+        print "ERROR: no %s data to average at %d traj" % (obs, int(traj))
+        sys.exit(1)
+      datList.append(ave / count)
+      begin += t_block
+      count = 1                         # Next block begins here
+      ave = float(temp[1])
+
+  # Now print mean and standard error, assuming N>1
+  dat = np.array(datList)
+  N = np.size(dat)
+  if N == 0:
+    print "WARNING: No", obs, "data"
+    continue
+  ave = np.mean(dat, dtype = np.float64)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+  outfilename = 'results/' + obs + '.dat'
+  outfile = open(outfilename, 'w')
+  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  outfile.close()
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# For the plaquette determinant and the susceptibilities
 # we're interested in all three data on each line
-for obs in ['suscept']:
+# For the determinant these should be |det-1|^2, 1-Re(det) and Im(det)
+# For the susceptibilities: plaq, Re(det) and Im(det)
+for obs in ['det', 'suscept']:
   count = 0
   ave = [0.0, 0.0, 0.0]       # Accumulate within each block
   datList = [[], [], []]
@@ -145,6 +212,9 @@ for obs in ['suscept']:
       ave[2] += float(temp[3])
       count += 1
     elif MDTU >= (begin + block_size):  # Move on to next block
+      if count == 0:
+        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        sys.exit(1)
       for i in range(len(ave)):
         datList[i].append(ave[i] / count)
         ave[i] = float(temp[i + 1])     # Next block begins here
@@ -157,6 +227,9 @@ for obs in ['suscept']:
   for i in range(len(ave)):
     dat = np.array(datList[i])
     N = np.size(dat)
+    if N == 0:
+      print "WARNING: No", obs, "data"
+      continue
     ave[i] = np.mean(dat, dtype = np.float64)
     err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
     print >> outfile, "%.8g %.4g" % (ave[i], err),

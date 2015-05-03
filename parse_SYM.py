@@ -21,6 +21,8 @@ PLAQ = open('data/plaq.csv', 'w')
 print >> PLAQ, "MDTU,plaq_ss,plaq_st"
 SB = open('data/SB.csv', 'w')
 print >> SB, "MDTU,S_B"
+SF = open('data/SF.csv', 'w')
+print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
@@ -28,14 +30,11 @@ print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
-if 'G' in os.getcwd():
-  print >> DET, "MDTU,1-|det|,1-Re(det),Im(det)"
-else:
-  print >> DET, "MDTU,1-|det|,1-Re(det)"
+print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 BILIN = open('data/bilin.csv', 'w')
-print >> BILIN, "MDTU,susyTrans"
+print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
 SUSCEPT = open('data/suscept.csv', 'w')
@@ -72,8 +71,10 @@ TU = open('data/TU.csv', 'w')
 print >> TU, "t,MDTU"
 
 # Status checks and running sums for the ensemble as a whole
+fermAct = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
+CG = 1
 traj = 0;
 MDTU = 0;
 # ------------------------------------------------------------------
@@ -216,7 +217,20 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Now extract evolution observables and physical observables
-    # Acceptance comes before measurements
+    # Acceptance comes before (most) measurements
+    # The exception is the fermion action
+    # This is always measured twice (before and after the trajectory)
+    # and which value we want depends on the accept/reject step...
+    # Normalize using volume and Nc extracted above
+    elif line.startswith('action: gauge '):
+      if fermAct[0] < 0:
+        fermAct[0] = float((line.split())[8]) / (16.0 * vol * Nc**2)
+      elif fermAct[1] < 0:
+        fermAct[1] = float((line.split())[8]) / (16.0 * vol * Nc**2)
+      else:
+        print infile, "lists too many action computations"
+        print >> ERRFILE, infile, "lists too many action computations"
+
     elif ' delta S = ' in line:
       traj += 1
       temp = MDTU + tlength
@@ -235,11 +249,14 @@ for temp_tag in open('list.txt'):
       # Instead just print out absolute value and consider its running average
       print >> ABS_DS, "%d,%g" % (traj, abs(float(dS)))
 
-      # Will be smeared out by running averages
+      # Acceptance is smeared out by running averages
       if line.startswith('ACCEPT'):
         print >> ACCP, "%d,1" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
       else:
         print >> ACCP, "%d,0" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
+      fermAct = [-1.0, -1.0]                        # Reset
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
@@ -278,17 +295,9 @@ for temp_tag in open('list.txt'):
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
     # ------------------------------------------------------------
 
-    # ------------------------------------------------------------
-    # Finally, the determinant is only measured every once in a while
-    elif line.startswith('DET '):
-      temp = line.split()
-      det_r = float(temp[1])
-      det_i = float(temp[2])
-      det = 1.0 - math.sqrt(det_r**2 + det_i**2)
-      if 'G' in os.getcwd():
-        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
-      else:
-        print >> DET, "%g,%g,%g" % (MDTU, det, 1.0 - det_r)
+    # Check to make sure CG always converged
+    elif 'CONGRAD' in line:
+      CG = -1
 
     # Store total walltime to average at the end
     elif line.startswith('Time = '):
@@ -299,6 +308,10 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Check to see if run seems to have finished properly
+  if CG == -1:
+    print infile, "encountered CG non-convergence"
+    print >> ERRFILE, infile, "encountered CG non-convergence"
+    CG = 1
   if walltime == -1:
     print infile, "didn't print final timing"
     print >> ERRFILE, infile, "didn't print final timing"
@@ -384,10 +397,10 @@ for temp_tag in open('list.txt'):
     # which wasn't always printed in output (though it is now)
     # For now, extract it from the path
     C2 = 1.0
-    if '-c' in os.getcwd():
-      temp1 = os.getcwd()
+    temp1 = os.getcwd()
+    if '-c' in temp1:
       temp2 = temp1.split('-c')
-      C2 = float(((temp1[1]).split('/'))[0])
+      C2 = float(((temp2[1]).split('/'))[0])
 
     # We have a file, so let's cycle over its lines
     check = -1
@@ -398,12 +411,31 @@ for temp_tag in open('list.txt'):
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
+      elif line.startswith('DET '):
+        temp = line.split()
+        det_r = float(temp[1])
+        det_i = float(temp[2])
+        # !!! Site-by-site |1-det|^2 not measured on all ensembles
+        # If it's missing, for now use volume average instead
+        if len(temp) == 6:
+          det = float(temp[5])
+        else:
+          det = (1.0 - det_r)**2 + det_i**2
+        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
+
+      elif 'CONGRAD' in line:
+        CG = -1
       elif line.startswith('SUSY '):
         temp = line.split()
         trace = float(temp[1])
         gauge = float(temp[3])
         susy = (C2 * gauge - trace) / (C2 * gauge + trace)
-        print >> BILIN, "%g,%g" % (MDTU, susy)
+
+        # The imaginary part of the bilinear should vanish on average,
+        # but large fluctuations may signal pathology
+        zero = float(temp[2])
+        print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
+
       elif 'WARNING' in line:
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
@@ -421,6 +453,10 @@ for temp_tag in open('list.txt'):
           print infile, "reports two measurements"
           print >> ERRFILE, infile, "reports two measurements"
         check = 1
+    if CG == -1:
+      print infile, "encountered CG non-convergence"
+      print >> ERRFILE, infile, "encountered CG non-convergence"
+      CG = 1
     if check == -1:
       print infile, "did not complete"
       print >> ERRFILE, infile, "did not complete"
@@ -434,6 +470,7 @@ ERRFILE.close()
 MISSINGFILES.close()
 PLAQ.close()
 SB.close()
+SF.close()
 POLY.close()
 POLY_MOD.close()
 FLINK.close()

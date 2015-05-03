@@ -47,6 +47,7 @@ for i in range(N):
   jkim[i] = np.imag(temp)
   jkmag[i] = np.absolute(temp)
   jkphase[i] = np.angle(temp)
+#  print "%.8g %.8g" % (np.real(dat[i]), np.imag(dat[i]))
 
 ave_re = np.average(jkre)
 var_re = (N - 1.0) * np.sum((jkre - ave_re)**2) / float(N)

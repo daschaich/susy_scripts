@@ -6,7 +6,7 @@ import numpy as np
 # ------------------------------------------------------------------
 # Compute SUGRA correlator effective masses, using a blocked jackknife
 # For C(t) = A (e^{-Mt} + e^{-M(T-t)}),
-# arccosh M = [C(t-1) + C(t+1)] / 2C(t)
+#     arccosh M = [C(t-1) + C(t+1)] / 2C(t)
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)

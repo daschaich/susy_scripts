@@ -10,11 +10,13 @@ import numpy as np
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-if len(sys.argv) < 3:
-  print "Usage:", str(sys.argv[0]), "<cut> <block>"
+# Third argument tells us whether to analyze "corr" or "stout" files
+if len(sys.argv) < 4:
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
+tag = str(sys.argv[3])
 # ------------------------------------------------------------------
 
 
@@ -33,14 +35,15 @@ if '-c' in temp:
 
 # Construct list of which configurations have been analyzed
 cfgs = []
-for filename in glob.glob('Out/corr.*'):
+files = 'Out/' + tag + '.*'
+for filename in glob.glob(files):
   cfg = int(filename.split('.')[-1])    # Number after last .
   if cfg not in cfgs and cfg > cut:
     cfgs.append(cfg)
 cfgs.sort()
 
 if len(cfgs) == 0:
-  print "ERROR: no files Out/corr.* found"
+  print "ERROR: no files", files, "found"
   sys.exit(1)
 
 # If we're missing some initial measurements,
@@ -91,7 +94,7 @@ for MDTU in cfgs:
     tN = 0.0
 
   # Running averages
-  filename = 'Out/corr.' + str(MDTU)
+  filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,

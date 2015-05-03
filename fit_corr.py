@@ -8,7 +8,7 @@ from scipy import optimize
 from scipy import special
 # ------------------------------------------------------------------
 # Run jackknifed fits of zero-momentum-projected SUGRA correlator
-#   C_K(t) = C + A(e^{-M_K t} + e^{-M_K (Nt - t)})
+#   C_K(t) = A(e^{-M_K t} + e^{-M_K (Nt - t)})
 # as well as the finite differences for both Konishi and SUGRA,
 #   D(t) = A(e^{-M t} - e^{-M (Nt - t)})
 # Need to force positive sinh mass, otherwise strange things can happen

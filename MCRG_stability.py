@@ -162,8 +162,7 @@ for MDTU in cfgs:
         dat[ops_per_smear * N + 3][bl] = float(temp[6])
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
-        print infile, "reports two measurements"
-        print >> ERRFILE, infile, "reports two measurements"
+        print toOpen[0], "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"

@@ -13,11 +13,10 @@ import numpy as np
 
 
 # ------------------------------------------------------------------
-# First make sure we're calling this from the right place
 # 16nt32 --> 8nt16
-for la in ['1.0']:
-  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
-  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
+#for la in ['1.0']:
+#  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
+#  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
 # 12nt12 --> 6nt6
 #for la in ['0.5', '1.0', '1.5']:
 #  smallFile = 'Nc2_6nt6/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
@@ -27,6 +26,12 @@ for la in ['1.0']:
 #  smallFile = 'Nc2_4nt4/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
 #  largeFile = 'Nc2_8nt8/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
 
+# Improved action, 8nt8 --> 4nt4
+for la in ['1.0']:
+  smallFile = 'Nc2_4nt4/l' + la + '_b0.4_G0.05/results/rsymm.dat'
+  largeFile = 'Nc2_8nt8/l' + la + '_b0.4_G0.05/results/rsymm.dat'
+
+  # First make sure we're calling this from the right place
   # Should be able to retain these independent of commenting out above
   if not os.path.isfile(smallFile):
     print "ERROR: missing file", smallFile
