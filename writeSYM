@@ -198,7 +198,7 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Monopole ('$tag')</th><th>Susceptibilities ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Monopole ('$tag')</th><th>Widths ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="mono"></div>' >> $out
@@ -216,10 +216,10 @@ echo '                            });' >> $out
 echo '          </script>' >> $out
 echo '        </td>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
-echo '          <div id="suscept"></div>' >> $out
+echo '          <div id="widths"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
-echo '            g = new Dygraph(document.getElementById("suscept"),' >> $out
-echo '                            "data/suscept.csv",' >> $out
+echo '            g = new Dygraph(document.getElementById("widths"),' >> $out
+echo '                            "data/widths",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
 echo '                              colors: ["blue", "green", "red"],' >> $out
 echo '                              showRoller: true,' >> $out

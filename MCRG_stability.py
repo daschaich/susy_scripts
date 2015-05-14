@@ -154,12 +154,19 @@ for MDTU in cfgs:
         continue
       bl = int(temp[2])
       dat[ops_per_smear * N][bl] = float(temp[3])
-      if ops_per_smear > 1:
-        dat[ops_per_smear * N + 1][bl] = float(temp[5])
-      if ops_per_smear > 2:
-        dat[ops_per_smear * N + 2][bl] = float(temp[4])
-      if ops_per_smear > 3:
-        dat[ops_per_smear * N + 3][bl] = float(temp[6])
+      if len(temp) > 5:
+        if ops_per_smear > 1:
+          dat[ops_per_smear * N + 1][bl] = float(temp[5])
+        if ops_per_smear > 2:
+          dat[ops_per_smear * N + 2][bl] = float(temp[4])
+        if ops_per_smear > 3:
+          dat[ops_per_smear * N + 3][bl] = float(temp[6])
+      else:
+        if ops_per_smear > 1:
+          dat[ops_per_smear * N + 1][bl] = float(temp[4])
+        if ops_per_smear > 2:
+          print "ERROR: only two operators available in %s" % toOpen
+          sys.exit(1)
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print toOpen[0], "reports two measurements"

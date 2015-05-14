@@ -37,8 +37,8 @@ BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
-SUSCEPT = open('data/suscept.csv', 'w')
-print >> SUSCEPT, "MDTU,plaq,Re(det),Im(det)"
+WIDTHS = open('data/widths.csv', 'w')
+print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -273,7 +273,9 @@ for temp_tag in open('list.txt'):
       if starting == 1:
         starting = 0
       else:
-        ave_link = float((line.split())[6])
+        temp = line.split()
+        ave_link = float(temp[6])
+        link_width = float(temp[7])   # Will be stored with other widths
         print >> FLINK, "%g,%g" % (MDTU, ave_link)
     # ------------------------------------------------------------
 
@@ -442,12 +444,13 @@ for temp_tag in open('list.txt'):
       elif line.startswith('MONOPOLE '):
         mono = float((line.split())[10])
         print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
-      elif line.startswith('PLAQ_VAR '):
+      elif line.startswith('WIDTHS '):
         temp = line.split()
-        plaq_var = float(temp[1])
-        re_var = float(temp[2])
-        im_var = float(temp[3])
-        print >> SUSCEPT, "%g,%g,%g,%g" % (MDTU, plaq_var, re_var, im_var)
+        plaq_width = float(temp[1])
+        re_width = float(temp[2])
+        im_width = float(temp[3])
+        print >> WIDTHS, "%g,%g,%g,%g,%g" \
+                         % (MDTU, plaq_width, re_width, im_width, link_width)
       elif line.startswith('RUNNING COMPLETED'):
         if check == 1:    # Check that we have one measurement per file
           print infile, "reports two measurements"
@@ -478,7 +481,7 @@ DET.close()
 EIG.close()
 BILIN.close()
 MONO.close()
-SUSCEPT.close()
+WIDTHS.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
