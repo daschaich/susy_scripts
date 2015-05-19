@@ -43,45 +43,10 @@ else:
   print "Must be one of POT, D or POLAR"
   sys.exit(1)
 
-# Convenience constants
-TOL = 1.0e-6
-invSq2  = 1.0 / np.sqrt(2)
-invSq6  = 1.0 / np.sqrt(6)
-invSq12 = 1.0 / np.sqrt(12)
-
 # errfunc will be minimized via least-squares optimization
 expfunc = lambda p, x: p[0] * np.exp(-p[1] * x)
 errfunc = lambda p, x, y, err: (expfunc(p, x) - y) / err
 p_in = [0.01, 0.1]   # Order-of-magnitude initial guesses
-# ------------------------------------------------------------------
-
-
-
-# ------------------------------------------------------------------
-# Map (x, y, z) to r on L^3 reduction of A4* lattice
-# Check all possible periodic shifts to find true r
-def A4map(x_in, y_in, z_in, L):
-  r = 100.0 * L  # To be overwritten
-  for x in [x_in + L, x_in, x_in - L]:
-    for y in [y_in + L, y_in, y_in - L]:
-      for z in [z_in + L, z_in, z_in - L]:
-        test = np.sqrt((x**2 + y**2 + z**2) * 0.75 \
-                       - (x * (y + z) + y * z) * 0.5)
-
-        # Sanity check -- can be commented out for more speed
-#        x_a4 = (x - y) * invSq2
-#        y_a4 = (x + y - 2.0 * z) * invSq6
-#        z_a4 = (x + y + z) * invSq12
-#        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
-#        if np.fabs(test - check) > TOL:
-#          print "ERROR: %.4g isn't %.4g for (%d, %d, %d)" \
-#                % (check, test, x, y, z)
-#          sys.exit(1)
-
-        # True r is the smallest
-        if test < r:
-          r = test
-  return r
 # ------------------------------------------------------------------
 
 
@@ -109,67 +74,29 @@ if len(cfgs) == 0:
 # increase thermalization cut
 cut = cfgs[0]
 
-# Cycle through first output file to construct list of scalar distances
-# and determine their multiplicity, also recording MAX_T
-# To simplify things later, record these scalar distances in a lookup table
-# Also, decide where to cut r based on MAX_X
-r = []          # List of two-component lists: first value, then count
+# Cycle through first output file to read MAX_T,
+# each scalar displacement and total number of them
+temp_r = []
 firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
-  if line.startswith('nx '):
-    L = int((line.split())[1])
-  # Format: hvy_pot: MAX_T = #, MAX_X = #
-  elif line.startswith('hvy_pot: MAX_T '):
+  # Format: hvy_pot: MAX_T = $MAX_T, MAX_X = $MAX_X --> r < $MAX_r
+  if line.startswith('hvy_pot: MAX_T '):
     temp = line.split()
     MAX_T = int((temp[3]).rstrip(','))    # Strip ',' from end
-    MAX_X = int(temp[6])
-    num_y = 2 * MAX_X + 1
-    lookup = np.empty((MAX_X + 1, num_y, num_y), dtype = np.float)
 
-    # Decide where to cut r
-    MAX_r = 100.0 * MAX_X   # To be overwritten
-    for y in range(MAX_X + 1):
-      for z in range(MAX_X + 1):
-        test = A4map(MAX_X + 1, y, z, L)
-        if test < MAX_r:
-          MAX_r = test
-#    print MAX_r
-
-  # Format: POT_LOOP x y z t dat      (similarly for D_LOOP and POLAR_LOOP)
+  # Format: $tag_LOOP # r t dat
   elif line.startswith(loop + '_LOOP '):
     temp = line.split()
-    if int(temp[4]) > 1:
-      break                 # Only consider first t=1!
-    x = int(temp[1])
-    y = int(temp[2])
-    z = int(temp[3])
-    this_r = A4map(x, y, z, L)
-
-    # Save this_r in lookup table so we can avoid calling A4map in the future
-    lookup[x][y + MAX_X][z + MAX_X] = this_r
-
-    # Accumulate multiplicities if 0.5 < this_r < MAX_r
-    # Try to avoid roundoff issues in latter comparison
-    if this_r < 0.5 or this_r - MAX_r > -TOL:
-      continue
-    done = -1
-    for j in range(len(r)):
-      if np.fabs(r[j][0] - this_r) < TOL:
-        r[j][1] += 1
-        done = 1
-        break
-    if done < 0:
-      r.append([this_r, 1])
-Npts = len(r)
-
-# Sort by magnitude (column zero), not count
-r = sorted(r, key=lambda x: x[0])
-#print lookup
-#for j in range(Npts):
-#  print r[j]
+    if int(temp[3]) > 1:      # Only consider first t=1!
+      break
+    if float(temp[2]) > 0.5:  # Ignore degenerate r=0!
+      temp_r.append(float(temp[2]))
+Npts = len(temp_r)
+x_r = np.array(temp_r, dtype = np.float)
+#print x_r
 # ------------------------------------------------------------------
 
 
@@ -192,8 +119,8 @@ for MDTU in cfgs:
   if MDTU >= (begin + block_size):
     for j in range(Npts):
       for t in range(MAX_T):
-        Wdat[j][t].append(tW[j][t] / float(count * r[j][1]))
-        WdatSq[j][t].append(tWSq[j][t] / float(count * r[j][1]))
+        Wdat[j][t].append(tW[j][t] / float(count))
+        WdatSq[j][t].append(tWSq[j][t] / float(count))
         tW[j][t] = 0.0
         tWSq[j][t] = 0.0
     # Record and reset block data
@@ -211,36 +138,21 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: *_LOOP x y z t dat
+    # Format: $tag_LOOP # r t dat
     if line.startswith(loop + '_LOOP '):
       temp = line.split()
-      x = int(temp[1])
-      y = int(temp[2])
-      z = int(temp[3])
-      t = int(temp[4]) - 1    # Shift to index from zero
-      dat = float(temp[5])
-      if x == 0 and y == 0 and z == 0 and t == 0:
-        count += 1            # Only increment once per measurement!
-      this_r = lookup[x][y + MAX_X][z + MAX_X]
-
-      # Accumulate data if this_r < MAX_r
-      # Try to avoid roundoff shenanigans
-      if this_r < 0.5 or this_r - MAX_r > -TOL:
+      if float(temp[2]) < 0.5:  # Ignore degenerate r=0!
         continue
-      done = -1
-      for j in range(len(r)):
-        if np.fabs(r[j][0] - this_r) < TOL:
-          done = 1
-          tW[j][t] += dat
-          tWSq[j][t] += dat**2
-          break
-      if done < 0:
-        print "ERROR: displacement", this_r, "not found"
-        sys.exit(1)
+      j = int(temp[1]) - 1      # Shift because ignoring degenerate r=0
+      t = int(temp[3]) - 1      # Shift to index from zero
+      dat = float(temp[4])
+      if j == 0 and t == 0:
+        count += 1              # Only increment once per measurement!
+      tW[j][t] += dat
+      tWSq[j][t] += dat**2
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
-        print >> ERRFILE, infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
@@ -251,8 +163,8 @@ for MDTU in cfgs:
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   for j in range(Npts):
     for t in range(MAX_T):
-      Wdat[j][t].append(tW[j][t] / float(count * r[j][1]))
-      WdatSq[j][t].append(tWSq[j][t] / float(count * r[j][1]))
+      Wdat[j][t].append(tW[j][t] / float(count))
+      WdatSq[j][t].append(tWSq[j][t] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -278,11 +190,6 @@ for j in range(Npts):
   for t in range(MAX_T):
     Wtot[j][t] = sum(Wdat[j][t])
     WtotSq[j][t] = sum(WdatSq[j][t])
-
-x_r = np.empty(Npts, dtype = np.float)
-for j in range(Npts):
-  x_r[j] = r[j][0]
-#print x_r
 
 # All jackknife results
 Nt = MAX_T - 2    # How many t_min we can consider
@@ -338,9 +245,9 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
     for j in range(Npts):
       temp = np.array(jkVlist[j])
       jkV[j][index][i] = np.average(temp)
-      rV[j] = r[j][0] * jkV[j][index][i]
+      rV[j] = x_r[j] * jkV[j][index][i]
       var = (Ninner - 1.0) * np.sum((temp - jkV[j][index][i])**2) / float(Ninner)
-      weight[j] = 1.0 / (r[j][0] * np.sqrt(var))    # Squared in fit
+      weight[j] = 1.0 / (x_r[j] * np.sqrt(var))    # Squared in fit
 #     print x_r[j], jkV[j][index][i], weight[j]
 
     # Fit r * V(r) = A * r - C for all r
@@ -386,7 +293,7 @@ for t_min in range(1, MAX_T - 2):
 print >> Vfile, "%d err" % (MAX_T - 2)
 
 for j in range(Npts):
-  print >> Vfile, "%.4g" % r[j][0],
+  print >> Vfile, "%.4g" % x_r[j],
   for t in range(Nt):
     ave = np.average(jkV[j][t])
     var = (Nblocks - 1.0) * np.sum((jkV[j][t] - ave)**2) / float(Nblocks)
@@ -401,8 +308,8 @@ print >> outfile, "# Analyzing with %d blocks of length %d MDTU" \
                   % (Nblocks, block_size)
 print >> outfile, "# t",
 for j in range(Npts - 1):
-  print >> outfile, "%.4g err            " % r[j][0],
-print >> outfile, "%.4g err" % r[Npts - 1][0]
+  print >> outfile, "%.4g err            " % x_r[j],
+print >> outfile, "%.4g err" % x_r[Npts - 1]
 
 for t in range(MAX_T):
   print >> outfile, "%d" % (t + 1),     # Shift since indexed from zero

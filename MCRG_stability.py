@@ -73,34 +73,11 @@ if blmax < 0:
 
 
 # ------------------------------------------------------------------
-# Either load xi array from files (ignoring uncertainties) or set it to unity
-xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
-for i in range(num_smear):
-  xi_file = 'results/xi' + smear[i] + '.dat'
-  if os.path.isfile(xi_file):
-    print "Reading xi^4 from", xi_file
-    for line in open(xi_file):
-      if line.startswith('# '):
-        continue
-      else:
-        temp = line.split()
-        bl = int(temp[0])
-        for j in range(ops_per_smear):
-          xi[ops_per_smear * i + j][bl] = float(temp[1])
-  else:
-    print "Setting xi^4 to unity for directory", tag
-    for bl in range(blmax + 1):
-      for j in range(ops_per_smear):
-        xi[ops_per_smear * i + j][bl] = 1.0
-# ------------------------------------------------------------------
-
-
-
-# ------------------------------------------------------------------
 # Construct arrays of blocked measurements
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two arrays of products for each operator
 # These list definitions are a little awkward: the last index comes first
+redetdat = [[[] for i in range(blmax + 1)]]
 Kdat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
 AKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
 BKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
@@ -111,6 +88,7 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
+tD = np.zeros((num_smear, blmax + 1), dtype = np.float)
 tK = np.zeros((num_ops, blmax + 1), dtype = np.float)
 tAK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
 tBK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
@@ -131,6 +109,10 @@ for MDTU in cfgs:
           BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
           tAK[i][j][bl] = 0.0
           tBK[i][j][bl] = 0.0
+    for i in range(num_smear):
+      for bl in range(blmax + 1):
+        redetdat[i][bl].append(tD[i][bl] / float(count))
+        tD[i][bl] = 0.0
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
@@ -167,6 +149,16 @@ for MDTU in cfgs:
         if ops_per_smear > 2:
           print "ERROR: only two operators available in %s" % toOpen
           sys.exit(1)
+
+    elif line.startswith('BDET '):
+      # Format: BDET smear bl Re[detP] Im[detP]
+      temp = line.split()
+      N = int(temp[1])
+      if N >= num_smear:
+        continue
+      bl = int(temp[2])
+      tD[N][bl] += float(temp[3])
+
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print toOpen[0], "reports two measurements"
@@ -198,6 +190,10 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
       for j in range(num_ops):
         AKdat[i][j][bl].append(tAK[i][j][bl] / float(count))
         BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
+  for i in range(num_smear):
+    redetdat[i][blmax].append(tD[i][blmax] / float(count))
+    for bl in range(blmax):
+      redetdat[i][bl].append(tD[i][bl] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -209,15 +205,53 @@ Nblocks = len(Kdat[0][0])
 
 
 # ------------------------------------------------------------------
-# Now we can construct jackknife samples through single-block elimination,
-# and analyze them to determine xi^4(n), A(n), B(n) and T(n),
-# eventually obtaining jackknife estimates for Delta = 4 - y
-# for both Konishi and SUGRA
+# Now we need xi^4 for each blocking level (ignoring uncertainties)
+# Either load it from files (determined for example by matching plaquettes)
+# or set it to produce (1 - Re det P) = 0 only for blocked levels
+# Start by determining Re det P through single-block elimination
 # Require multiple blocks instead of worrying about error propagation
 if Nblocks == 1:
   print "ERROR: need multiple blocks to analyze"
   sys.exit(1)
 
+# Jackknife results for xi^4
+redet = np.zeros((num_smear, blmax + 1), dtype = np.float)
+for i in range(num_smear):
+  for bl in range(blmax + 1):
+    dat = np.array(redetdat[i][bl])
+    redet[i][bl] = np.mean(dat, dtype = np.float64)
+
+xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
+for i in range(num_smear):
+  xi_file = 'results/xi' + smear[i] + '.dat'
+  if os.path.isfile(xi_file):
+    print "Reading xi^4 from", xi_file
+    for line in open(xi_file):
+      if line.startswith('# '):
+        continue
+      else:
+        temp = line.split()
+        bl = int(temp[0])
+        for j in range(ops_per_smear):
+          xi[ops_per_smear * i + j][bl] = float(temp[1])
+  else:
+    print "Setting xi^4 to 1 / Re det P for directory", tag
+    for bl in range(1, blmax + 1):
+      for j in range(ops_per_smear):
+        xi[ops_per_smear * i + j][bl] = 1.0 / redet[i][bl]
+    for j in range(ops_per_smear):
+      xi[ops_per_smear * i + j][0] = 1.0
+    for bl in range(blmax + 1):
+      print "xi[%d][%d] = %.4g" % (i, bl, xi[i][bl])
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# Now we can construct jackknife samples through single-block elimination,
+# and analyze them to determine xi^4(n), A(n), B(n) and T(n),
+# eventually obtaining jackknife estimates for Delta = 4 - y
+# for both Konishi and SUGRA
 Ktot = np.empty_like(tK)
 AKtot = np.empty_like(tAK)
 BKtot = np.empty_like(tBK)

@@ -273,9 +273,7 @@ for temp_tag in open('list.txt'):
       if starting == 1:
         starting = 0
       else:
-        temp = line.split()
-        ave_link = float(temp[6])
-        link_width = float(temp[7])   # Will be stored with other widths
+        ave_link = float((line.split())[6])
         print >> FLINK, "%g,%g" % (MDTU, ave_link)
     # ------------------------------------------------------------
 
@@ -413,6 +411,9 @@ for temp_tag in open('list.txt'):
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
+      elif line.startswith('FLINK '): # Will be printed with other widths
+        link_width = float((line.split())[7])
+
       elif line.startswith('DET '):
         temp = line.split()
         det_r = float(temp[1])
@@ -444,6 +445,7 @@ for temp_tag in open('list.txt'):
       elif line.startswith('MONOPOLE '):
         mono = float((line.split())[10])
         print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
+
       elif line.startswith('WIDTHS '):
         temp = line.split()
         plaq_width = float(temp[1])

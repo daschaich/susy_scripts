@@ -219,9 +219,9 @@ echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="widths"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("widths"),' >> $out
-echo '                            "data/widths",' >> $out
+echo '                            "data/widths.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
-echo '                              colors: ["blue", "green", "red"],' >> $out
+echo '                              colors: ["blue", "green", "red", "black"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out

@@ -25,7 +25,6 @@ for filename in glob.glob('Out/corr.*'):
     if line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print filename, "reports two measurements"
-        print >> ERRFILE, filename, "reports two measurements"
       check = 1
 
     toPrint = 1

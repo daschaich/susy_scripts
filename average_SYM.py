@@ -189,11 +189,58 @@ for obs in ['wallTU', 'cg_iters', 'accP']:
 
 
 # ------------------------------------------------------------------
-# For the plaquette determinant and the susceptibilities
-# we're interested in all three data on each line
-# For the determinant these should be |det-1|^2, 1-Re(det) and Im(det)
-# For the susceptibilities: plaq, Re(det) and Im(det)
-for obs in ['det', 'suscept']:
+# For the plaquette determinant we're interested in all three data on each line
+# These are |det-1|^2, 1-Re(det) and Im(det)
+for obs in ['det']:
+  count = 0
+  ave = [0.0, 0.0, 0.0]       # Accumulate within each block
+  datList = [[], [], []]
+  begin = cut       # Where each block begins, to be incremented
+  obsfile = 'data/' + obs + '.csv'
+  for line in open(obsfile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    MDTU = float(temp[0])
+    if MDTU <= cut:
+      continue
+    elif MDTU > begin and MDTU < (begin + block_size):
+      ave[0] += float(temp[1])
+      ave[1] += float(temp[2])
+      ave[2] += float(temp[3])
+      count += 1
+    elif MDTU >= (begin + block_size):  # Move on to next block
+      if count == 0:
+        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        sys.exit(1)
+      for i in range(len(ave)):
+        datList[i].append(ave[i] / count)
+        ave[i] = float(temp[i + 1])     # Next block begins here
+      begin += block_size
+      count = 1
+
+  # Now print mean and standard error, assuming N>1
+  outfilename = 'results/' + obs + '.dat'
+  outfile = open(outfilename, 'w')
+  for i in range(len(ave)):
+    dat = np.array(datList[i])
+    N = np.size(dat)
+    if N == 0:
+      print "WARNING: No", obs, "data"
+      continue
+    ave[i] = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+    print >> outfile, "%.8g %.4g" % (ave[i], err),
+  print >> outfile, "# %d" % N
+  outfile.close()
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# For the widths we're interested in all four data on each line
+# These correspond to plaq, Re(det), Im(det) and Tr[U.Udag]/N
+for obs in ['widths']:
   count = 0
   ave = [0.0, 0.0, 0.0]       # Accumulate within each block
   datList = [[], [], []]
