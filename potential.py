@@ -82,10 +82,20 @@ if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
+  if line.startswith('nt'):
+    # Smaller MAX_T seems to increase central values
+    # !!! May want to include as systematic effect
+    MAX_T = int((line.split())[1]) / 2 - 1
+    print "MAX_T =", MAX_T
   # Format: hvy_pot: MAX_T = $MAX_T, MAX_X = $MAX_X --> r < $MAX_r
-  if line.startswith('hvy_pot: MAX_T '):
+  elif line.startswith('hvy_pot: MAX_T '):
     temp = line.split()
-    MAX_T = int((temp[3]).rstrip(','))    # Strip ',' from end
+    max_meas = int((temp[3]).rstrip(','))    # Strip ',' from end
+    if max_meas < MAX_T:
+      print "ERROR: Only measured Wilson loops to %d but MAX_T=%d" \
+            % (max_meas, MAX_T)
+      sys.exit(1)
+      print
 
   # Format: $tag_LOOP # r t dat
   elif line.startswith(loop + '_LOOP '):
@@ -148,8 +158,9 @@ for MDTU in cfgs:
       dat = float(temp[4])
       if j == 0 and t == 0:
         count += 1              # Only increment once per measurement!
-      tW[j][t] += dat
-      tWSq[j][t] += dat**2
+      if t < MAX_T:
+        tW[j][t] += dat
+        tWSq[j][t] += dat**2
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
@@ -171,6 +182,22 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   block_data[2].append(begin + block_size)
 
 Nblocks = len(Wdat[0][0])
+
+# Sort r, Wdat and WdatSq to reproduce old results
+# There ought to be a less awkward way to do this
+order = x_r.argsort()
+x_r = x_r[order]
+
+tmp = np.zeros(Npts, dtype = np.float)
+tmpSq = np.zeros_like(tmp)
+for t in range(MAX_T):
+  for i in range(Nblocks):
+    for j in range(Npts):
+      tmp[j] = Wdat[j][t][i]
+      tmpSq[j] = WdatSq[j][t][i]
+    for j in range(Npts):
+      Wdat[j][t][i] = tmp[order[j]]
+      WdatSq[j][t][i] = tmpSq[order[j]]
 # ------------------------------------------------------------------
 
 

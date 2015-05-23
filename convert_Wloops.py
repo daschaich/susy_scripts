@@ -48,8 +48,8 @@ def A4map(x_in, y_in, z_in, L):
         # Try to avoid negative roundoff
         # so that we can see when periodic shifts are really necessary
         if test - r < -TOL:
-          print "|(%d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
-          print "--> |(%d, %d, %d)| = %.6g" % (x, y, z, test)
+#          print "|(%d, %d, %d)| = %.6g"     % (x_in, y_in, z_in, r),
+#          print "--> |(%d, %d, %d)| = %.6g" % (x, y, z, test)
           r = test
 #  print "%d %d %d --> %.6g" % (x_in, y_in, z_in, r)
   return r
@@ -91,7 +91,7 @@ for line in open(toOpen):
   elif line.startswith('POT_LOOP '):
     temp = line.split()
     if int(temp[4]) > 1:
-      break                 # Only consider a single value of t=1!
+      continue              # Only consider a single value of t=1!
     x = int(temp[1])
     y = int(temp[2])
     z = int(temp[3])
