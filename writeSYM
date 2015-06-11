@@ -327,7 +327,7 @@ echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("force"),' >> $out
 echo '                            "data/force.csv",' >> $out
 echo '                            { rollPeriod: 1,' >> $out
-echo '                              colors: ["red", "blue", "green"],' >> $out
+echo '                              colors: ["green", "red", "blue", "black"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 6)' >> $out
@@ -389,6 +389,31 @@ echo '                                return Math.round(x * shift) / shift' >> $
 echo '                              },' >> $out
 echo '                            });' >> $out
 echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>ln[condition#] ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="cond_num"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("cond_num"),' >> $out
+echo '                            "data/cond_num.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 6)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
 echo '        </td>' >> $out
 echo '      </tr>' >> $out
 echo '    </table>' >> $out

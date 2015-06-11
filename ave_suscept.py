@@ -2,10 +2,16 @@
 import os
 import sys
 import glob
+import time
 import numpy as np
 # ------------------------------------------------------------------
-# Print blocked fermion bilinear and Ward identity violation averages
+# Print blocked Konishi and SUGRA susceptibility averages
 # with blocked standard errors
+
+# The C measurement now does all the A4* lattice conversion for us
+# We just need to read, construct
+#   \int dr r^{n + 3} \cO(x_0 + r) \cO(x_0) = \int dr r^{n + 3} C(r)
+# for 0 <= n <= 3, and average
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -17,6 +23,7 @@ if len(sys.argv) < 4:
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
+runtime = -time.time()
 # ------------------------------------------------------------------
 
 
@@ -26,12 +33,6 @@ tag = str(sys.argv[3])
 if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
-
-# Try to set C2 from path
-C2 = 1.0
-temp = os.getcwd()
-if '-c' in temp:
-  C2 = float((temp.split('-c'))[1])   # Everything after '-c'
 
 # Construct list of which configurations have been analyzed
 cfgs = []
@@ -49,21 +50,32 @@ if len(cfgs) == 0:
 # If we're missing some initial measurements,
 # increase thermalization cut
 cut = cfgs[0]
+
+# Cycle through first output file to associate scalar distances
+# with the corresponding label in the output
+r = []          # List of r sorted by tag
+firstfile = 'Out/' + tag + '.' + str(cfgs[0])
+if not os.path.isfile(firstfile):
+  print "ERROR:", firstfile, "does not exist"
+  sys.exit(1)
+for line in open(firstfile):
+  # Format: CORR_K label r dat
+  if line.startswith('CORR_K '):
+    r.append(float((line.split())[2]))
+  elif line.startswith('CORR_S '):
+    break             # Don't go through whole file yet
+
+# Number of powers to consider: 0 <= n <= 4
+Nsus = 4
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Construct arrays of blocked measurements for each observable
-# Ignore stochastic noise in measurements
-# Need to add factor of C2 to gauge piece
-# F = fermion bilinear piece, G = gauge piece,
-# D = susy transform (difference C2 * G - F),
-# N = normalized (C2 * G - F) / (C2 * G + F)
-Fdat = []
-Gdat = []
-Ddat = []
-Ndat = []
+# Construct arrays of blocked susceptibilities for each correlator
+# K = Konishi, S = SUGRA (averaged over all independent components)
+Kdat = [[] for x in range(Nsus)]
+Sdat = [[] for x in range(Nsus)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -71,27 +83,22 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tF = 0.0
-tG = 0.0
-tD = 0.0
-tN = 0.0
+tK = [0 for x in range(Nsus)]
+tS = [0 for x in range(Nsus)]
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    Fdat.append(tF / float(count))
-    Gdat.append(tG / float(count))
-    Ddat.append(tD / float(count))
-    Ndat.append(tN / float(count))
+    for i in range(Nsus):
+      Kdat[i].append(tK[i] / float(count))
+      Sdat[i].append(tS[i] / float(count))
+      tK[i] = 0.0
+      tS[i] = 0.0
     # Record and reset block data
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tF = 0.0
-    tG = 0.0
-    tD = 0.0
-    tN = 0.0
 
   # Running averages
   filename = 'Out/' + tag + '.' + str(MDTU)
@@ -101,17 +108,29 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: SUSY f_dat imag g_dat diff [with C2=1]
-    # Imaginary component should average to zero
-    if line.startswith('SUSY '):
-      count += 1
+    # Format: CORR_{K, S} label r dat
+    if line.startswith('CORR'):
       temp = line.split()
-      diff = C2 * float(temp[3]) - float(temp[1])
-      tF += float(temp[1])
-      tG += C2 * float(temp[3])
-      tD += diff
-      tN += diff / (C2 * float(temp[3]) + float(temp[1]))
+      r = float(temp[2])
+      dat = float(temp[3])
+      if line.startswith('CORR_K 0 '):
+        count += 1          # Only increment once per measurement!
+
+      if r < 1.5:           # !!! Drop first three points
+        continue
+
+      if line.startswith('CORR_K '):
+        for n in range(Nsus):
+          tK[n] += np.power(r, n + 3) * dat
+      elif line.startswith('CORR_S '):
+        for n in range(Nsus):
+          tS[n] += np.power(r, n + 3) * dat
+      else:
+        print "ERROR: tag ", temp[0], "not recognized"
+        sys.exit(1)
     elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
@@ -120,16 +139,15 @@ for MDTU in cfgs:
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  Fdat.append(tF / float(count))
-  Gdat.append(tG / float(count))
-  Ddat.append(tD / float(count))
-  Ndat.append(tN / float(count))
+  for i in range(Nsus):
+    Kdat[i].append(tK[i] / float(count))
+    Sdat[i].append(tS[i] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(Fdat)
+Nblocks = len(Kdat[0])
 # ------------------------------------------------------------------
 
 
@@ -141,21 +159,25 @@ if Nblocks == 1:
   sys.exit(1)
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-outfile = open('results/bilin.dat', 'w')
-print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# diff err rel err gauge err bilin err"
+outfile = open('results/suscept.dat', 'w')
+print >> outfile, "# Averaging with %d blocks of length %d MDTU" \
+                  % (Nblocks, block_size)
+print >> outfile, "# n Konishi err SUGRA err"
 
-for obs in [Ddat, Ndat, Gdat, Fdat]:
-  dat = np.array(obs)
+for i in range(Nsus):
+  print >> outfile, "%d" % i,
+
+  dat = np.array(Kdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
   print >> outfile, "%.6g %.4g" % (ave, err),
-print >> outfile, "# %d" % Nblocks
 
-# More detailed block information
-#for i in range(Nblocks):
-#  print >> outfile, \
-#        "# Block %2d has %d measurements from MDTU in [%d, %d)" \
-#        % (i + 1, block_data[0][i], block_data[1][i], block_data[2][i])
+  dat = np.array(Sdat[i])
+  ave = np.mean(dat, dtype = np.float64)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
+  print >> outfile, "%.6g %.4g" % (ave, err)
 outfile.close()
+
+runtime += time.time()
+print "Runtime: %0.1f seconds" % runtime
 # ------------------------------------------------------------------

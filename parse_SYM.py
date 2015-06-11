@@ -50,13 +50,15 @@ print >> DELTAS, "t,deltaS"
 ABS_DS = open('data/abs_dS.csv', 'w')
 print >> ABS_DS, "t,|deltaS|"
 FORCE = open('data/force.csv', 'w')
-print >> FORCE, "t,G,F"
+print >> FORCE, "t,G,F1,F2,F3"
 CG_ITERS = open('data/cg_iters.csv', 'w')
 print >> CG_ITERS, "t,cg_iters"
 WALLTIME = open('data/walltime.csv', 'w')
 print >> WALLTIME, "t,walltime"
 WALLTU = open('data/wallTU.csv', 'w')
 print >> WALLTU, "t,cost"
+COND_NUM = open('data/cond_num.csv', 'w')
+print >> COND_NUM, "t,cond_num"
 
 # Run parameters
 NSTEP = open('data/Nstep.csv', 'w')
@@ -169,12 +171,18 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
+  Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
   for line in open(infile):
+    # See how many fermion forces we will have below
+    # Retain case insensitivity for now
+    if line.lower().startswith('using nroot '):
+      Nroot = int((line.split())[3])
+
     # Extract spectral range for eigenvalues
     # Format: RHMC Norder # for spectral range [min, max]
-    if line.startswith('RHMC Norder '):
+    elif line.startswith('RHMC Norder '):
       if 'spectral' in line:
         temp1 = line.rstrip()       # Kill newline
         temp2 = temp1.rstrip(']')   # Kill ]
@@ -263,7 +271,17 @@ for temp_tag in open('list.txt'):
       force_g = float((line.split())[-1])
     elif line.startswith('MONITOR_FORCE_FERMION0 '):
       force_f = float((line.split())[-1])
-      print >> FORCE, "%d,%g,%g" % (traj, force_g, force_f)
+      if Nroot == 1:
+        print >> FORCE, "%d,%g,%g,null,null" % (traj, force_g, force_f)
+    elif line.startswith('MONITOR_FORCE_FERMION1 '):
+      force_f2 = float((line.split())[-1])
+      if Nroot == 2:
+        print >> FORCE, "%d,%g,%g,%g,null" % (traj, force_g, force_f, force_f2)
+    elif line.startswith('MONITOR_FORCE_FERMION2 '):
+      force_f3 = float((line.split())[-1])
+      if Nroot == 3:
+        print >> FORCE, "%d,%g,%g,%g,%g" \
+                        % (traj, force_g, force_f, force_f2, force_f3)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -367,6 +385,10 @@ for temp_tag in open('list.txt'):
           print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+
+        # Monitor (log of) condition number
+        cond_num = math.log(dat / eig[0])
+        print >> COND_NUM, "%d,%g" % (traj, cond_num)
 
       elif 'WARNING' in line:
         print infile, "saturated eigenvalue iterations"
@@ -492,6 +514,7 @@ FORCE.close()
 CG_ITERS.close()
 WALLTIME.close()
 WALLTU.close()
+COND_NUM.close()
 NSTEP.close()
 STEPSIZE.close()
 TLENGTH.close()

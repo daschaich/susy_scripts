@@ -70,7 +70,7 @@ Npts = len(r)
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
-# K = Konishi, S = SUGRA (averaged over all 25 components)
+# K = Konishi, S = SUGRA (averaged over all independent components)
 Kdat = [[] for x in range(Npts)]
 Sdat = [[] for x in range(Npts)]
 

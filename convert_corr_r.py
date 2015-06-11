@@ -31,13 +31,20 @@ def A4map(x_in, y_in, z_in, t_in, L, Nt):
   r = np.sqrt((x_in**2 + y_in**2 + z_in**2 + t_in**2) * 0.8 \
               - 2.0 * (x_in * (y_in + z_in + t_in) \
                        + y_in * (z_in + t_in) + z_in * t_in) * 0.2)
+
   for x in [x_in + L, x_in, x_in - L]:
+    xSq = x**2
     for y in [y_in + L, y_in, y_in - L]:
+      xSq_ySq = xSq + y**2
+      xpy = x + y
+      xy = x * y
       for z in [z_in + L, z_in, z_in - L]:
+        xSq_ySq_zSq = xSq_ySq + z**2
+        xpypz = xpy + z
+        xy_xz_yz = xy + x * z + y * z
         for t in [t_in + Nt, t_in, t_in - Nt]:
-          test = np.sqrt((x**2 + y**2 + z**2 + t**2) * 0.8 \
-                         - 2.0 * (x * (y + z + t) \
-                                  + y * (z + t) + z * t) * 0.2)
+          test = np.sqrt((xSq_ySq_zSq + t**2) * 0.8 \
+                         - 2.0 * (xy_xz_yz + xpypz * t) * 0.2)
 
           # Sanity check -- can be commented out for more speed
           x_a4 = (x - y) * invSq2
