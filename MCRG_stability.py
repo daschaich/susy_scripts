@@ -77,7 +77,7 @@ if blmax < 0:
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two arrays of products for each operator
 # These list definitions are a little awkward: the last index comes first
-redetdat = [[[] for i in range(blmax + 1)]]
+width_dat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
 Kdat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
 AKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
 BKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
@@ -88,7 +88,7 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tD = np.zeros((num_smear, blmax + 1), dtype = np.float)
+tW = np.zeros((num_smear, blmax + 1), dtype = np.float)
 tK = np.zeros((num_ops, blmax + 1), dtype = np.float)
 tAK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
 tBK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
@@ -111,8 +111,8 @@ for MDTU in cfgs:
           tBK[i][j][bl] = 0.0
     for i in range(num_smear):
       for bl in range(blmax + 1):
-        redetdat[i][bl].append(tD[i][bl] / float(count))
-        tD[i][bl] = 0.0
+        width_dat[i][bl].append(tW[i][bl] / float(count))
+        tW[i][bl] = 0.0
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
@@ -150,14 +150,14 @@ for MDTU in cfgs:
           print "ERROR: only two operators available in %s" % toOpen
           sys.exit(1)
 
-    elif line.startswith('BDET '):
-      # Format: BDET smear bl Re[detP] Im[detP]
+    elif line.startswith('BFLINK_DET '):
+      # Format: BFLINK_DET smear bl 5xdet[dir] ave width
       temp = line.split()
       N = int(temp[1])
       if N >= num_smear:
         continue
       bl = int(temp[2])
-      tD[N][bl] += float(temp[3])
+      tW[N][bl] += float(temp[9])
 
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
@@ -191,9 +191,9 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
         AKdat[i][j][bl].append(tAK[i][j][bl] / float(count))
         BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
   for i in range(num_smear):
-    redetdat[i][blmax].append(tD[i][blmax] / float(count))
+    width_dat[i][blmax].append(tW[i][blmax] / float(count))
     for bl in range(blmax):
-      redetdat[i][bl].append(tD[i][bl] / float(count))
+      width_dat[i][bl].append(tW[i][bl] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -215,11 +215,11 @@ if Nblocks == 1:
   sys.exit(1)
 
 # Jackknife results for xi^4
-redet = np.zeros((num_smear, blmax + 1), dtype = np.float)
+width = np.zeros((num_smear, blmax + 1), dtype = np.float)
 for i in range(num_smear):
   for bl in range(blmax + 1):
-    dat = np.array(redetdat[i][bl])
-    redet[i][bl] = np.mean(dat, dtype = np.float64)
+    dat = np.array(width_dat[i][bl])
+    width[i][bl] = np.mean(dat, dtype = np.float64)
 
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
 for i in range(num_smear):
@@ -235,14 +235,19 @@ for i in range(num_smear):
         for j in range(ops_per_smear):
           xi[ops_per_smear * i + j][bl] = float(temp[1])
   else:
-    print "Setting xi^4 to 1 / Re det P for directory", tag
+    print "Setting xi^4 to width ratio for directory", tag
     for bl in range(1, blmax + 1):
       for j in range(ops_per_smear):
-        xi[ops_per_smear * i + j][bl] = 1.0 / redet[i][bl]
+        xi[ops_per_smear * i + j][bl] = width[i][bl - 1] / width[i][bl]
+#        print "%.4g / %.4g = %.4g" \
+#              % (width[i][bl - 1], width[i][bl], temp)
+#        temp = width[i][bl - 1] / width[i][bl]
+#        xi[ops_per_smear * i + j][bl] = temp * temp
+        xi[ops_per_smear * i + j][bl] = 1.0
     for j in range(ops_per_smear):
       xi[ops_per_smear * i + j][0] = 1.0
     for bl in range(blmax + 1):
-      print "xi[%d][%d] = %.4g" % (i, bl, xi[i][bl])
+      print "Setting xi^4[%d][%d] = %.4g" % (i, bl, xi[i][bl])
 # ------------------------------------------------------------------
 
 
@@ -312,8 +317,14 @@ print "Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
 print "%d operators in the stability matrix" % num_ops
 outfile = open('results/MCRG.dat', 'w')
 print >> outfile, "# Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# %d operators in the stability matrix" % num_ops
+print >> outfile, "Setting xi^4 to width ratio"
+for bl in range(blmax + 1):
+  print >> outfile, "xi4 %d" % bl,
+  for i in range(num_smear - 1):
+    print >> outfile, "%.4g" % xi[i][bl],
+  print >> outfile, "%.4g" % xi[num_smear - 1][bl]
 
+print >> outfile, "# %d operators in the stability matrix" % num_ops
 for bl in range(blmax):
   ave = np.average(jkDeltaK[bl])
   err = (Nblocks - 1.0) * np.sum((jkDeltaK[bl] - ave)**2) / float(Nblocks)
