@@ -6,8 +6,8 @@ import time
 import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
-# Consider up to four operators per measurement
-# Limitation: The order Tr(BB) Tr(CC) Tr(BB)Tr(BB) Tr(CC)Tr(CC) is fixed
+# Consider up to three operators per measurement
+# Limitation: The order Tr(BB) Tr(BC) Tr(CC) is fixed
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -23,14 +23,15 @@ cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 ops_per_smear = int(sys.argv[3])
 num_smear = int(sys.argv[4])
-smear = ['0', '1', '2', '3', '4']
+smear = ['0', '1', '2', '3', '4', '5', '6', '7', '8']
+smear = ['0', '2', '4']
 num_ops = ops_per_smear * num_smear
 tag = str(sys.argv[5])
 runtime = -time.time()
 
 # Quick sanity check
-if ops_per_smear < 1 or ops_per_smear > 4:
-  print "ERROR: Have at most 4 operators per measurement"
+if ops_per_smear < 1 or ops_per_smear > 3:
+  print "ERROR: Have at most 3 operators per measurement"
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -77,7 +78,6 @@ if blmax < 0:
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two arrays of products for each operator
 # These list definitions are a little awkward: the last index comes first
-width_dat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
 Kdat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
 AKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
 BKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
@@ -88,10 +88,9 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tW = np.zeros((num_smear, blmax + 1), dtype = np.float)
 tK = np.zeros((num_ops, blmax + 1), dtype = np.float)
 tAK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
-tBK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
+tBK = np.zeros_like(tAK)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
@@ -109,10 +108,6 @@ for MDTU in cfgs:
           BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
           tAK[i][j][bl] = 0.0
           tBK[i][j][bl] = 0.0
-    for i in range(num_smear):
-      for bl in range(blmax + 1):
-        width_dat[i][bl].append(tW[i][bl] / float(count))
-        tW[i][bl] = 0.0
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
@@ -128,36 +123,20 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: OK smear bl Tr(BB) Tr(CC) Tr(BB)Tr(BB) Tr(CC)Tr(CC)
+    # Format: OK smear bl Tr(PP) Tr(UU)
     if line.startswith('OK '):
       temp = line.split()
-      N = int(temp[1])
-      if N >= num_smear:
+      this_smear = int(temp[1])
+      N = -1
+      for i in range(num_smear):
+        if this_smear == int(smear[i]):
+          N = i
+      if N < 0:
         continue
       bl = int(temp[2])
       dat[ops_per_smear * N][bl] = float(temp[3])
-      if len(temp) > 5:
-        if ops_per_smear > 1:
-          dat[ops_per_smear * N + 1][bl] = float(temp[5])
-        if ops_per_smear > 2:
-          dat[ops_per_smear * N + 2][bl] = float(temp[4])
-        if ops_per_smear > 3:
-          dat[ops_per_smear * N + 3][bl] = float(temp[6])
-      else:
-        if ops_per_smear > 1:
-          dat[ops_per_smear * N + 1][bl] = float(temp[4])
-        if ops_per_smear > 2:
-          print "ERROR: only two operators available in %s" % toOpen
-          sys.exit(1)
-
-    elif line.startswith('BFLINK_DET '):
-      # Format: BFLINK_DET smear bl 5xdet[dir] ave width
-      temp = line.split()
-      N = int(temp[1])
-      if N >= num_smear:
-        continue
-      bl = int(temp[2])
-      tW[N][bl] += float(temp[9])
+      if ops_per_smear > 1:
+        dat[ops_per_smear * N + 1][bl] = float(temp[4])
 
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
@@ -190,10 +169,6 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
       for j in range(num_ops):
         AKdat[i][j][bl].append(tAK[i][j][bl] / float(count))
         BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
-  for i in range(num_smear):
-    width_dat[i][blmax].append(tW[i][blmax] / float(count))
-    for bl in range(blmax):
-      width_dat[i][bl].append(tW[i][bl] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -205,22 +180,10 @@ Nblocks = len(Kdat[0][0])
 
 
 # ------------------------------------------------------------------
-# Now we need xi^4 for each blocking level (ignoring uncertainties)
-# Either load it from files (determined for example by matching plaquettes)
-# or set it to produce (1 - Re det P) = 0 only for blocked levels
-# Start by determining Re det P through single-block elimination
-# Require multiple blocks instead of worrying about error propagation
-if Nblocks == 1:
-  print "ERROR: need multiple blocks to analyze"
-  sys.exit(1)
-
+# Optionally load xi^4 for each operator on each blocking level
+# or just set it to unity
+# In either case ignore uncertainties, which tend to be small
 # Jackknife results for xi^4
-width = np.zeros((num_smear, blmax + 1), dtype = np.float)
-for i in range(num_smear):
-  for bl in range(blmax + 1):
-    dat = np.array(width_dat[i][bl])
-    width[i][bl] = np.mean(dat, dtype = np.float64)
-
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
 for i in range(num_smear):
   xi_file = 'results/xi' + smear[i] + '.dat'
@@ -235,28 +198,25 @@ for i in range(num_smear):
         for j in range(ops_per_smear):
           xi[ops_per_smear * i + j][bl] = float(temp[1])
   else:
-    print "Setting xi^4 to width ratio for directory", tag
-    for bl in range(1, blmax + 1):
-      for j in range(ops_per_smear):
-        xi[ops_per_smear * i + j][bl] = width[i][bl - 1] / width[i][bl]
-#        print "%.4g / %.4g = %.4g" \
-#              % (width[i][bl - 1], width[i][bl], temp)
-#        temp = width[i][bl - 1] / width[i][bl]
-#        xi[ops_per_smear * i + j][bl] = temp * temp
-        xi[ops_per_smear * i + j][bl] = 1.0
+    print "Setting xi^4 to unity"
     for j in range(ops_per_smear):
       xi[ops_per_smear * i + j][0] = 1.0
-    for bl in range(blmax + 1):
-      print "Setting xi^4[%d][%d] = %.4g" % (i, bl, xi[i][bl])
+      for bl in range(1, blmax + 1):
+        xi[ops_per_smear * i + j][bl] = xi[ops_per_smear * i + j][bl - 1] * 1.313
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # Now we can construct jackknife samples through single-block elimination,
-# and analyze them to determine xi^4(n), A(n), B(n) and T(n),
+# and analyze them to determine A(n), B(n) and T(n),
 # eventually obtaining jackknife estimates for Delta = 4 - y
 # for both Konishi and SUGRA
+# Require multiple blocks instead of worrying about error propagation
+if Nblocks == 1:
+  print "ERROR: need multiple blocks to analyze"
+  sys.exit(1)
+
 Ktot = np.empty_like(tK)
 AKtot = np.empty_like(tAK)
 BKtot = np.empty_like(tBK)
@@ -317,7 +277,6 @@ print "Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
 print "%d operators in the stability matrix" % num_ops
 outfile = open('results/MCRG.dat', 'w')
 print >> outfile, "# Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "Setting xi^4 to width ratio"
 for bl in range(blmax + 1):
   print >> outfile, "xi4 %d" % bl,
   for i in range(num_smear - 1):
