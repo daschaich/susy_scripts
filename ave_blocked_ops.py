@@ -108,14 +108,14 @@ for MDTU in cfgs:
   check = -1
   for line in open(toOpen[0]):
     # Format: OK smearing bl blocked_konishi
-    if line.startswith('OK '):
+    if line.startswith('OK 0 '):
       temp = line.split()
       bl = int(temp[2])
       tK[bl] += float(temp[3])
       if bl == 0:
         count += 1          # Only tick counter once per measurement
     # Format: OS bl blocked_SUGRA
-    elif line.startswith('OS '):
+    elif line.startswith('OS 0 '):
       temp = line.split()
       bl = int(temp[2])
       tS[bl] += float(temp[3])

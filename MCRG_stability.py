@@ -6,32 +6,43 @@ import time
 import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
-# Consider up to three operators per measurement
-# Limitation: The order Tr(BB) Tr(BC) Tr(CC) is fixed
+# Consider only two operators per measurement
+#   Tr(PP) is built from polar projections of the links -- give it xi^2
+#   Tr(UU) is built from U.Ubar -- give it xi^4
+# The order Tr(PP) Tr(UU) is fixed
+# While lines around 145 can be adjusted below,
+# also remember to adjust corresponding xi factors....
+
+# Optionally load results/xi.dat, which I think should not depend on smearing
+# since it is part of the RG blocking
+# while the smearing is part of the observable definition
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
 # Third argument tells us how many operators to consider per measurement
 # Fourth argument tells us how many smearings to consider per measurement
-# Each smearing can have an optional results/xi#.dat file to load
-# Final argument tells us the directory to analyze
-if len(sys.argv) < 6:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# smear> <dir>"
+# Fifth argument tells us the directory to analyze
+# Final argument tells us whether to consider the Konishi or SUGRA
+if len(sys.argv) < 7:
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# smear> <dir> <op>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 ops_per_smear = int(sys.argv[3])
 num_smear = int(sys.argv[4])
 smear = ['0', '1', '2', '3', '4', '5', '6', '7', '8']
-smear = ['0', '2', '4']
 num_ops = ops_per_smear * num_smear
 tag = str(sys.argv[5])
+op = 'O' + str(sys.argv[6]) + ' '
 runtime = -time.time()
 
 # Quick sanity check
-if ops_per_smear < 1 or ops_per_smear > 3:
-  print "ERROR: Have at most 3 operators per measurement"
+if ops_per_smear < 1 or ops_per_smear > 2:
+  print "ERROR: Have at most 2 operators per measurement"
+  sys.exit(1)
+if num_smear > len(smear):
+  print "ERROR: Only set up", num_smear, "smearings per measurement"
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -124,7 +135,8 @@ for MDTU in cfgs:
   check = -1
   for line in open(toOpen[0]):
     # Format: OK smear bl Tr(PP) Tr(UU)
-    if line.startswith('OK '):
+    # op = 'OK ' or 'OS ' defined at top
+    if line.startswith(op):
       temp = line.split()
       this_smear = int(temp[1])
       N = -1
@@ -185,24 +197,30 @@ Nblocks = len(Kdat[0][0])
 # In either case ignore uncertainties, which tend to be small
 # Jackknife results for xi^4
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
-for i in range(num_smear):
-  xi_file = 'results/xi' + smear[i] + '.dat'
-  if os.path.isfile(xi_file):
-    print "Reading xi^4 from", xi_file
-    for line in open(xi_file):
-      if line.startswith('# '):
-        continue
-      else:
-        temp = line.split()
-        bl = int(temp[0])
-        for j in range(ops_per_smear):
-          xi[ops_per_smear * i + j][bl] = float(temp[1])
-  else:
-    print "Setting xi^4 to unity"
+xi_file = 'results/xi.dat'
+if os.path.isfile(xi_file):
+  print "Reading xi^4 from", xi_file
+  for line in open(xi_file):
+    if line.startswith('# '):
+      continue
+    else:
+      temp = line.split()
+      bl = int(temp[0])
+      for i in range(num_smear):
+        # With the polar field we probably only want xi^2...
+        xi[ops_per_smear * i][bl] = np.sqrt(float(temp[1]))
+        # With the U.Ubar field we probably want xi^4...
+        if ops_per_smear > 1:
+          xi[ops_per_smear * i + 1][bl] = float(temp[1])
+else:
+  print xi_file, "does not exist..."
+  sys.exit(1)
+  print "Setting xi^4 to unity"
+  for i in range(num_smear):
     for j in range(ops_per_smear):
       xi[ops_per_smear * i + j][0] = 1.0
       for bl in range(1, blmax + 1):
-        xi[ops_per_smear * i + j][bl] = xi[ops_per_smear * i + j][bl - 1] * 1.313
+        xi[ops_per_smear * i + j][bl] = xi[ops_per_smear * i + j][bl - 1] * 1.0
 # ------------------------------------------------------------------
 
 
@@ -273,10 +291,12 @@ for n in range(Nblocks):  # Jackknife samples
 
 # ------------------------------------------------------------------
 # Now we can average over jackknife samples and print out results
-print "Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print "Analyzing %s with %d blocks of length %d MDTU" \
+      % (op.rstrip(), Nblocks, block_size)
 print "%d operators in the stability matrix" % num_ops
 outfile = open('results/MCRG.dat', 'w')
-print >> outfile, "# Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print >> outfile, "# Analyzing %s with %d blocks of length %d MDTU" \
+                  % (op.rstrip(), Nblocks, block_size)
 for bl in range(blmax + 1):
   print >> outfile, "xi4 %d" % bl,
   for i in range(num_smear - 1):
@@ -287,7 +307,8 @@ print >> outfile, "# %d operators in the stability matrix" % num_ops
 for bl in range(blmax):
   ave = np.average(jkDeltaK[bl])
   err = (Nblocks - 1.0) * np.sum((jkDeltaK[bl] - ave)**2) / float(Nblocks)
-  print >> outfile, "DeltaK %d %.6g %.4g" % (bl + 1, ave, err)
+  print >> outfile, "Delta%s %d %.6g %.4g" \
+                    % (str(sys.argv[6]), bl + 1, ave, err)
 
 # More detailed block information
 #for i in range(Nblocks):

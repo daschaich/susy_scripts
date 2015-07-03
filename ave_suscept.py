@@ -59,8 +59,10 @@ if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
+  if line.startswith('nt'):
+    Nt = int((line.split())[1])
   # Format: CORR_K label r dat
-  if line.startswith('CORR_K '):
+  elif line.startswith('CORR_K '):
     r.append(float((line.split())[2]))
   elif line.startswith('CORR_S '):
     break             # Don't go through whole file yet
@@ -76,6 +78,10 @@ Nsus = 4
 # K = Konishi, S = SUGRA (averaged over all independent components)
 Kdat = [[] for x in range(Nsus)]
 Sdat = [[] for x in range(Nsus)]
+
+# Make time series plot of operators themselves at the same time
+timeseries = open('data/konishi.csv', 'w')
+print >> timeseries, "MDTU,Konishi,SUGRA"
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -106,6 +112,8 @@ for MDTU in cfgs:
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
+  OK = 0.0
+  OS = 0.0
   check = -1
   for line in open(toOpen[0]):
     # Format: CORR_{K, S} label r dat
@@ -128,13 +136,23 @@ for MDTU in cfgs:
       else:
         print "ERROR: tag ", temp[0], "not recognized"
         sys.exit(1)
+    elif line.startswith('KONISHI '):
+      OK += float((line.split())[2])
+    elif line.startswith('SUGRA '):
+      OS += float((line.split())[2])
     elif line.startswith('RUNNING COMPLETED'):
+      # Average Konishi and SUGRA over all time slices
+      OK /= Nt
+      OS /= Nt
+      print >> timeseries, "%d,%.6g,%.6g" % (MDTU, OK, OS)
+
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
     sys.exit(1)
+timeseries.close()
 
 # Check special case that last block is full
 # Assume last few measurements are equally spaced

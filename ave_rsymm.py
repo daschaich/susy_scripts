@@ -116,21 +116,22 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   check = -1
+  polar = -1    # !!! Temporary check for Konishi, which should probably be reversed for R symmetry transformations
   for line in open(toOpen[0]):
     # Skip measurement if average link looks unreasonably large
     # This seems to be due to occasional near-singular link matrix inversions
-    if line.startswith('INVLINK '):
-      temp = float((line.split())[6])
-      if temp > Nc:
-        print "WARNING: skipping %s due to large link inverse %.4g" \
-              % (toOpen[0], temp)
-        check = 1   # Avoid spurious non-completion error
-        break
+#    if line.startswith('INVLINK '):
+#      temp = float((line.split())[6])
+#      if temp > Nc:
+#        print "WARNING: skipping %s due to large link inverse %.4g" \
+#              % (toOpen[0], temp)
+#        check = 1   # Avoid spurious non-completion error
+#        break
 
     # Format: RSYMM normal [dir] inverted [dir] usual mod
     # This comes last in the output files,
     # so it will use the correct sav
-    elif line.startswith('RSYMM '):
+    if line.startswith('RSYMM '):
       temp = line.split()
       norm = int(temp[1]) - 1
       inv = int(temp[3]) - 1
@@ -145,12 +146,18 @@ for MDTU in cfgs:
       if norm == 0 and inv == 0 and temp[2] == '[0]' and temp[4] == '[1]':
         count += 1
 
+    elif line.startswith('rsymm considering polar-projected links'):
+      polar = 1
+
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
+    sys.exit(1)
+  if polar == -1:
+    print toOpen[0], "did not consider polar-projected links"
     sys.exit(1)
 
 # Check special case that last block is full

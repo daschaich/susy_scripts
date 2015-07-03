@@ -4,8 +4,11 @@ import sys
 import glob
 import numpy as np
 # ------------------------------------------------------------------
-# Compare 6nt6 and 12nt12 Wilson loops,
-# with and without modifications for R symmetry tests
+# Compare small-volume and blocked-large-volume Wilson loops,
+# First determine xi^2 from the (blocked) plaquette
+# Then use xi^4 to compute larger loop ratios,
+# including modified loops to test discrete R symmetries
+# Everything after xi^4 printing is currently commented out
 
 # No arguments yet...
 # ------------------------------------------------------------------
@@ -13,23 +16,62 @@ import numpy as np
 
 
 # ------------------------------------------------------------------
-# 16nt32 --> 8nt16
-#for la in ['1.0']:
-#  smallFile = 'Nc2_8nt16/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
-#  largeFile = 'Nc2_16nt32/l' + la + '_b1.0_f0.0_k1.0/results/rsymm.dat'
-# 12nt12 --> 6nt6
-#for la in ['0.5', '1.0', '1.5']:
-#  smallFile = 'Nc2_6nt6/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
-#  largeFile = 'Nc2_12nt12/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
-# 8nt8 --> 4nt4
-#for la in ['1.0']:
-#  smallFile = 'Nc2_4nt4/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
-#  largeFile = 'Nc2_8nt8/l' + la + '_b0.5_f0.0_k0.5/results/rsymm.dat'
+# 8nt8 with xi from 4nt4 with fixed mu
+# TODO: Switch to l3.0_b0.6_G0.1, add l4.0_b0.6_G0.15 & l5.0_b0.8_G0.1
+small_dir = 'Nc2_4nt4/'
+large_dir = 'Nc2_8nt8/'
+small_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
+             'l2.0_b0.6_G0.05', 'l3.0_b0.8_G0.1']
+large_tag = small_tag
 
-# Improved action, 8nt8 --> 4nt4
-for la in ['1.0']:
-  smallFile = 'Nc2_4nt4/l' + la + '_b0.4_G0.05/results/rsymm.dat'
-  largeFile = 'Nc2_8nt8/l' + la + '_b0.4_G0.05/results/rsymm.dat'
+# 12nt12 --> 6nt6
+#small_dir = 'Nc2_6nt6/'
+#large_dir = 'Nc2_12nt12/'
+#small_tag = ['l1.0_b0.3_G0.05', 'l1.0_b0.4_G0.05',  \
+#             'l1.0_b0.6_G0.02', 'l1.0_b0.6_G0.05', \
+#             'l2.0_b0.3_G0.05', 'l2.0_b0.6_G0.05', \
+#             'l3.0_b0.6_G0.05', 'l4.0_b0.6_G0.1']
+#large_tag = small_tag
+
+# 8nt8 with xi from 4nt4 with scaled mu \propto 1 / L
+# TODO: Add l4.0_b0.3_G0.15 & l5.0_b0.4_G0.1...
+#small_dir = 'Nc2_4nt4/'
+#small_tag = ['l0.5_b0.8_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.6_G0.05', \
+#             'l1.0_b0.8_G0.02', 'l1.0_b0.8_G0.05', 'l1.0_b0.8_G0.1', \
+#             'l2.0_b0.6_G0.05', 'l2.0_b0.8_G0.05', 'l2.0_b0.8_G0.1', \
+#             'l3.0_b0.8_G0.05', 'l3.0_b0.8_G0.1', \
+#             'l4.0_b0.8_G0.05', 'l4.0_b0.8_G0.1']
+#large_dir = 'Nc2_8nt8/'
+#large_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.2_G0.05', 'l1.0_b0.3_G0.05', \
+#             'l1.0_b0.4_G0.02', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
+#             'l2.0_b0.3_G0.05', 'l2.0_b0.4_G0.05', 'l2.0_b0.4_G0.1', \
+#             'l3.0_b0.4_G0.05', 'l3.0_b0.4_G0.1', \
+#             'l4.0_b0.4_G0.05', 'l4.0_b0.4_G0.1']
+
+# 12nt12 with xi from 6nt6 with scaled mu \propto 1 / L
+#small_dir = 'Nc2_6nt6/'
+#small_tag = ['l1.0_b0.3_G0.05',  'l1.0_b0.6_G0.02', 'l1.0_b0.6_G0.05', \
+#             'l2.0_b0.4_G0.05', 'l2.0_b0.6_G0.05', 'l3.0_b0.6_G0.05']
+#large_dir = 'Nc2_12nt12/'
+#large_tag = ['l1.0_b0.15_G0.05', 'l1.0_b0.3_G0.02', 'l1.0_b0.3_G0.05',  \
+#             'l2.0_b0.2_G0.05', 'l2.0_b0.3_G0.05', 'l3.0_b0.3_G0.05']
+
+# 16nt16 with xi from 8nt8 with scaled mu \propto 1 / L
+#small_dir = 'Nc2_8nt8/'
+#small_tag = ['l1.0_b0.2_G0.05']
+#large_dir = 'Nc2_16nt16/'
+#large_tag = ['l1.0_b0.1_G0.05']
+
+for i in range(len(small_tag)):
+  if small_tag[i] == large_tag[i]:
+    outfilename = large_dir + large_tag[i] + '/results/xi_fixed.dat'
+    print "Comparing %s for %s vs. %s" % (small_tag[i], small_dir, large_dir)
+  else:
+    outfilename = large_dir + large_tag[i] + '/results/xi_scaled.dat'
+    print "Comparing %s vs. %s" % (small_dir + small_tag[i], \
+                                   large_dir + large_tag[i])
+  smallFile = small_dir + small_tag[i] + '/results/rsymm.dat'
+  largeFile = large_dir + large_tag[i] + '/results/rsymm.dat'
 
   # First make sure we're calling this from the right place
   # Should be able to retain these independent of commenting out above
@@ -83,11 +125,16 @@ for la in ['1.0']:
   # Print xi
   xi = np.zeros(blmax, dtype = np.float)
   xiErr = np.zeros(blmax, dtype = np.float)
-  print "0 1.0     0.0"
+  outfile = open(outfilename, 'w')
+#  print "0 1.0     0.0"
+  print >> outfile, "0 1.0     0.0"
   for bl in range(blmax):
     xi[bl] = smallPlaq[bl] / largePlaq[bl]      # Technically xi^4
     xiErr[bl] = xi[bl] * np.sqrt(smallErr[bl]**2 + largeErr[bl]**2)
-    print "%d %.6g %.4g" % (bl + 1, xi[bl], xiErr[bl])
+#    print "%d %.6g %.4g" % (bl + 1, xi[bl], xiErr[bl])
+    print >> outfile, "%d %.6g %.4g" % (bl + 1, xi[bl], xiErr[bl])
+#  print
+  outfile.close()
 sys.exit(0)
 for la in ['0.5', '1.0', '1.5']:
 
