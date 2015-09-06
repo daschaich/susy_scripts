@@ -7,7 +7,7 @@ fi
 
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
-path=/nfs/beowulf02/schaich/SYM/$dir
+path=/nfs/beowulf03/schaich/SYM/$dir
 # ------------------------------------------------------------------
 
 

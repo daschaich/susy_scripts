@@ -11,18 +11,19 @@ import numpy as np
 # Everything after xi^4 printing is currently commented out
 
 # No arguments yet...
+small_tag = []
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # 8nt8 with xi from 4nt4 with fixed mu
-# TODO: Switch to l3.0_b0.6_G0.1, add l4.0_b0.6_G0.15 & l5.0_b0.8_G0.1
-small_dir = 'Nc2_4nt4/'
-large_dir = 'Nc2_8nt8/'
-small_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
-             'l2.0_b0.6_G0.05', 'l3.0_b0.8_G0.1']
-large_tag = small_tag
+#small_dir = 'Nc2_4nt4/'
+#large_dir = 'Nc2_8nt8/'
+#small_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
+#             'l2.0_b0.6_G0.05', 'l3.0_b0.6_G0.1', 'l3.0_b0.8_G0.1', \
+#             'l4.0_b0.6_G0.15', 'l5.0_b0.8_G0.1']
+#large_tag = small_tag
 
 # 12nt12 --> 6nt6
 #small_dir = 'Nc2_6nt6/'
@@ -34,19 +35,19 @@ large_tag = small_tag
 #large_tag = small_tag
 
 # 8nt8 with xi from 4nt4 with scaled mu \propto 1 / L
-# TODO: Add l4.0_b0.3_G0.15 & l5.0_b0.4_G0.1...
+# TODO: Add l6.0_b0.4_G0.1...
 #small_dir = 'Nc2_4nt4/'
 #small_tag = ['l0.5_b0.8_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.6_G0.05', \
 #             'l1.0_b0.8_G0.02', 'l1.0_b0.8_G0.05', 'l1.0_b0.8_G0.1', \
 #             'l2.0_b0.6_G0.05', 'l2.0_b0.8_G0.05', 'l2.0_b0.8_G0.1', \
-#             'l3.0_b0.8_G0.05', 'l3.0_b0.8_G0.1', \
-#             'l4.0_b0.8_G0.05', 'l4.0_b0.8_G0.1']
+#             'l3.0_b0.8_G0.05', 'l3.0_b0.8_G0.1', 'l4.0_b0.6_G0.15', \
+#             'l4.0_b0.8_G0.05', 'l4.0_b0.8_G0.1', 'l5.0_b0.8_G0.1']
 #large_dir = 'Nc2_8nt8/'
 #large_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.2_G0.05', 'l1.0_b0.3_G0.05', \
 #             'l1.0_b0.4_G0.02', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
 #             'l2.0_b0.3_G0.05', 'l2.0_b0.4_G0.05', 'l2.0_b0.4_G0.1', \
-#             'l3.0_b0.4_G0.05', 'l3.0_b0.4_G0.1', \
-#             'l4.0_b0.4_G0.05', 'l4.0_b0.4_G0.1']
+#             'l3.0_b0.4_G0.05', 'l3.0_b0.4_G0.1', 'l4.0_b0.3_G0.15', \
+#             'l4.0_b0.4_G0.05', 'l4.0_b0.4_G0.1', 'l5.0_b0.4_G0.1']
 
 # 12nt12 with xi from 6nt6 with scaled mu \propto 1 / L
 #small_dir = 'Nc2_6nt6/'
@@ -58,9 +59,9 @@ large_tag = small_tag
 
 # 16nt16 with xi from 8nt8 with scaled mu \propto 1 / L
 #small_dir = 'Nc2_8nt8/'
-#small_tag = ['l1.0_b0.2_G0.05']
+#small_tag = ['l1.0_b0.2_G0.05', 'l1.0_b0.4_G0.05', 'l2.0_b0.4_G0.05']
 #large_dir = 'Nc2_16nt16/'
-#large_tag = ['l1.0_b0.1_G0.05']
+#large_tag = ['l1.0_b0.1_G0.05', 'l1.0_b0.2_G0.05', 'l2.0_b0.2_G0.05',]
 
 for i in range(len(small_tag)):
   if small_tag[i] == large_tag[i]:

@@ -10,7 +10,7 @@ die "Usage: $0 <path>\n"
   if (@ARGV != 1);
 
 my $dir = shift;
-my $path = "/nfs/beowulf02/schaich/SYM/$dir";
+my $path = "/nfs/beowulf03/schaich/SYM/$dir";
 my $i;
 my $junk;
 my $temp;

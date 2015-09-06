@@ -8,7 +8,7 @@ fi
 tag=$1
 date=$2
 
-out="/nfs/beowulf02/schaich/SYM/$tag/index.html"
+out="/nfs/beowulf03/schaich/SYM/$tag/index.html"
 #echo "Writing $out"
 
 echo '<html><head>' > $out
@@ -250,6 +250,7 @@ echo '                            "data/accP.csv",' >> $out
 echo '                            { rollPeriod: 50,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [0, 1.01],' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 3)' >> $out
 echo '                                return Math.round(x * shift) / shift' >> $out
@@ -265,6 +266,7 @@ echo '                            "data/exp_dS.csv",' >> $out
 echo '                            { rollPeriod: 50,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [0, 2.01],' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
 echo '                                return Math.round(x * shift) / shift' >> $out
@@ -286,10 +288,10 @@ echo '          <div id="deltaS"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("deltaS"),' >> $out
 echo '                            "data/deltaS.csv",' >> $out
-echo '                            { rollPeriod: 50,' >> $out
+echo '                            { rollPeriod: 5,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
-echo '                              valueRange: [-2.5, 2.5],' >> $out
+echo '                              valueRange: [-2.5, 2.51],' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
 echo '                                return Math.round(x * shift) / shift' >> $out
@@ -302,10 +304,10 @@ echo '          <div id="abs_dS"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("abs_dS"),' >> $out
 echo '                            "data/abs_dS.csv",' >> $out
-echo '                            { rollPeriod: 50,' >> $out
+echo '                            { rollPeriod: 5,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
-echo '                              valueRange: [0, 5],' >> $out
+echo '                              valueRange: [0, 5.01],' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
 echo '                                return Math.round(x * shift) / shift' >> $out
