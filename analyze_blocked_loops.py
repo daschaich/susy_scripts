@@ -5,6 +5,7 @@ import glob
 import numpy as np
 # ------------------------------------------------------------------
 # Compare small-volume and blocked-large-volume Wilson loops,
+# scaling mu \propto 1 / L
 # First determine xi^2 from the (blocked) plaquette
 # Then use xi^4 to compute larger loop ratios,
 # including modified loops to test discrete R symmetries
@@ -17,51 +18,55 @@ small_tag = []
 
 
 # ------------------------------------------------------------------
-# 8nt8 with xi from 4nt4 with fixed mu
-#small_dir = 'Nc2_4nt4/'
-#large_dir = 'Nc2_8nt8/'
-#small_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
-#             'l2.0_b0.6_G0.05', 'l3.0_b0.6_G0.1', 'l3.0_b0.8_G0.1', \
-#             'l4.0_b0.6_G0.15', 'l5.0_b0.8_G0.1']
-#large_tag = small_tag
+# U(4) 8nt8 & 4nt4
+#small_dir = 'Nc4_4nt4/'
+#small_tag = ['l1.0_b0.4_G0.05', 'l2.0_b0.6_G0.05']
+#large_dir = 'Nc4_8nt8/'
+#large_tag = ['l1.0_b0.2_G0.05', 'l2.0_b0.3_G0.05']
 
-# 12nt12 --> 6nt6
-#small_dir = 'Nc2_6nt6/'
-#large_dir = 'Nc2_12nt12/'
-#small_tag = ['l1.0_b0.3_G0.05', 'l1.0_b0.4_G0.05',  \
-#             'l1.0_b0.6_G0.02', 'l1.0_b0.6_G0.05', \
-#             'l2.0_b0.3_G0.05', 'l2.0_b0.6_G0.05', \
-#             'l3.0_b0.6_G0.05', 'l4.0_b0.6_G0.1']
-#large_tag = small_tag
+# U(3) 8nt8 & 4nt4
+#small_dir = 'Nc3_4nt4/'
+#small_tag = ['l1.0_b0.4_G0.05', 'l2.0_b0.6_G0.05', 'l3.0_b0.8_G0.05']
+#large_dir = 'Nc3_8nt8/'
+#large_tag = ['l1.0_b0.2_G0.05', 'l2.0_b0.3_G0.05', 'l3.0_b0.4_G0.05']
 
-# 8nt8 with xi from 4nt4 with scaled mu \propto 1 / L
-# TODO: Add l6.0_b0.4_G0.1...
-#small_dir = 'Nc2_4nt4/'
-#small_tag = ['l0.5_b0.8_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.6_G0.05', \
-#             'l1.0_b0.8_G0.02', 'l1.0_b0.8_G0.05', 'l1.0_b0.8_G0.1', \
-#             'l2.0_b0.6_G0.05', 'l2.0_b0.8_G0.05', 'l2.0_b0.8_G0.1', \
-#             'l3.0_b0.8_G0.05', 'l3.0_b0.8_G0.1', 'l4.0_b0.6_G0.15', \
-#             'l4.0_b0.8_G0.05', 'l4.0_b0.8_G0.1', 'l5.0_b0.8_G0.1']
-#large_dir = 'Nc2_8nt8/'
-#large_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.2_G0.05', 'l1.0_b0.3_G0.05', \
-#             'l1.0_b0.4_G0.02', 'l1.0_b0.4_G0.05', 'l1.0_b0.4_G0.1', \
-#             'l2.0_b0.3_G0.05', 'l2.0_b0.4_G0.05', 'l2.0_b0.4_G0.1', \
-#             'l3.0_b0.4_G0.05', 'l3.0_b0.4_G0.1', 'l4.0_b0.3_G0.15', \
-#             'l4.0_b0.4_G0.05', 'l4.0_b0.4_G0.1', 'l5.0_b0.4_G0.1']
-
-# 12nt12 with xi from 6nt6 with scaled mu \propto 1 / L
-#small_dir = 'Nc2_6nt6/'
-#small_tag = ['l1.0_b0.3_G0.05',  'l1.0_b0.6_G0.02', 'l1.0_b0.6_G0.05', \
-#             'l2.0_b0.4_G0.05', 'l2.0_b0.6_G0.05', 'l3.0_b0.6_G0.05']
-#large_dir = 'Nc2_12nt12/'
-#large_tag = ['l1.0_b0.15_G0.05', 'l1.0_b0.3_G0.02', 'l1.0_b0.3_G0.05',  \
-#             'l2.0_b0.2_G0.05', 'l2.0_b0.3_G0.05', 'l3.0_b0.3_G0.05']
-
-# 16nt16 with xi from 8nt8 with scaled mu \propto 1 / L
+# U(2) 16nt16 & 8nt8
 #small_dir = 'Nc2_8nt8/'
-#small_tag = ['l1.0_b0.2_G0.05', 'l1.0_b0.4_G0.05', 'l2.0_b0.4_G0.05']
+#small_tag = ['l1.0_b0.2_G0.05', 'l1.0_b0.4_G0.05', \
+#                                'l2.0_b0.4_G0.05']
 #large_dir = 'Nc2_16nt16/'
-#large_tag = ['l1.0_b0.1_G0.05', 'l1.0_b0.2_G0.05', 'l2.0_b0.2_G0.05',]
+#large_tag = ['l1.0_b0.1_G0.05', 'l1.0_b0.2_G0.05', \
+#                                'l2.0_b0.2_G0.05']
+
+# U(2) 12nt12 & 6nt6
+#small_dir = 'Nc2_6nt6/'
+#small_tag = ['l1.0_b0.25_G0.05', 'l1.0_b0.5_G0.05', \
+#                                 'l2.0_b0.5_G0.05', \
+#                                 'l3.0_b0.5_G0.05', \
+#                                 'l4.0_b0.5_G0.05', \
+#                                 'l5.0_b0.5_G0.05']
+#large_dir = 'Nc2_12nt12/'
+#large_tag = ['l1.0_b0.13_G0.05', 'l1.0_b0.25_G0.05', \
+#                                 'l2.0_b0.25_G0.05', \
+#                                 'l3.0_b0.25_G0.05', \
+#                                 'l4.0_b0.25_G0.05', \
+#                                 'l5.0_b0.25_G0.05']
+
+# U(2) 8nt8 & 4nt4
+#small_dir = 'Nc2_4nt4/'
+#small_tag = ['l0.5_b0.8_G0.1', 'l1.0_b0.4_G0.05', 'l1.0_b0.8_G0.05', \
+#                                                  'l2.0_b0.8_G0.05', \
+#                                                  'l3.0_b0.8_G0.05', \
+#                                                  'l4.0_b0.8_G0.05', \
+#             'l5.0_b0.8_G0.1', \
+#             'l6.0_b0.8_G0.1']
+#large_dir = 'Nc2_8nt8/'
+#large_tag = ['l0.5_b0.4_G0.1', 'l1.0_b0.2_G0.05', 'l1.0_b0.4_G0.05', \
+#                                                  'l2.0_b0.4_G0.05', \
+#                                                  'l3.0_b0.4_G0.05', \
+#                                                  'l4.0_b0.4_G0.05',
+#             'l5.0_b0.4_G0.1', \
+#             'l6.0_b0.4_G0.1']
 
 for i in range(len(small_tag)):
   if small_tag[i] == large_tag[i]:

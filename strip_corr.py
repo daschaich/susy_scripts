@@ -7,9 +7,10 @@ from subprocess import call
 # Strip cheap and in some cases incorrect results out of existing
 # (unsmeared) measurement files
 # Currently strips the following list of tags:
-tags = ['KONISHI ', 'SUGRA ', 'd_correlator_r: ', 'CORR_', 'rsymm: ', \
-        'INVLINK ', 'RSYMM ', 'hvy_pot', 'PLOT_LOOP ', 'DL_LOOP ', \
-        'PLOLAR_LOOP ', 'Fixing ', 'GFIX ', 'BEFORE ', 'AFTER ', \
+tags = ['KONISHI ', 'SUGRA ', 'd_correlator_r: ', 'CORR_', 'VACSUB_', 'vevK' \
+        'rsymm: ', 'INVLINK ', 'RSYMM ', \
+        'hvy_pot', 'PLOT_LOOP ', 'DL_LOOP ', 'PLOLAR_LOOP ', \
+        'Fixing ', 'GFIX ', 'BEFORE ', 'AFTER ', \
         'POT_LOOP ', 'D_LOOP ', 'POLAR_LOOP ', 'FLAVOR ', 'Error ']
 
 # First make sure we're calling this from the right place

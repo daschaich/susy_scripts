@@ -21,7 +21,7 @@ block_size = int(sys.argv[2])
 tag = str(sys.argv[3])
 runtime = -time.time()
 
-numK = 2
+numK = 3
 # ------------------------------------------------------------------
 
 
@@ -66,8 +66,9 @@ for line in open(firstfile):
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each operator
 # K = Konishi, S = SUGRA (averaged over all independent components)
-Kdat = [[] for i in range(numK)]
-Sdat = [[] for i in range(numK)]
+# Check measurements with volume average subtracted, which should vanish
+Kdat = [[] for i in range(2 * numK)]
+Sdat = [[] for i in range(2 * numK)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -75,12 +76,12 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK = np.zeros(numK, dtype = np.float)
+tK = np.zeros(2 * numK, dtype = np.float)
 tS = np.zeros_like(tK)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    for i in range(numK):
+    for i in range(2 * numK):
       Kdat[i].append(tK[i] / float(Nt * count))
       Sdat[i].append(tS[i] / float(Nt * count))
       tK[i] = 0.0
@@ -100,18 +101,20 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: CORR_{K, S} label r dat
+    # Format: TAG t op dat
     if line.startswith('KONISHI '):
       temp = line.split()
-      for i in range(numK):
-        tK[i] += float(temp[2 + i])
-      if line.startswith('KONISHI 0 '):
+      op = int(temp[2])
+      tK[op] += float(temp[3])
+      tK[numK + op] += float(temp[4])
+      if line.startswith('KONISHI 0 0 '):
         count += 1          # Only increment once per measurement!
 
     elif line.startswith('SUGRA '):
       temp = line.split()
-      for i in range(numK):
-        tS[i] += float(temp[2 + i])
+      op = int(temp[2])
+      tS[op] += float(temp[3])
+      tS[numK + op] += float(temp[4])
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
@@ -123,7 +126,7 @@ for MDTU in cfgs:
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for i in range(numK):
+  for i in range(2 * numK):
     Kdat[i].append(tK[i] / float(Nt * count))
     Sdat[i].append(tS[i] / float(Nt * count))
   # Record block data
@@ -148,14 +151,14 @@ print >> outfile, "# Averaging with %d blocks of length %d MDTU" \
                   % (Nblocks, block_size)
 print >> outfile, "# Konishi err"
 
-for i in range(numK):
+for i in range(2 * numK):
   dat = np.array(Kdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
   print >> outfile, "%.16g %.4g" % (ave, err)
 
 print >> outfile, "# SUGRA err"
-for i in range(numK):
+for i in range(2 * numK):
   dat = np.array(Sdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)

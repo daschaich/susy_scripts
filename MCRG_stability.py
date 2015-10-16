@@ -6,15 +6,15 @@ import time
 import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
-# Consider only two operators per measurement
-#   Tr(PP) is built from polar projections of the links -- give it xi^2
-#   Tr(UU) is built from U.Ubar -- give it xi^4
-# The order Tr(PP) Tr(UU) is fixed
-# While lines around 145 can be adjusted below,
-# also remember to adjust corresponding xi factors....
+# Consider three operators per measurement
+#   0 is Tr(PP) from two polar-decomposed links -- give it xi^2
+#   1 is symmetrized mixture of P & U -- give it xi^3
+#   2 is Tr(UU) from two U.Ubar -- give it xi^4
+# When adjusting the observables considered on lines ~145,
+# remember to adjust the corresponding xi factors on lines ~220
 
 # Optionally load results/xi.dat, which I think should not depend on smearing
-# since it is part of the RG blocking
+# since xi is part of the RG blocking
 # while the smearing is part of the observable definition
 
 # Parse arguments: first is thermalization cut,
@@ -23,7 +23,7 @@ import numpy as np
 # Third argument tells us how many operators to consider per measurement
 # Fourth argument tells us how many smearings to consider per measurement
 # Fifth argument tells us the directory to analyze
-# Final argument tells us whether to consider the Konishi or SUGRA
+# Final argument tells us whether to consider the Konishi ("K") or SUGRA ("S")
 if len(sys.argv) < 7:
   print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# smear> <dir> <op>"
   sys.exit(1)
@@ -38,11 +38,14 @@ op = 'O' + str(sys.argv[6]) + ' '
 runtime = -time.time()
 
 # Quick sanity check
-if ops_per_smear < 1 or ops_per_smear > 2:
-  print "ERROR: Have at most 2 operators per measurement"
+if ops_per_smear < 1 or ops_per_smear > 3:
+  print "ERROR: Have at most three operators per measurement"
   sys.exit(1)
 if num_smear > len(smear):
-  print "ERROR: Only set up", num_smear, "smearings per measurement"
+  print "ERROR: Only set up", len(smear), "smearings per measurement"
+  sys.exit(1)
+if op != "OK" and op != "OS":
+  print "ERROR: Unrecognized target", op
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -134,8 +137,8 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: OK smear bl Tr(PP) Tr(UU)
-    # op = 'OK ' or 'OS ' defined at top
+    # Format: O? smear bl op dat
+    # Three operators  defined at top
     if line.startswith(op):
       temp = line.split()
       this_smear = int(temp[1])
@@ -146,9 +149,13 @@ for MDTU in cfgs:
       if N < 0:
         continue
       bl = int(temp[2])
-      dat[ops_per_smear * N][bl] = float(temp[3])
-      if ops_per_smear > 1:
-        dat[ops_per_smear * N + 1][bl] = float(temp[4])
+      op = int(temp[3])
+      if op == 0:
+        dat[ops_per_smear * N][bl] = float(temp[4])       # PP
+      elif op == 2 and ops_per_smear > 1:
+        dat[ops_per_smear * N + 1][bl] = float(temp[4])   # UU
+      elif op == 1 and ops_per_smear > 2:
+        dat[ops_per_smear * N + 2][bl] = float(temp[4])   # Mixed
 
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
@@ -207,11 +214,15 @@ if os.path.isfile(xi_file):
       temp = line.split()
       bl = int(temp[0])
       for i in range(num_smear):
-        # With the polar field we probably only want xi^2...
-        xi[ops_per_smear * i][bl] = np.sqrt(float(temp[1]))
-        # With the U.Ubar field we probably want xi^4...
+        # With the polar field we probably want only xi^2...
+        xiSq = np.sqrt(float(temp[1]))
+        xi[ops_per_smear * i][bl] = xiSq
+        # With the U.Ubar field we probably want full xi^4...
         if ops_per_smear > 1:
           xi[ops_per_smear * i + 1][bl] = float(temp[1])
+        # With the mixed field we probably want xi^3...
+        if ops_per_smear > 2:
+          xi[ops_per_smear * i + 1][bl] = xiSq  * sqrt(xiSq)
 else:
   print xi_file, "does not exist..."
   sys.exit(1)
