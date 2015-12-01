@@ -434,7 +434,11 @@ for temp_tag in open('list.txt'):
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
       elif line.startswith('FLINK '): # Will be printed with other widths
-        link_width = float((line.split())[7])
+        temp = line.split()
+        if len(temp) > 7:
+          link_width = float(temp[7])
+        else:
+          link_width = float('nan')
 
       elif line.startswith('DET '):
         temp = line.split()
@@ -454,7 +458,9 @@ for temp_tag in open('list.txt'):
         temp = line.split()
         trace = float(temp[1])
         gauge = float(temp[3])
-        susy = (C2 * gauge - trace) / (C2 * gauge + trace)
+        a = C2 * gauge
+        b = trace
+        susy = (a - b) / math.sqrt(a * a + b * b)
 
         # The imaginary part of the bilinear should vanish on average,
         # but large fluctuations may signal pathology

@@ -110,7 +110,9 @@ for MDTU in cfgs:
       tF += float(temp[1])
       tG += C2 * float(temp[3])
       tD += diff
-      tN += diff / (C2 * float(temp[3]) + float(temp[1]))
+      a = float(temp[1])
+      b = C2 * float(temp[3])
+      tN += diff / np.sqrt(a * a + b * b)
     elif line.startswith('RUNNING COMPLETED'):
       check = 1
   if check == -1:
