@@ -25,20 +25,36 @@ SF = open('data/SF.csv', 'w')
 print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
+POLY_POLAR = open('data/poly_polar.csv', 'w')
+print >> POLY_POLAR, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
+POLY_MOD_POLAR = open('data/poly_mod_polar.csv', 'w')
+print >> POLY_MOD_POLAR, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
+LINES = open('data/lines.csv', 'w')
+print >> LINES, "ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)"
+LINES_POLAR = open('data/lines_polar.csv', 'w')
+print >> LINES_POLAR, "ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)"
+LINES_MOD = open('data/lines_mod.csv', 'w')
+print >> LINES_MOD, "MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|"
+LINES_MOD_POLAR = open('data/lines_mod_polar.csv', 'w')
+print >> LINES_MOD_POLAR, "MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|"
 FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
 print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
-EIG = open('data/eig.csv', 'w')
-print >> EIG, "MDTU,0,2,4,6,8,10"
+WIDTHS = open('data/widths.csv', 'w')
+print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
+SCALAR_EIG = open('data/scalar_eig.csv', 'w')
+print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4"
+SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
+print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4"
 BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
-WIDTHS = open('data/widths.csv', 'w')
-print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
+EIG = open('data/eig.csv', 'w')
+print >> EIG, "MDTU,0,2,4,6,8,10"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -174,6 +190,13 @@ for temp_tag in open('list.txt'):
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
+  NEED_LINES = 1    # May not need to check measurement file
+  NEED_DET = 1      # for these if they're in the main output file
+  NEED_WIDTHS = 1
+  NEED_SCALAR_EIGS = 1
+  scalar_eig_min = []
+  scalar_eig_max = []
+  scalar_eig_width = []
   for line in open(infile):
     # See how many fermion forces we will have below
     # Retain case insensitivity for now
@@ -285,25 +308,33 @@ for temp_tag in open('list.txt'):
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
+    # Ignore first FLINK printed as test of configuration reloading
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
       if starting == 1:
         starting = 0
+        link_width = float('nan')
       else:
-        ave_link = float((line.split())[6])
+        temp = line.split()
+        ave_link = float(temp[6])
         print >> FLINK, "%g,%g" % (MDTU, ave_link)
+        if len(temp) > 7:
+          link_width = float(temp[7]) # To be printed with other widths
+        else:
+          link_width = float('nan')
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # Gauge measurements come next:
     # plaquette, Polyakov loop, bosonic action... and CG iterations
+    # Normalize first three using Nc extracted above
     elif line.startswith('GMES '):
       temp = line.split()
-      print >> PLAQ, "%g,%g,%g" % (MDTU, float(temp[4]), float(temp[5]))
+      ss_plaq = float(temp[4]) / Nc
+      st_plaq = float(temp[5]) / Nc
+      print >> PLAQ, "%g,%g,%g" % (MDTU, ss_plaq, st_plaq)
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
-      # Normalize bosonic action and Polyakov loop using Nc extracted above
       print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * Nc**2))
 
       poly_r = float(temp[1]) / Nc
@@ -311,6 +342,108 @@ for temp_tag in open('list.txt'):
       print >> POLY, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Wilson lines in other directions
+    elif line.startswith('LINES '):
+      NEED_LINES = -1
+      temp = line.split()
+      x_r = float(temp[1]) / Nc
+      x_i = float(temp[2]) / Nc
+      y_r = float(temp[3]) / Nc
+      y_i = float(temp[4]) / Nc
+      z_r = float(temp[5]) / Nc
+      z_i = float(temp[6]) / Nc
+      f_r = float(temp[9]) / Nc
+      f_i = float(temp[10]) / Nc
+      print >> LINES, "%g,%g,null,null,null" % (x_r, x_i)
+      print >> LINES, "%g,null,%g,null,null" % (y_r, y_i)
+      print >> LINES, "%g,null,null,%g,null" % (z_r, z_i)
+      print >> LINES, "%g,null,null,null,%g" % (f_r, f_i)
+      x_mod = math.sqrt(x_r**2 + x_i**2)
+      y_mod = math.sqrt(y_r**2 + y_i**2)
+      z_mod = math.sqrt(z_r**2 + z_i**2)
+      f_mod = math.sqrt(f_r**2 + f_i**2)
+      print >> LINES_MOD, "%g,%g,%g,%g,%g" % (MDTU, x_mod, y_mod, z_mod, f_mod)
+
+    # Unitarized Polyakov loop and Wilson lines in other directions
+    elif line.startswith('LINES_POLAR '):
+      temp = line.split()
+      poly_r = float(temp[7]) / Nc
+      poly_i = float(temp[8]) / Nc
+      print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
+      poly_mod = math.sqrt(poly_r**2 + poly_i**2)
+      print >> POLY_MOD_POLAR, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
+
+      x_r = float(temp[1]) / Nc
+      x_i = float(temp[2]) / Nc
+      y_r = float(temp[3]) / Nc
+      y_i = float(temp[4]) / Nc
+      z_r = float(temp[5]) / Nc
+      z_i = float(temp[6]) / Nc
+      f_r = float(temp[9]) / Nc
+      f_i = float(temp[10]) / Nc
+      print >> LINES_POLAR, "%g,%g,null,null,null" % (x_r, x_i)
+      print >> LINES_POLAR, "%g,null,%g,null,null" % (y_r, y_i)
+      print >> LINES_POLAR, "%g,null,null,%g,null" % (z_r, z_i)
+      print >> LINES_POLAR, "%g,null,null,null,%g" % (f_r, f_i)
+      x_mod = math.sqrt(x_r**2 + x_i**2)
+      y_mod = math.sqrt(y_r**2 + y_i**2)
+      z_mod = math.sqrt(z_r**2 + z_i**2)
+      f_mod = math.sqrt(f_r**2 + f_i**2)
+      print >> LINES_MOD_POLAR, "%g,%g,%g,%g,%g" \
+                                % (MDTU, x_mod, y_mod, z_mod, f_mod)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Plaquette determinant and widths
+    # Originally only in measurements, now can be in main output
+    elif line.startswith('DET '):
+      NEED_DET = -1
+      temp = line.split()
+      det_r = float(temp[1])
+      det_i = float(temp[2])
+      # !!! Site-by-site |1-det|^2 not measured on all ensembles
+      # If it's missing, for now use volume average instead
+      if len(temp) == 6:
+        det = float(temp[5])
+      else:
+        det = (1.0 - det_r)**2 + det_i**2
+      print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
+
+    elif line.startswith('WIDTHS '):
+      NEED_WIDTHS = -1
+      temp = line.split()
+      plaq_width = float(temp[1])
+      re_width = float(temp[2])
+      im_width = float(temp[3])
+      print >> WIDTHS, "%g,%g,%g,%g,%g" \
+                       % (MDTU, plaq_width, re_width, im_width, link_width)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Scalar eigenvalues
+    elif line.startswith('POLAR_EIG '):
+      NEED_SCALAR_EIGS = -1
+      temp = line.split()
+      index = int(temp[1])
+      scalar_eig_min.append(float(temp[4]))
+      scalar_eig_max.append(float(temp[5]))
+      scalar_eig_width.append(float(temp[3]))
+      if index == Nc - 1:
+        print >> SCALAR_EIG, "%g" % MDTU,
+        print >> SCALAR_EIG_WIDTHS, "%g" % MDTU,
+        for i in range(index):
+          print >> SCALAR_EIG, ",%g" % scalar_eig_min[i],
+          print >> SCALAR_EIG, ",%g" % scalar_eig_max[i],
+          print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[i],
+        print >> SCALAR_EIG, ",%g,%g" \
+                             % (scalar_eig_min[-1],  scalar_eig_max[-1])
+        print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[-1]
+        scalar_eig_min = []
+        scalar_eig_max = []
+        scalar_eig_width = []
     # ------------------------------------------------------------
 
     # Check to make sure CG always converged
@@ -440,18 +573,8 @@ for temp_tag in open('list.txt'):
         else:
           link_width = float('nan')
 
-      elif line.startswith('DET '):
-        temp = line.split()
-        det_r = float(temp[1])
-        det_i = float(temp[2])
-        # !!! Site-by-site |1-det|^2 not measured on all ensembles
-        # If it's missing, for now use volume average instead
-        if len(temp) == 6:
-          det = float(temp[5])
-        else:
-          det = (1.0 - det_r)**2 + det_i**2
-        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
-
+      # ----------------------------------------------------------
+      # Fermion bilinear Ward identity
       elif 'CONGRAD' in line:
         CG = -1
       elif line.startswith('SUSY '):
@@ -466,21 +589,119 @@ for temp_tag in open('list.txt'):
         # but large fluctuations may signal pathology
         zero = float(temp[2])
         print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
+      # ----------------------------------------------------------
 
+      # ----------------------------------------------------------
+      # Monopole world line density
       elif 'WARNING' in line:
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
       elif line.startswith('MONOPOLE '):
         mono = float((line.split())[10])
         print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
+      # ----------------------------------------------------------
 
-      elif line.startswith('WIDTHS '):
+      # ----------------------------------------------------------
+      # Wilson lines in other directions
+      elif NEED_LINES > 0 and line.startswith('LINES '):
+        temp = line.split()
+        x_r = float(temp[1]) / Nc
+        x_i = float(temp[2]) / Nc
+        y_r = float(temp[3]) / Nc
+        y_i = float(temp[4]) / Nc
+        z_r = float(temp[5]) / Nc
+        z_i = float(temp[6]) / Nc
+        f_r = float(temp[9]) / Nc
+        f_i = float(temp[10]) / Nc
+        print >> LINES, "%g,%g,null,null,null" % (x_r, x_i)
+        print >> LINES, "%g,null,%g,null,null" % (y_r, y_i)
+        print >> LINES, "%g,null,null,%g,null" % (z_r, z_i)
+        print >> LINES, "%g,null,null,null,%g" % (f_r, f_i)
+        x_mod = math.sqrt(x_r**2 + x_i**2)
+        y_mod = math.sqrt(y_r**2 + y_i**2)
+        z_mod = math.sqrt(z_r**2 + z_i**2)
+        f_mod = math.sqrt(f_r**2 + f_i**2)
+        print >> LINES_MOD, "%g,%g,%g,%g,%g" \
+                            % (MDTU, x_mod, y_mod, z_mod, f_mod)
+
+      # Unitarized Polyakov loop and Wilson lines in other directions
+      elif NEED_LINES > 0 and line.startswith('LINES_POLAR '):
+        temp = line.split()
+        poly_r = float(temp[7]) / Nc
+        poly_i = float(temp[8]) / Nc
+        print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
+        poly_mod = math.sqrt(poly_r**2 + poly_i**2)
+        print >> POLY_MOD_POLAR, "%g,%g,%g,%g" \
+                                 % (MDTU, poly_mod, poly_r, poly_i)
+
+        x_r = float(temp[1]) / Nc
+        x_i = float(temp[2]) / Nc
+        y_r = float(temp[3]) / Nc
+        y_i = float(temp[4]) / Nc
+        z_r = float(temp[5]) / Nc
+        z_i = float(temp[6]) / Nc
+        f_r = float(temp[9]) / Nc
+        f_i = float(temp[10]) / Nc
+        print >> LINES_POLAR, "%g,%g,null,null,null" % (x_r, x_i)
+        print >> LINES_POLAR, "%g,null,%g,null,null" % (y_r, y_i)
+        print >> LINES_POLAR, "%g,null,null,%g,null" % (z_r, z_i)
+        print >> LINES_POLAR, "%g,null,null,null,%g" % (f_r, f_i)
+        x_mod = math.sqrt(x_r**2 + x_i**2)
+        y_mod = math.sqrt(y_r**2 + y_i**2)
+        z_mod = math.sqrt(z_r**2 + z_i**2)
+        f_mod = math.sqrt(f_r**2 + f_i**2)
+        print >> LINES_MOD_POLAR, "%g,%g,%g,%g,%g" \
+                                  % (MDTU, x_mod, y_mod, z_mod, f_mod)
+      # ----------------------------------------------------------
+
+      # ----------------------------------------------------------
+      # Plaquette determinant and widths
+      elif NEED_DET > 0 and line.startswith('DET '):
+        temp = line.split()
+        det_r = float(temp[1])
+        det_i = float(temp[2])
+        # !!! Site-by-site |1-det|^2 not measured on all ensembles
+        # If it's missing, for now use volume average instead
+        if len(temp) == 6:
+          det = float(temp[5])
+        else:
+          det = (1.0 - det_r)**2 + det_i**2
+        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
+
+      elif NEED_WIDTHS > 0 and line.startswith('WIDTHS '):
         temp = line.split()
         plaq_width = float(temp[1])
         re_width = float(temp[2])
         im_width = float(temp[3])
         print >> WIDTHS, "%g,%g,%g,%g,%g" \
                          % (MDTU, plaq_width, re_width, im_width, link_width)
+      # ----------------------------------------------------------
+
+      # ----------------------------------------------------------
+      # Scalar eigenvalues
+      elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
+        temp = line.split()
+        index = int(temp[1])
+        scalar_eig_min.append(float(temp[4]))
+        scalar_eig_max.append(float(temp[5]))
+        scalar_eig_width.append(float(temp[3]))
+        if index == Nc - 1:
+          print >> SCALAR_EIG, "%g" % MDTU,
+          print >> SCALAR_EIG_WIDTHS, "%g" % MDTU,
+          for i in range(index):
+            print >> SCALAR_EIG, ",%g" % scalar_eig_min[i],
+            print >> SCALAR_EIG, ",%g" % scalar_eig_max[i],
+            print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[i],
+          print >> SCALAR_EIG, ",%g,%g" \
+                               % (scalar_eig_min[-1],  scalar_eig_max[-1])
+          print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[-1]
+          scalar_eig_min = []
+          scalar_eig_max = []
+          scalar_eig_width = []
+      # ---------------------------------------------------------
+
+
+
       elif line.startswith('RUNNING COMPLETED'):
         if check == 1:    # Check that we have one measurement per file
           print infile, "reports two measurements"
@@ -505,13 +726,21 @@ PLAQ.close()
 SB.close()
 SF.close()
 POLY.close()
+POLY_POLAR.close()
 POLY_MOD.close()
+POLY_MOD_POLAR.close()
+LINES.close()
+LINES_POLAR.close()
+LINES_MOD.close()
+LINES_MOD_POLAR.close()
 FLINK.close()
 DET.close()
-EIG.close()
 BILIN.close()
 MONO.close()
 WIDTHS.close()
+SCALAR_EIG.close()
+SCALAR_EIG_WIDTHS.close()
+EIG.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
