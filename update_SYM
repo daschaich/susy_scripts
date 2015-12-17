@@ -26,8 +26,6 @@ rm -f data/*.csv ERRORS
 date=`date`
 echo "python ~schaich/scripts/parse_SYM.py"
 python ~schaich/scripts/parse_SYM.py
-#echo "~schaich/scripts/parse_SYM.pl $dir"
-#~schaich/scripts/parse_SYM.pl $dir
 chmod 664 data/*.csv
 rm -f list.txt            # Done with this
 
@@ -40,4 +38,9 @@ rm -f index.html
 echo writeSYM $dir "$date"
 ~schaich/scripts/writeSYM $dir "$date"
 chmod 664 index.html
+
+# I like to monitor this
+wc -l M*
+wc -l E*
+echo
 # ------------------------------------------------------------------
