@@ -38,7 +38,7 @@ for filename in glob.glob('Out/corr.*'):
 
   if check == -1:
     print filename, "did not complete"
-    sys.exit(1)
+    continue
   outfile.close()
   os.rename('TEMP', filename)
 # ------------------------------------------------------------------
