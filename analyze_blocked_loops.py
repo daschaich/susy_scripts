@@ -6,10 +6,10 @@ import numpy as np
 # ------------------------------------------------------------------
 # Compare small-volume and blocked-large-volume Wilson loops,
 # scaling mu \propto 1 / L
-# First determine xi^2 from the (blocked) plaquette
+# First determine xi^4 from the (blocked) plaquette
 # Then use xi^4 to compute larger loop ratios,
 # including modified loops to test discrete R symmetries
-# Everything after xi^4 printing is currently commented out
+# TODO: Everything after xi^4 printing needs to be updated
 
 # No arguments yet...
 small_tag = []
@@ -142,9 +142,11 @@ for i in range(len(small_tag)):
 #  print
   outfile.close()
 sys.exit(0)
-for la in ['0.5', '1.0', '1.5']:
 
-  # Check other Wilson loops
+
+
+# Check other Wilson loops
+for i in range(len(small_tag)):
   for line in open(smallFile):
     if line.startswith('1 1 ') or line.startswith('# '):
       continue

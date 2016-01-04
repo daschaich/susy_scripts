@@ -102,7 +102,7 @@ else:
 # and monopole world line density
 # we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-for obs in ['poly_mod', 'SB', 'SF', 'Flink', 'mono']:
+for obs in ['poly_mod', 'poly_mod_polar', 'SB', 'SF', 'Flink', 'mono']:
   count = 0
   ave = 0.          # Accumulate within each block
   datList = []
@@ -238,12 +238,13 @@ for obs in ['det']:
 
 
 # ------------------------------------------------------------------
-# For the widths we're interested in all four data on each line
-# These correspond to plaq, Re(det), Im(det) and Tr[U.Udag]/N
-for obs in ['widths']:
+# For the widths and Wilson lines
+# we're interested in all four data on each line
+# These widths are for plaq, Re(det), Im(det) and Tr[U.Udag]/N
+for obs in ['widths', 'lines_mod', 'lines_mod_polar']:
   count = 0
-  ave = [0.0, 0.0, 0.0]       # Accumulate within each block
-  datList = [[], [], []]
+  ave = [0.0, 0.0, 0.0, 0.0]      # Accumulate within each block
+  datList = [[], [], [], []]
   begin = cut       # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
   for line in open(obsfile):
@@ -257,6 +258,7 @@ for obs in ['widths']:
       ave[0] += float(temp[1])
       ave[1] += float(temp[2])
       ave[2] += float(temp[3])
+      ave[3] += float(temp[4])
       count += 1
     elif MDTU >= (begin + block_size):  # Move on to next block
       if count == 0:
@@ -283,3 +285,63 @@ for obs in ['widths']:
   print >> outfile, "# %d" % N
   outfile.close()
 # ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# For the scalar eigenvalues we're interested in Nc data on each line
+for obs in ['scalar_eig_ave']:
+  count = 0
+  # Figure out Nc from number of points on first non-trivial line
+  obsfile = 'data/' + obs + '.csv'
+  for line in open(obsfile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    Nc = len(temp) - 1
+    break
+
+  ave = []      # Accumulate within each block
+  datList = []
+  for i in range(Nc):
+    ave.append(0.0)
+    datList.append([])
+
+  begin = cut       # Where each block begins, to be incremented
+  for line in open(obsfile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    MDTU = float(temp[0])
+    if MDTU <= cut:
+      continue
+    elif MDTU > begin and MDTU < (begin + block_size):
+      for i in range(Nc):
+        ave[i] += float(temp[i + 1])
+      count += 1
+    elif MDTU >= (begin + block_size):  # Move on to next block
+      if count == 0:
+        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        sys.exit(1)
+      for i in range(len(ave)):
+        datList[i].append(ave[i] / count)
+        ave[i] = float(temp[i + 1])     # Next block begins here
+      begin += block_size
+      count = 1
+
+  # Now print mean and standard error, assuming N>1
+  outfilename = 'results/' + obs + '.dat'
+  outfile = open(outfilename, 'w')
+  for i in range(Nc):
+    dat = np.array(datList[i])
+    N = np.size(dat)
+    if N == 0:
+      print "WARNING: No", obs, "data"
+      continue
+    ave[i] = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+    print >> outfile, "%.8g %.4g" % (ave[i], err),
+  print >> outfile, "# %d" % N
+  outfile.close()
+# ------------------------------------------------------------------
+

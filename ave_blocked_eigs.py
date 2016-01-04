@@ -4,8 +4,8 @@ import sys
 import glob
 import numpy as np
 # ------------------------------------------------------------------
-# Print blocked Konishi and SUGRA operator averages
-# with blocked standard errors
+# Print blocked scalar eigenvalue averages with blocked standard errors
+# Just look at largest and smallest that should be reliably non-zero
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -39,26 +39,23 @@ if len(cfgs) == 0:
 # increase thermalization cut
 cut = cfgs[0]
 
-# Extract volume and number of blocking levels from first output file
+# Extract Nc and number of blocking levels from first output file
 firstfile = tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 
-vol = -1;
+Nc = -1;
 blmax = -1
 for line in open(firstfile):
-  if line.startswith('Blocking '):
+  if line.startswith('N=4 SYM, '):
+    temp1 = line.split(',')
+    Nc = int(((temp1[1]).split())[2])
+  elif line.startswith('Blocking '):
     blmax = int((line.split())[1])
-  elif line.startswith('nx '):
-    vol = float((line.split())[1])
-  elif line.startswith('ny ') or line.startswith('nz '):
-    vol *= float((line.split())[1])
-  elif line.startswith('nt '):
-    vol *= float((line.split())[1])
 
-if vol < 0:
-  print "ERROR:", firstfile, "doesn't define lattice volume"
+if Nc < 0:
+  print "ERROR:", firstfile, "doesn't define Nc"
   sys.exit(1)
 if blmax < 0:
   print "ERROR:", firstfile, "doesn't mention blocking"
@@ -68,10 +65,9 @@ if blmax < 0:
 
 
 # ------------------------------------------------------------------
-# Construct arrays of blocked measurements for each observable
+# Construct arrays of blocked scalar eigenvalue measurements
 # for the Konishi (K) and SUGRA (S) operators
-Kdat = [[] for i in range(blmax + 1)]
-Sdat = [[] for i in range(blmax + 1)]
+eigdat = [[[] for i in range(blmax + 1)] for i in range(Nc)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -79,19 +75,17 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK = np.zeros(blmax + 1, dtype = np.float)
-tS = np.zeros(blmax + 1, dtype = np.float)
+tE = np.zeros((Nc, blmax + 1), dtype = np.float)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
     if count == 0:
       print "ERROR: no data to average after file %s:" % toOpen
       sys.exit(1)
-    for bl in range(blmax + 1):
-      Kdat[bl].append(tK[bl] / float(count * vol / 16.0**bl))
-      Sdat[bl].append(tS[bl] / float(count * vol / 16.0**bl))
-      tK[bl] = 0.0
-      tS[bl] = 0.0
+    for eig in range(Nc):
+      for bl in range(blmax + 1):
+        eigdat[eig][bl].append(tE[eig][bl] / float(count))
+        tE[eig][bl] = 0.0
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
@@ -106,18 +100,14 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: OK smearing bl blocked_konishi
-    if line.startswith('OK 0 '):
+    # Format: POLAR_EIG smearing bl num ave width min max
+    if line.startswith('POLAR_EIG 0 '):
       temp = line.split()
+      num = int(temp[3])
       bl = int(temp[2])
-      tK[bl] += float(temp[3])
-      if bl == 0:
+      tE[num][bl] += float(temp[4])
+      if bl == 0 and num == 0:
         count += 1          # Only tick counter once per measurement
-    # Format: OS bl blocked_SUGRA
-    elif line.startswith('OS 0 '):
-      temp = line.split()
-      bl = int(temp[2])
-      tS[bl] += float(temp[3])
     elif line.startswith('RUNNING COMPLETED'):
       check = 1
   if check == -1:
@@ -130,15 +120,15 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   if count == 0:
     print "ERROR: no data to average after file %s:" % toOpen
     sys.exit(1)
-  for bl in range(blmax + 1):
-    Kdat[bl].append(tK[bl] / float(count * vol / 16.0**bl))
-    Sdat[bl].append(tS[bl] / float(count * vol / 16.0**bl))
+  for eig in range(Nc):
+    for bl in range(blmax + 1):
+      eigdat[eig][bl].append(tE[eig][bl] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(Kdat[0])
+Nblocks = len(eigdat[0][0])
 # ------------------------------------------------------------------
 
 
@@ -150,22 +140,18 @@ if Nblocks == 1:
   sys.exit(1)
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-outfile = open('results/ops.dat', 'w')
+outfile = open('results/blocked_eigs.dat', 'w')
 print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# bl Konishi err SUGRA err"
+print >> outfile, "# num bl eig[num] err"
 
-for i in range(blmax + 1):
-  print >> outfile, i,
+for eig in range(Nc):
+  for bl in range(blmax + 1):
+    print >> outfile, eig, bl,
 
-  dat = np.array(Kdat[i])
-  ave = np.mean(dat, dtype = np.float64)
-  err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print >> outfile, "%.6g %.4g" % (ave, err),
-
-  dat = np.array(Sdat[i])
-  ave = np.mean(dat, dtype = np.float64)
-  err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
-  print >> outfile, "%.6g %.4g" % (ave, err)
+    dat = np.array(eigdat[eig][bl])
+    ave = np.mean(dat, dtype = np.float64)
+    err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.)
+    print >> outfile, "%.6g %.4g" % (ave, err)
 
 # More detailed block information
 #for i in range(Nblocks):

@@ -45,6 +45,8 @@ DET = open('data/det.csv', 'w')
 print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
 WIDTHS = open('data/widths.csv', 'w')
 print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
+SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
+print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
 print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
@@ -194,9 +196,9 @@ for temp_tag in open('list.txt'):
   NEED_DET = 1      # for these if they're in the main output file
   NEED_WIDTHS = 1
   NEED_SCALAR_EIGS = 1
-  scalar_eig_min = []
-  scalar_eig_max = []
-  scalar_eig_width = []
+  scalar_eig_ave = ''
+  scalar_eig_ext = ''
+  scalar_eig_width = ''
   for line in open(infile):
     # See how many fermion forces we will have below
     # Retain case insensitivity for now
@@ -424,26 +426,21 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
+    # Some hacky backspaces for output formatting...
     elif line.startswith('POLAR_EIG '):
       NEED_SCALAR_EIGS = -1
       temp = line.split()
       index = int(temp[1])
-      scalar_eig_min.append(float(temp[4]))
-      scalar_eig_max.append(float(temp[5]))
-      scalar_eig_width.append(float(temp[3]))
+      scalar_eig_ave += ',' + str(temp[2])
+      scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+      scalar_eig_width += ',' + str(temp[3])
       if index == Nc - 1:
-        print >> SCALAR_EIG, "%g" % MDTU,
-        print >> SCALAR_EIG_WIDTHS, "%g" % MDTU,
-        for i in range(index):
-          print >> SCALAR_EIG, ",%g" % scalar_eig_min[i],
-          print >> SCALAR_EIG, ",%g" % scalar_eig_max[i],
-          print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[i],
-        print >> SCALAR_EIG, ",%g,%g" \
-                             % (scalar_eig_min[-1],  scalar_eig_max[-1])
-        print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[-1]
-        scalar_eig_min = []
-        scalar_eig_max = []
-        scalar_eig_width = []
+        print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
+        print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
+        print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
+        scalar_eig_ave = ''
+        scalar_eig_ext = ''
+        scalar_eig_width = ''
     # ------------------------------------------------------------
 
     # Check to make sure CG always converged
@@ -481,7 +478,7 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Now deal with the corresponding "eig" file, if it is present
-  # These are always paired (checked by check_eig_pairs.py),
+  # These are always paired (checked by check_eig_pairs.py)
   # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
   infile = 'Out/eig.' + cfg
   if not os.path.isfile(infile):
@@ -679,25 +676,20 @@ for temp_tag in open('list.txt'):
 
       # ----------------------------------------------------------
       # Scalar eigenvalues
+      # Some hacky backspaces for output formatting...
       elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
         temp = line.split()
         index = int(temp[1])
-        scalar_eig_min.append(float(temp[4]))
-        scalar_eig_max.append(float(temp[5]))
-        scalar_eig_width.append(float(temp[3]))
+        scalar_eig_ave += ',' + str(temp[2])
+        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+        scalar_eig_width += ',' + str(temp[3])
         if index == Nc - 1:
-          print >> SCALAR_EIG, "%g" % MDTU,
-          print >> SCALAR_EIG_WIDTHS, "%g" % MDTU,
-          for i in range(index):
-            print >> SCALAR_EIG, ",%g" % scalar_eig_min[i],
-            print >> SCALAR_EIG, ",%g" % scalar_eig_max[i],
-            print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[i],
-          print >> SCALAR_EIG, ",%g,%g" \
-                               % (scalar_eig_min[-1],  scalar_eig_max[-1])
-          print >> SCALAR_EIG_WIDTHS, ",%g" % scalar_eig_width[-1]
-          scalar_eig_min = []
-          scalar_eig_max = []
-          scalar_eig_width = []
+          print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
+          print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
+          print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
+          scalar_eig_ave = ''
+          scalar_eig_ext = ''
+          scalar_eig_width = ''
       # ---------------------------------------------------------
 
 
@@ -738,6 +730,7 @@ DET.close()
 BILIN.close()
 MONO.close()
 WIDTHS.close()
+SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
 EIG.close()

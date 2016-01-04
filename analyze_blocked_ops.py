@@ -12,6 +12,8 @@ import numpy as np
 
 
 # ------------------------------------------------------------------
+print "UPDATE FROM analyze_blocked_loops.py..."
+sys.exit(0)
 # 8nt8 --> 4nt4
 #for la in ['1.0']:
 #  smallFile = 'Nc2_4nt4/l' + la + '_b0.4_G0.05/results/ops.dat'
@@ -58,7 +60,7 @@ for tag in ['l1.0_b0.6_G0.05']:
 
   print "0 1.0     0.0"
   for bl in range(blmax):
-    xi = smallOp[bl] / largeOp[bl]                    # Presumably xi^4
+    xi = smallOp[bl] / largeOp[bl]                    # Technically xi^4
     xi_err = xi * np.sqrt(smallErr[bl]**2 + largeErr[bl]**2)
     print "%d %.6g %.4g" % (bl + 1, xi, xi_err)
 # ------------------------------------------------------------------
