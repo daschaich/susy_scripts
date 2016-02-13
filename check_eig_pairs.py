@@ -14,7 +14,6 @@ if not os.path.isdir('Out'):
 
 # Cycle over eigenvalue files
 for filename in glob.glob('Out/eig.*'):
-  r = []          # List of real and imaginary parts of the matrix elements
   check = -1
   for line in open(filename):
     # Format: EIGENVALUE # eig accuracy
@@ -28,7 +27,7 @@ for filename in glob.glob('Out/eig.*'):
         if diff / even > TOL:
           print "Apparent pairing breakdown for", filename
           check = 1   # Avoid spurious non-completion error
-          break
+          break       # Move on to next file
       else:
         print "Something weird happened: evenodd =", evenodd
     elif line.startswith('RUNNING COMPLETED'):

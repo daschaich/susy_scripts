@@ -46,11 +46,11 @@ print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
 WIDTHS = open('data/widths.csv', 'w')
 print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
-print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4"
+print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4,ave5"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
-print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4"
+print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4,min5,max5"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
-print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4"
+print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4,width5"
 BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
@@ -466,6 +466,7 @@ for temp_tag in open('list.txt'):
   elif walltime == -2:
     # Placeholder file -- error has been addressed as well as possible,
     # but don't print nonsense wall clock time
+    fermAct = [-1.0, -1.0]                        # Reset
     pass
   else:   # We are good to go
     ave_time = walltime / traj_per_file
