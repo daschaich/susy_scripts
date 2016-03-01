@@ -306,7 +306,7 @@ echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("scalar_eig"),' >> $out
 echo '                            "data/scalar_eig.csv",' >> $out
 echo '                            { rollPeriod: 50,' >> $out
-echo '                              colors: ["black", "black", "blue", "blue", "green", "green", "purple", "purple", "orange", "orange", "red", "red"],' >> $out
+echo '                              colors: ["blue", "blue", "red", "red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
@@ -321,7 +321,7 @@ echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("scalar_eig_widths"),' >> $out
 echo '                            "data/scalar_eig_widths.csv",' >> $out
 echo '                            { rollPeriod: 50,' >> $out
-echo '                              colors: ["black", "blue", "green", "purple", "orange", "red"],' >> $out
+echo '                              colors: ["blue", "red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out

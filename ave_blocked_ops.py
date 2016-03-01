@@ -7,6 +7,10 @@ import numpy as np
 # Print blocked Konishi and SUGRA operator averages
 # with blocked standard errors
 
+# Currently this is used to obtain xi (a property of the blocking)
+# so ignore smearing (a property of the observable)
+# Also only consider log-polar definition (op '0') for now
+
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
@@ -106,18 +110,20 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: OK smearing bl blocked_konishi
+    # Format: OK  smearing  block  op  vev-subtracted  vol-subtracted
     if line.startswith('OK 0 '):
       temp = line.split()
-      bl = int(temp[2])
-      tK[bl] += float(temp[3])
-      if bl == 0:
-        count += 1          # Only tick counter once per measurement
-    # Format: OS bl blocked_SUGRA
+      if int(temp[3]) == 0:   # Only consider log-polar definition
+        bl = int(temp[2])
+        tK[bl] += float(temp[4])
+        if bl == 0:
+          count += 1          # Only tick counter once per measurement
+    # Format: OK  smearing  block  op  unsubtracted  vol-subtracted
     elif line.startswith('OS 0 '):
       temp = line.split()
-      bl = int(temp[2])
-      tS[bl] += float(temp[3])
+      if int(temp[3]) == 0:   # Only consider log-polar definition
+        bl = int(temp[2])
+        tS[bl] += float(temp[4])
     elif line.startswith('RUNNING COMPLETED'):
       check = 1
   if check == -1:

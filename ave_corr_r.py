@@ -57,9 +57,14 @@ if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
-  # Format: CORR_K label r dat
+  # Format: CORR_K label r tag1 tag2 dat_vev dat_vol
+  # Format: CORR_K label r dat_vev dat_vol
   if line.startswith('CORR_K '):
-    r.append(float((line.split())[2]))
+    temp = line.split()
+    tag1 = int(temp[3])
+    tag2 = int(temp[4])
+    if tag1 == 0 and tag2 == 0:
+      r.append(float((line.split())[2]))
   elif line.startswith('CORR_S '):
     break             # Don't go through whole file yet
 
@@ -71,8 +76,9 @@ Npts = len(r)
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
 # K = Konishi, S = SUGRA (averaged over all independent components)
-Kdat = [[] for x in range(Npts)]
-Sdat = [[] for x in range(Npts)]
+# First subtracts ensemble average, second volume average
+Kdat = [[[] for x in range(Npts)] for i in range(2)]
+Sdat = [[[] for x in range(Npts)] for i in range(2)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -80,16 +86,22 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK = [0 for x in range(Npts)]
-tS = [0 for x in range(Npts)]
+tK = [[[] for x in range(Npts)] for i in range(2)]
+tS = [[[] for x in range(Npts)] for i in range(2)]
+for sub in range(2):
+  for i in range(Npts):
+    tK[sub][i] = 0.0
+    tS[sub][i] = 0.0
+
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    for i in range(Npts):
-      Kdat[i].append(tK[i] / float(count))
-      Sdat[i].append(tS[i] / float(count))
-      tK[i] = 0.0
-      tS[i] = 0.0
+    for sub in range(2):
+      for i in range(Npts):
+        Kdat[sub][i].append(tK[sub][i] / float(count))
+        Sdat[sub][i].append(tS[sub][i] / float(count))
+        tK[sub][i] = 0.0
+        tS[sub][i] = 0.0
     # Record and reset block data
     block_data[0].append(count)
     count = 0
@@ -105,21 +117,23 @@ for MDTU in cfgs:
     print toOpen
   check = -1
   for line in open(toOpen[0]):
-    # Format: CORR_{K, S} label r dat
+    # Format: CORR_? label r tag1 tag2 dat_vev dat_vol
     if line.startswith('CORR'):
       temp = line.split()
       label = int(temp[1])
-      dat = float(temp[3])
-      if line.startswith('CORR_K 0 '):
+      tag1 = int(temp[3])
+      tag2 = int(temp[4])
+      dat_vev = float(temp[5])
+      dat_vol = float(temp[6])
+      if line.startswith('CORR_K 0 0 0 0 '):
         count += 1          # Only increment once per measurement!
 
-      if line.startswith('CORR_K '):
-        tK[label] += dat
-      elif line.startswith('CORR_S '):
-        tS[label] += dat
-      else:
-        print "ERROR: tag ", temp[0], "not recognized"
-        sys.exit(1)
+      if line.startswith('CORR_K ') and tag1 == 0 and tag2 == 0:
+        tK[0][label] += dat_vev
+        tK[1][label] += dat_vol
+      elif line.startswith('CORR_S ') and tag1 == 0 and tag2 == 0:
+        tS[0][label] += dat_vev
+        tS[1][label] += dat_vol
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
         print infile, "reports two measurements"
@@ -131,15 +145,16 @@ for MDTU in cfgs:
 # Check special case that last block is full
 # Assume last few measurements are equally spaced
 if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for i in range(Npts):
-    Kdat[i].append(tK[i] / float(count))
-    Sdat[i].append(tS[i] / float(count))
+  for sub in range(2):
+    for i in range(Npts):
+      Kdat[sub][i].append(tK[sub][i] / float(count))
+      Sdat[sub][i].append(tS[sub][i] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
   block_data[2].append(begin + block_size)
 
-Nblocks = len(Kdat[0])
+Nblocks = len(Kdat[0][0])
 # ------------------------------------------------------------------
 
 
@@ -151,24 +166,40 @@ if Nblocks == 1:
   sys.exit(1)
 
 columns = [('r', float), ('ave', float), ('err', float)]
-Kout = np.zeros(Npts, dtype = columns)
-Sout = np.zeros_like(Kout)
+Kout_vev = np.zeros(Npts, dtype = columns)
+Kout_vol = np.zeros_like(Kout_vev)
+Sout_vev = np.zeros_like(Kout_vev)
+Sout_vol = np.zeros_like(Kout_vev)
 for i in range(Npts):
-  # Konishi
-  dat = np.array(Kdat[i])
-  Kout[i][0] = r[i]
-  Kout[i][1] = np.mean(dat, dtype = np.float64)
-  Kout[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
+  # Konishi with ensemble average subtracted
+  dat = np.array(Kdat[0][i])
+  Kout_vev[i][0] = r[i]
+  Kout_vev[i][1] = np.mean(dat, dtype = np.float64)
+  Kout_vev[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
 
-  # SUGRA
-  dat = np.array(Sdat[i])
-  Sout[i][0] = r[i]
-  Sout[i][1] = np.mean(dat, dtype = np.float64)
-  Sout[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
+  # Konishi with volume average subtracted
+  dat = np.array(Kdat[1][i])
+  Kout_vol[i][0] = r[i]
+  Kout_vol[i][1] = np.mean(dat, dtype = np.float64)
+  Kout_vol[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
+
+  # SUGRA with ensemble average subtracted
+  dat = np.array(Sdat[0][i])
+  Sout_vev[i][0] = r[i]
+  Sout_vev[i][1] = np.mean(dat, dtype = np.float64)
+  Sout_vev[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
+
+  # SUGRA with volume average subtracted
+  dat = np.array(Sdat[1][i])
+  Sout_vol[i][0] = r[i]
+  Sout_vol[i][1] = np.mean(dat, dtype = np.float64)
+  Sout_vol[i][2] = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
 
 # Sort output by r (column zero) and print
-Kout = np.sort(Kout, order='r')
-Sout = np.sort(Sout, order='r')
+Kout_vev = np.sort(Kout_vev, order='r')
+Kout_vol = np.sort(Kout_vol, order='r')
+Sout_vev = np.sort(Sout_vev, order='r')
+Sout_vol = np.sort(Sout_vol, order='r')
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 Kfile = open('results/konishi_r.dat', 'w')
@@ -176,8 +207,12 @@ print >> Kfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block
 Sfile = open('results/sugra_r.dat', 'w')
 print >> Sfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 for i in range(Npts):
-  print >> Kfile, "%.4g %.6g %.4g" % (Kout[i][0], Kout[i][1], Kout[i][2])
-  print >> Sfile, "%.4g %.6g %.4g" % (Sout[i][0], Sout[i][1], Sout[i][2])
+  print >> Kfile, "%.4g %.6g %.4g" \
+                  % (Kout_vev[i][0], Kout_vev[i][1], Kout_vev[i][2]),
+  print >> Kfile, "%.6g %.4g" % (Kout_vol[i][1], Kout_vol[i][2])
+  print >> Sfile, "%.4g %.6g %.4g" \
+                  % (Sout_vev[i][0], Sout_vev[i][1], Sout_vev[i][2]),
+  print >> Sfile, "%.6g %.4g" % (Sout_vol[i][1], Sout_vol[i][2])
 Kfile.close()
 Sfile.close()
 

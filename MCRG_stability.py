@@ -7,7 +7,7 @@ import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
 # Consider three operators per measurement
-#   0 is Tr(PP) from two polar-decomposed links -- give it xi^2
+#   0 is Tr(PP) from two log-polar links -- give it xi^2
 #   1 is symmetrized mixture of P & U -- give it xi^3
 #   2 is Tr(UU) from two U.Ubar -- give it xi^4
 # When adjusting the observables considered on lines ~145,
@@ -37,14 +37,14 @@ tag = str(sys.argv[5])
 op = 'O' + str(sys.argv[6]) + ' '
 runtime = -time.time()
 
-# Quick sanity check
+# Quick sanity checks
 if ops_per_smear < 1 or ops_per_smear > 3:
   print "ERROR: Have at most three operators per measurement"
   sys.exit(1)
 if num_smear > len(smear):
   print "ERROR: Only set up", len(smear), "smearings per measurement"
   sys.exit(1)
-if op != "OK" and op != "OS":
+if op != 'OK ' and op != 'OS ':
   print "ERROR: Unrecognized target", op
   sys.exit(1)
 # ------------------------------------------------------------------
@@ -138,7 +138,7 @@ for MDTU in cfgs:
   check = -1
   for line in open(toOpen[0]):
     # Format: O? smear bl op dat
-    # Three operators  defined at top
+    # Three interpolating operators for each continuum op defined at top
     if line.startswith(op):
       temp = line.split()
       this_smear = int(temp[1])
@@ -149,12 +149,12 @@ for MDTU in cfgs:
       if N < 0:
         continue
       bl = int(temp[2])
-      op = int(temp[3])
-      if op == 0:
+      interp = int(temp[3])
+      if interp == 0:
         dat[ops_per_smear * N][bl] = float(temp[4])       # PP
-      elif op == 2 and ops_per_smear > 1:
+      elif interp == 2 and ops_per_smear > 1:
         dat[ops_per_smear * N + 1][bl] = float(temp[4])   # UU
-      elif op == 1 and ops_per_smear > 2:
+      elif interp == 1 and ops_per_smear > 2:
         dat[ops_per_smear * N + 2][bl] = float(temp[4])   # Mixed
 
     elif line.startswith('RUNNING COMPLETED'):
@@ -199,14 +199,14 @@ Nblocks = len(Kdat[0][0])
 
 
 # ------------------------------------------------------------------
-# Optionally load xi^4 for each operator on each blocking level
+# Optionally load xi for each operator on each blocking level
 # or just set it to unity
 # In either case ignore uncertainties, which tend to be small
-# Jackknife results for xi^4
+# Jackknife results for xi
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
 xi_file = 'results/xi.dat'
 if os.path.isfile(xi_file):
-  print "Reading xi^4 from", xi_file
+  print "Reading xi from", xi_file
   for line in open(xi_file):
     if line.startswith('# '):
       continue
@@ -214,19 +214,19 @@ if os.path.isfile(xi_file):
       temp = line.split()
       bl = int(temp[0])
       for i in range(num_smear):
-        # With the polar field we probably want only xi^2...
-        xiSq = np.sqrt(float(temp[1]))
-        xi[ops_per_smear * i][bl] = xiSq
+        # With the log-polar field we probably want only xi^2...
+        tr = float(temp[1])
+        xi[ops_per_smear * i][bl] = tr * tr
         # With the U.Ubar field we probably want full xi^4...
         if ops_per_smear > 1:
-          xi[ops_per_smear * i + 1][bl] = float(temp[1])
+          xi[ops_per_smear * i + 1][bl] = tr * tr * tr * tr
         # With the mixed field we probably want xi^3...
         if ops_per_smear > 2:
-          xi[ops_per_smear * i + 1][bl] = xiSq  * sqrt(xiSq)
+          xi[ops_per_smear * i + 2][bl] = tr * tr * tr
 else:
-  print xi_file, "does not exist..."
-  sys.exit(1)
-  print "Setting xi^4 to unity"
+#  print xi_file, "does not exist..."
+#  sys.exit(1)
+  print "Setting xi to unity"
   for i in range(num_smear):
     for j in range(ops_per_smear):
       xi[ops_per_smear * i + j][0] = 1.0

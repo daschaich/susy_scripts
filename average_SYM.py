@@ -291,8 +291,8 @@ for obs in ['widths', 'lines_mod', 'lines_mod_polar']:
 # ------------------------------------------------------------------
 # For the scalar eigenvalues we're interested in Nc data on each line
 for obs in ['scalar_eig_ave']:
-  count = 0
   # Figure out Nc from number of points on first non-trivial line
+  Nc = -1
   obsfile = 'data/' + obs + '.csv'
   for line in open(obsfile):
     if line.startswith('M'):
@@ -301,12 +301,17 @@ for obs in ['scalar_eig_ave']:
     Nc = len(temp) - 1
     break
 
+  if Nc < 0:
+    print "WARNING: No scalar eigenvalue data"
+    continue
+
   ave = []      # Accumulate within each block
   datList = []
   for i in range(Nc):
     ave.append(0.0)
     datList.append([])
 
+  count = 0
   begin = cut       # Where each block begins, to be incremented
   for line in open(obsfile):
     if line.startswith('M'):

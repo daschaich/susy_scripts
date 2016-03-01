@@ -46,11 +46,11 @@ print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
 WIDTHS = open('data/widths.csv', 'w')
 print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
-print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4,ave5"
+print >> SCALAR_EIG_AVE, "MDTU,min_ave,max_ave"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
-print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4,min5,max5"
+print >> SCALAR_EIG, "MDTU,min_min,min_max,max_min,max_max5"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
-print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4,width5"
+print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
 BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
@@ -431,9 +431,10 @@ for temp_tag in open('list.txt'):
       NEED_SCALAR_EIGS = -1
       temp = line.split()
       index = int(temp[1])
-      scalar_eig_ave += ',' + str(temp[2])
-      scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-      scalar_eig_width += ',' + str(temp[3])
+      if index == 0 or index == Nc - 1:
+        scalar_eig_ave += ',' + str(temp[2])
+        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+        scalar_eig_width += ',' + str(temp[3])
       if index == Nc - 1:
         print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
         print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
@@ -681,9 +682,10 @@ for temp_tag in open('list.txt'):
       elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
         temp = line.split()
         index = int(temp[1])
-        scalar_eig_ave += ',' + str(temp[2])
-        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-        scalar_eig_width += ',' + str(temp[3])
+        if index == 0 or index == Nc - 1:
+          scalar_eig_ave += ',' + str(temp[2])
+          scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+          scalar_eig_width += ',' + str(temp[3])
         if index == Nc - 1:
           print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
           print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)

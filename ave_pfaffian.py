@@ -43,7 +43,7 @@ jkmag = np.empty(N, dtype = np.float)
 jkphase = np.empty(N, dtype = np.float)
 for i in range(N):
   temp = (tot - dat[i]) / (N - 1.0)
-  jkre[i] = np.real(temp)
+  jkre[i] = 1.0 - np.real(temp) # !!!
   jkim[i] = np.imag(temp)
   jkmag[i] = np.absolute(temp)
   jkphase[i] = np.angle(temp)

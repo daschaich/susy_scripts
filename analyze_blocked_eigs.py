@@ -56,11 +56,11 @@ large_tag = []
 #large_tag.append('l5.0_b0.22_G0.05');   small_tag.append('l5.0_b0.44_G0.05')
 
 # U(2) 12nt12 & 6nt6 with G=0.05 and (mu*L)^2 / lambda ~ 2.5
-Nc = 2
-large_dir = 'Nc2_12nt12/'
-small_dir = 'Nc2_6nt6/'
+#Nc = 2
+#large_dir = 'Nc2_12nt12/'
+#small_dir = 'Nc2_6nt6/'
 #large_tag.append('l0.5_b0.095_G0.05');  small_tag.append('l0.5_b0.19_G0.05')
-large_tag.append('l1.0_b0.13_G0.05');   small_tag.append('l1.0_b0.26_G0.05')
+#large_tag.append('l1.0_b0.13_G0.05');   small_tag.append('l1.0_b0.26_G0.05')
 #large_tag.append('l2.0_b0.19_G0.05');   small_tag.append('l2.0_b0.38_G0.05')
 #large_tag.append('l3.0_b0.23_G0.05');   small_tag.append('l3.0_b0.46_G0.05')
 #large_tag.append('l4.0_b0.25_G0.05');   small_tag.append('l4.0_b0.5_G0.05')
@@ -77,7 +77,7 @@ large_tag.append('l1.0_b0.13_G0.05');   small_tag.append('l1.0_b0.26_G0.05')
 #large_tag.append('l4.0_b0.4_G0.05');    small_tag.append('l4.0_b0.8_G0.05')
 
 for i in range(len(small_tag)):
-  outfilename = large_dir + large_tag[i] + '/results/xi.dat'
+  outfilename = large_dir + large_tag[i] + '/results/xi_eig.dat'
   print "Comparing %s vs. %s" % (small_dir + small_tag[i], \
                                  large_dir + large_tag[i])
   smallFile = small_dir + small_tag[i] + '/results/blocked_eigs.dat'
