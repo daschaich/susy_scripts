@@ -7,15 +7,16 @@ import numpy as np
 # ------------------------------------------------------------------
 # Compute MCRG stability matrix using blocked jackknife procedure
 # Consider three operators per measurement
-#   0 is Tr(PP) from two log-polar links -- give it xi^2
+#   0 is Tr(PP) from two log-polar links -- give it xi^2 (?)
 #   1 is symmetrized mixture of P & U -- give it xi^3
 #   2 is Tr(UU) from two U.Ubar -- give it xi^4
 # When adjusting the observables considered on lines ~145,
 # remember to adjust the corresponding xi factors on lines ~220
 
-# Optionally load results/xi.dat, which I think should not depend on smearing
-# since xi is part of the RG blocking
-# while the smearing is part of the observable definition
+# Optionally load RG blocking parameter xi from given file
+# Use same xi for all operators with different amounts of smearing
+# (Consider xi part of the RG blocking
+# while the smearing is part of the observable definition)
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -23,9 +24,11 @@ import numpy as np
 # Third argument tells us how many operators to consider per measurement
 # Fourth argument tells us how many smearings to consider per measurement
 # Fifth argument tells us the directory to analyze
-# Final argument tells us whether to consider the Konishi ("K") or SUGRA ("S")
+# Sixth argument tells us whether to consider the Konishi ("K") or SUGRA ("S")
+# The optional final argument tells us to load this xi file
 if len(sys.argv) < 7:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <# ops> <# smear> <dir> <op>"
+  print "Usage:", str(sys.argv[0]),
+  print "<cut> <block> <# ops> <# smear> <dir> <op> [xi file (optional)]"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -204,8 +207,12 @@ Nblocks = len(Kdat[0][0])
 # In either case ignore uncertainties, which tend to be small
 # Jackknife results for xi
 xi = np.zeros((num_ops, blmax + 1), dtype = np.float)
-xi_file = 'results/xi.dat'
-if os.path.isfile(xi_file):
+if len(sys.argv) > 7:
+  xi_file = str(sys.argv[7])
+  if not os.path.isfile(xi_file):
+    print "ERROR:", xi_file, "does not exist"
+    sys.exit(1)
+
   print "Reading xi from", xi_file
   for line in open(xi_file):
     if line.startswith('# '):
@@ -213,25 +220,26 @@ if os.path.isfile(xi_file):
     else:
       temp = line.split()
       bl = int(temp[0])
+      tr = float(temp[1])
+      trTwo = tr * tr
+      trThree = trTwo * tr
+      trFour = trTwo * trTwo
       for i in range(num_smear):
-        # With the log-polar field we probably want only xi^2...
-        tr = float(temp[1])
-        xi[ops_per_smear * i][bl] = tr * tr
-        # With the U.Ubar field we probably want full xi^4...
+        # Use xi^2 for the log-polar definition (!!!)...
+        xi[ops_per_smear * i][bl] = trTwo
+        # Use xi^4 for the U.Ubar definition...
         if ops_per_smear > 1:
-          xi[ops_per_smear * i + 1][bl] = tr * tr * tr * tr
-        # With the mixed field we probably want xi^3...
+          xi[ops_per_smear * i + 1][bl] = trFour
+        # Use xi^3 when mixing both definitions...
         if ops_per_smear > 2:
-          xi[ops_per_smear * i + 2][bl] = tr * tr * tr
+          xi[ops_per_smear * i + 2][bl] = trThree
 else:
-#  print xi_file, "does not exist..."
-#  sys.exit(1)
   print "Setting xi to unity"
   for i in range(num_smear):
     for j in range(ops_per_smear):
       xi[ops_per_smear * i + j][0] = 1.0
       for bl in range(1, blmax + 1):
-        xi[ops_per_smear * i + j][bl] = xi[ops_per_smear * i + j][bl - 1] * 1.0
+        xi[ops_per_smear * i + j][bl] = xi[ops_per_smear * i + j][bl - 1]
 # ------------------------------------------------------------------
 
 

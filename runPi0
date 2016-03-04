@@ -1,0 +1,119 @@
+#!/bin/bash
+
+if [ $# -lt 5 ]; then
+  echo "Usage: $0 <first> <last> nsteps:{<fermion> <gauge>} <time> [dependency (optional)]"
+  exit 1
+fi
+
+# Input parameters
+first=$1
+last=$2
+fsteps=$3
+gsteps=$4
+time=$5
+
+# Adjustable parameters
+node=1
+cpus=16
+L=16
+Nt=16
+rt=1.0
+lambda=0.00390625
+bmass=0.083
+fmass=0.0
+kappa=0.0
+G=0.05
+B=0.0
+Ntraj=10
+traj_length=1
+skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
+
+# Common parameters for all jobs
+tag=rt${rt}_b${bmass}_G$G
+echo "#!/bin/sh" > temp
+echo "#PBS -l nodes=$node" >> temp
+echo "#PBS -l walltime=$time" >> temp
+echo "#PBS -A latticesusy" >> temp
+echo "#PBS -q pi" >> temp
+echo "#PBS -j oe" >> temp
+echo "#PBS -N HMC4_${L}nt${Nt}_$tag" >> temp
+echo "#PBS -o job.\$PBS_JOBID.out" >> temp
+echo "#PBS -k oe" >> temp
+echo "#PBS -m ae -M daschaich@gmail.com" >> temp
+
+dir=/lqcdproj/latticesusy/N4/2d/Nc4_${L}nt${Nt}/$tag
+bin=/lqcdproj/latticesusy/N4/code/4dSYM/pi0_bins/susy_hmc-U4
+cd $dir
+echo "cd $dir" >> temp
+
+# Write all evolution tasks to run in a single job
+iter=0
+for(( i=$first ; $i<$last ; i+=$skip )); do
+  iter=$[$iter + 1]
+  next=$[$i + $skip]
+  out=$dir/Out/out.$i-$next
+  lat=$dir/Configs/gauge
+  if [ -f $out ]; then
+    echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+#  echo "if [ ! -f $lat.$i ]; then" >> temp
+#  echo "  echo \"ERROR: LATTICE $lat.$i NOT FOUND, SUBMISSION ABORTED\"" >> temp
+#  echo "  exit 1" >> temp
+#  echo "fi" >> temp
+  if [ -f $lat.$next ]; then
+    echo "ERROR: LATTICE $lat.$next EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+
+  echo "echo \"Job \$PBS_JOBNAME started \"\`date\`\" jobid \$PBS_JOBID\" >> $out" >> temp
+  echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
+  echo "echo \"/usr/local/mvapich/bin/mpirun -np $cpus $bin\" >> $out" >> temp
+  echo "/usr/local/mvapich/bin/mpirun -np $cpus $bin << EOF >> $out" >> temp
+  echo "prompt 0" >> temp
+  echo "nx 1" >> temp
+  echo "ny 1" >> temp
+  echo "nz $L" >> temp
+  echo "nt $Nt" >> temp
+  echo "PBC -1" >> temp
+  echo "iseed ${last}41$i" >> temp
+
+  echo "Nroot 1" >> temp
+  echo "Norder 9" >> temp
+
+  echo "warms 0" >> temp
+  echo "trajecs $Ntraj" >> temp
+  echo "traj_length $traj_length" >> temp
+  echo "nstep $fsteps" >> temp
+  echo "nstep_gauge $gsteps" >> temp
+  echo "traj_between_meas $Ntraj" >> temp
+
+  echo "lambda $lambda" >> temp
+  echo "kappa_u1 $kappa" >> temp
+  echo "bmass $bmass" >> temp
+  echo "fmass $fmass" >> temp
+  echo "G $G" >> temp
+  echo "B $B" >> temp
+
+  echo "max_cg_iterations 5000" >> temp
+  echo "error_per_site 1e-5" >> temp
+
+#  echo "reload_serial $lat.$i" >> temp
+  echo "fresh" >> temp
+  echo "save_serial $lat.$next" >> temp
+  echo "EOF" >> temp
+
+  echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
+  echo "chmod 666 $out $lat.$i* $lat.$next*" >> temp
+  echo "" >> temp
+done
+
+if [ $# -gt 5 ]; then
+  qsub -W depend=afterok:$6.pi0s.fnal.gov temp -r n
+else
+  qsub temp -r n
+fi
+echo "Requested $time to run $iter jobs"
+rm -f temp

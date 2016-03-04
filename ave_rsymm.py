@@ -51,14 +51,14 @@ if not os.path.isfile(firstfile):
   sys.exit(1)
 
 MAX = -1
-POLAR = -1
 for line in open(firstfile):
   if line.startswith('N=4 SYM,'):
     Nc = int((((line.split())[4]).split(','))[0])
   elif line.startswith('rsymm: MAX = '):
     MAX = int((line.split())[3])
   elif line.startswith('rsymm considering polar-projected links'):
-    POLAR = 1
+    print "ERROR:", firstfile, "uses site variables in loop calculations"
+    sys.exit(1)
   elif line.startswith('INVLINK '):
     break   # Done scanning through file
 
@@ -119,7 +119,6 @@ for MDTU in cfgs:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   check = -1
-  this_polar = -1    # Make sure all measurements used consistent observables
   for line in open(toOpen[0]):
     # Skip measurement if average link looks unreasonably large
     # This seems to be due to occasional near-singular link matrix inversions
@@ -150,7 +149,8 @@ for MDTU in cfgs:
         count += 1
 
     elif line.startswith('rsymm considering polar-projected links'):
-      this_polar = 1
+      print "ERROR:", toOpen[0], "uses site variables in loop calculations"
+      sys.exit(1)
 
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
@@ -158,9 +158,6 @@ for MDTU in cfgs:
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
-    sys.exit(1)
-  if this_polar != POLAR:
-    print "Error: inconsistent observable in", infile
     sys.exit(1)
 
 # Check special case that last block is full
@@ -191,17 +188,9 @@ if Nblocks == 1:
   print "ERROR: need multiple blocks to take average"
   sys.exit(1)
 
-print "Averaging with %d blocks of length %d MDTU," % (Nblocks, block_size),
-if POLAR < 0:
-  print "considering the full links"
-else:
-  print "considering polar-projected links"
+print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 outfile = open('results/rsymm.dat', 'w')
-print >> outfile, "# Averaging with %d blocks of length %d MDTU," % (Nblocks, block_size),
-if POLAR < 0:
-  print >> outfile, "considering the full links"
-else:
-  print >> outfile, "considering polar-projected links"
+print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 print >> outfile, "# norm inv diff err rel err modified err usual err"
 
 for i in range(MAX):
