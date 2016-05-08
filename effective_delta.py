@@ -38,7 +38,7 @@ for line in open(toOpen):
       continue
     r.append(float(temp[0]))
     vev.append(float(temp[1]))
-    rel_err.append(float(temp[2]))
+    rel_err.append(float(temp[2]) / float(temp[1]))
 #    vol.append(float(temp[3]))
 #    vol_err.append(float(temp[4]))
 
@@ -48,5 +48,7 @@ Npts = len(r)
 for i in range(Npts - 1):
   x = 0.5 * (r[i] + r[i + 1])
   DeEff = 0.5 * np.log(vev[i] / vev[i + 1]) / np.log(r[i + 1] / r[i])
-  print "%.4g %.4g" % (x, Delta, Delta_err)
+  De_err = 0.5 * np.sqrt(rel_err[i]**2 + rel_err[i + 1]**2)
+  De_err /= np.log(r[i + 1] / r[i])
+  print "%.4g %.4g %.4g" % (x, DeEff, De_err)
 # ------------------------------------------------------------------
