@@ -14,7 +14,8 @@ import numpy as np
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-# Third argument tells us whether to analyze "corr" or "stout" files
+# Third argument tells us which files to analyze
+#   (for example, "corr", "konishi0", "subtracted0")
 if len(sys.argv) < 4:
   print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
   sys.exit(1)
@@ -203,9 +204,13 @@ Sout_vol = np.sort(Sout_vol, order='r')
 
 print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
 Kfile = open('results/konishi_r.dat', 'w')
-print >> Kfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print >> Kfile, "# Averaging with %d blocks of length %d MDTU" \
+                % (Nblocks, block_size)
+print >> Kfile, "# r    vev       err       vol       err"
 Sfile = open('results/sugra_r.dat', 'w')
-print >> Sfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print >> Sfile, "# Averaging with %d blocks of length %d MDTU" \
+                % (Nblocks, block_size)
+print >> Sfile, "# r    vev       err       vol       err"
 for i in range(Npts):
   print >> Kfile, "%.4g %.6g %.4g" \
                   % (Kout_vev[i][0], Kout_vev[i][1], Kout_vev[i][2]),

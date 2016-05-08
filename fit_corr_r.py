@@ -7,25 +7,23 @@ import numpy as np
 from scipy import optimize
 from scipy import special
 # ------------------------------------------------------------------
-# Run jackknifed fits of zero-momentum-projected SUGRA correlator
-#   C_K(t) = A(e^{-M_K t} + e^{-M_K (Nt - t)})
-# as well as the finite differences for both Konishi and SUGRA,
-#   D(t) = A(e^{-M t} - e^{-M (Nt - t)})
-# Need to force positive sinh mass, otherwise strange things can happen
+# Run jackknifed fits of radial correlators
+#   C(r) = A' * r^{Delta}
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-# Third argument is the minimum t to use in the fits (t_max = Nt / 2)
-# Fourth argument tells us which files to analyze
+# Third and fourth arguments are the fit range (r_min, r_max)
+# Fifth argument tells us which files to analyze
 #   (for example, "corr", "konishi0", "subtracted0")
-if len(sys.argv) < 5:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <tmin> <tag>"
+if len(sys.argv) < 6:
+  print "Usage:", str(sys.argv[0]), "<cut> <block> <rmin> <rmax> <tag>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
-tmin = int(sys.argv[3])
-tag = str(sys.argv[4])
+rmin = int(sys.argv[3])
+rmax = int(sys.argv[4])
+tag = str(sys.argv[5])
 runtime = -time.time()
 # ------------------------------------------------------------------
 

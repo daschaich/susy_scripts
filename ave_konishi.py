@@ -12,7 +12,8 @@ import numpy as np
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
-# Third argument tells us whether to analyze "corr" or "stout" files
+# Third argument tells us which files to analyze
+#   (for example, "corr", "konishi0", "subtracted0")
 if len(sys.argv) < 4:
   print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
   sys.exit(1)
@@ -162,7 +163,7 @@ for i in range(2 * numK):
   dat = np.array(Sdat[i])
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
-  print >> outfile, "%.8g %.4g" % (ave, err)
+  print >> outfile, "%.16g %.4g" % (ave, err)
 outfile.close()
 
 runtime += time.time()
