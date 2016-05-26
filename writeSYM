@@ -84,7 +84,6 @@ echo '                            "data/poly.csv",' >> $out
 echo '                            { colors: ["blue"],' >> $out
 echo '                              drawPoints: true,' >> $out
 echo '                              strokeWidth: 0,' >> $out
-#echo '                              valueRange: [-0.25, 0.25],' >> $out
 echo '                              showLabelsOnHighlight: false,' >> $out
 echo '                              xValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
@@ -176,7 +175,6 @@ echo '                            "data/lines.csv",' >> $out
 echo '                            { colors: ["blue", "red", "green", "black"],' >> $out
 echo '                              drawPoints: true,' >> $out
 echo '                              strokeWidth: 0,' >> $out
-#echo '                              valueRange: [-0.25, 0.25],' >> $out
 echo '                              showLabelsOnHighlight: false,' >> $out
 echo '                              xValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out

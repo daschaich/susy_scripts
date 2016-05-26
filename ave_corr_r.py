@@ -52,20 +52,19 @@ cut = cfgs[0]
 
 # Cycle through first output file to associate scalar distances
 # with the corresponding label in the output
-r = []          # List of r sorted by tag
+r = []          # List of r
 firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
   # Format: CORR_K label r tag1 tag2 dat_vev dat_vol
-  # Format: CORR_K label r dat_vev dat_vol
   if line.startswith('CORR_K '):
     temp = line.split()
     tag1 = int(temp[3])
     tag2 = int(temp[4])
     if tag1 == 0 and tag2 == 0:
-      r.append(float((line.split())[2]))
+      r.append(float(temp[2]))
   elif line.startswith('CORR_S '):
     break             # Don't go through whole file yet
 
@@ -207,10 +206,12 @@ Kfile = open('results/konishi_r.dat', 'w')
 print >> Kfile, "# Averaging with %d blocks of length %d MDTU" \
                 % (Nblocks, block_size)
 print >> Kfile, "# r    vev       err       vol       err"
+
 Sfile = open('results/sugra_r.dat', 'w')
 print >> Sfile, "# Averaging with %d blocks of length %d MDTU" \
                 % (Nblocks, block_size)
 print >> Sfile, "# r    vev       err       vol       err"
+
 for i in range(Npts):
   print >> Kfile, "%.4g %.6g %.4g" \
                   % (Kout_vev[i][0], Kout_vev[i][1], Kout_vev[i][2]),

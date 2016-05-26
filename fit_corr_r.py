@@ -21,8 +21,8 @@ if len(sys.argv) < 6:
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
-rmin = int(sys.argv[3])
-rmax = int(sys.argv[4])
+rMin = float(sys.argv[3])
+rMax = float(sys.argv[4])
 tag = str(sys.argv[5])
 runtime = -time.time()
 # ------------------------------------------------------------------
@@ -52,56 +52,45 @@ if len(cfgs) == 0:
 # increase thermalization cut
 cut = cfgs[0]
 
-# Extract Nt from first output file
+# Cycle through first output file to count how many scalar distances
+# we will consider, and record their order
+r = []          # List of r
 firstfile = 'Out/' + tag + '.' + str(cfgs[0])
 if not os.path.isfile(firstfile):
   print "ERROR:", firstfile, "does not exist"
   sys.exit(1)
 for line in open(firstfile):
-  if line.startswith('nt'):
-    Nt = int((line.split())[1])
-    break
+  # Format: CORR_K label r tag1 tag2 dat_vev dat_vol
+  if line.startswith('CORR_K '):
+    temp = line.split()
+    tag1 = int(temp[3])
+    tag2 = int(temp[4])
+    if tag1 == 0 and tag2 == 0:   # Only count each r once
+      tr = float(temp[2])
+      if tr < rMin or tr > rMax:
+        continue
+      r.append(tr)
+  elif line.startswith('CORR_S '):
+    break             # Don't go through whole file yet
 
-# Now we can define the fit functions for C_S(t) and D(t)
-# The err functions will be minimized via least-squares optimization
-#cosh = lambda p, t: p[0] * np.cosh(p[1] * (t - (Nt / 2.0)))
-cosh = lambda p, t: p[0] * (np.exp(-p[1] * t) + np.exp(-p[1] * (Nt - t)))
-cosherr = lambda p, t, y, err: (cosh(p, t) - y) / err
-#sinh = lambda p, t: p[0] * np.sinh(p[1] * (t - (Nt / 2.0)))
-sinh = lambda p, t: -p[0] * (np.exp(-p[1] * t) - np.exp(-p[1] * (Nt - t)))
-# Need to force positive sinh mass, otherwise strange things can happen
-def sinherr(p, t, y, err):
-  if p[1] > 0:
-    return (sinh(p, t) - y) / err
-  else:
-    return 1e6
-p_in = [0.1, 0.1]               # Order-of-magnitude initial guesses
+Npts = len(r)
 
-# We exploit t <--> Nt - t symmetry to only print 0 through Nt / 2
-Npts = Nt / 2 + 1 - tmin  # Assume Nt is even
-dof = Npts - len(p_in)
-if dof <= 0:
-  print "ERROR: Not enough data points to fit to (2, 2) rational function"
-  sys.exit(1)
+# Now we can define the fit function
+fitfunc = lambda p, x: p[0] / np.power(x, p[1])
+errfunc = lambda p, x, y, err: (fitfunc(p, x) - y) / err
+p_in = [1.0, 1.0]    # Order-of-magnitude initial guesses
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # Construct arrays of blocked measurements for each correlator
-# There is some funny business with indexing from zero despite tmin>0
-# We need to shift things by tmin to deal with it
-# K = Konishi, S = SUGRA
-# DK and DS are corresponding finite differences
+# K = Konishi, S = SUGRA (averaged over all independent components)
+# For now only consider log-polar operator with ensemble subtraction
 Kdat   = [[] for x in range(Npts)]
 KdatSq = [[] for x in range(Npts)]
 Sdat   = [[] for x in range(Npts)]
 SdatSq = [[] for x in range(Npts)]
-
-DKdat   = [[] for x in range(Npts - 1)]
-DKdatSq = [[] for x in range(Npts - 1)]
-DSdat   = [[] for x in range(Npts - 1)]
-DSdatSq = [[] for x in range(Npts - 1)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -109,105 +98,82 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK   = [0 for x in range(Npts)]
-tKSq = [0 for x in range(Npts)]
-tS   = [0 for x in range(Npts)]
-tSSq = [0 for x in range(Npts)]
-tDK   = [0 for x in range(Npts - 1)]
-tDKSq = [0 for x in range(Npts - 1)]
-tDS   = [0 for x in range(Npts - 1)]
-tDSSq = [0 for x in range(Npts - 1)]
+tK   = [0.0 for x in range(Npts)]
+tKSq = [0.0 for x in range(Npts)]
+tS   = [0.0 for x in range(Npts)]
+tSSq = [0.0 for x in range(Npts)]
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
   if MDTU >= (begin + block_size):
-    if count == 0:
-      print "ERROR: no data to average after file %s:" % toOpen
-      sys.exit(1)
-    for t in range(Npts):
-      Kdat[t].append(tK[t] / float(count))
-      KdatSq[t].append(tKSq[t] / float(count))
-      Sdat[t].append(tS[t] / float(count))
-      SdatSq[t].append(tSSq[t] / float(count))
-    for t in range(Npts - 1):
-      DKdat[t].append(tDK[t] / float(count))
-      DKdatSq[t].append(tDKSq[t] / float(count))
-      DSdat[t].append(tDS[t] / float(count))
-      DSdatSq[t].append(tDSSq[t] / float(count))
+    for i in range(Npts):
+      Kdat[i].append(tK[i] / float(count))
+      KdatSq[i].append(tKSq[i] / float(count))
+      Sdat[i].append(tS[i] / float(count))
+      SdatSq[i].append(tSSq[i] / float(count))
     # Record and reset block data
     block_data[0].append(count)
     count = 0
     block_data[1].append(begin)
     begin += block_size
     block_data[2].append(begin)
-    tK   = [0 for x in range(Npts)]
-    tKSq = [0 for x in range(Npts)]
-    tS   = [0 for x in range(Npts)]
-    tSSq = [0 for x in range(Npts)]
-    tDK   = [0 for x in range(Npts - 1)]
-    tDKSq = [0 for x in range(Npts - 1)]
-    tDS   = [0 for x in range(Npts - 1)]
-    tDSSq = [0 for x in range(Npts - 1)]
+    tK   = [0.0 for x in range(Npts)]
+    tKSq = [0.0 for x in range(Npts)]
+    tS   = [0.0 for x in range(Npts)]
+    tSSq = [0.0 for x in range(Npts)]
 
   # Running averages
-  prev_time = float('NaN')    # To make it obvious if this isn't overwritten
   filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
     print "ERROR: multiple files named %s:" % filename,
     print toOpen
   check = -1
+  rCount_K = 0
+  rCount_S = 0
   for line in open(toOpen[0]):
-    # Format: KONISHI t dat
-    if line.startswith('KONISHI '):
+    # Format: CORR_? label r tag1 tag2 dat_vev dat_vol
+    if line.startswith('CORR'):
+      if line.startswith('CORR_K 0 0 0 0 '):
+        count += 1            # Only increment once per measurement!
+
+      # For now only consider log-polar operator with ensemble subtraction
       temp = line.split()
-      t = int(temp[1])
-      dat = float(temp[2])
-      if t < tmin:
+      tr = float(temp[2])
+      tag1 = int(temp[3])
+      tag2 = int(temp[4])
+      if tr < rMin or tr > rMax or not tag1 == 0 or not tag2 == 0:
         continue
-      elif t == tmin:
-        count += 1    # Only increment once per measurement!
-      elif t > tmin:
-        tDK[t - tmin - 1] += dat - prev_time
-        tDKSq[t - tmin - 1] += (dat - prev_time)**2
-      prev_time = dat
-      tK[t - tmin] += dat
-      tKSq[t - tmin] += dat**2
-    # We go through all Konishi data before reaching first SUGRA line
-    # Format: SUGRA t dat
-    elif line.startswith('SUGRA '):
-      temp = line.split()
-      t = int(temp[1])
-      dat = float(temp[2])
-      if t < tmin:
-        continue
-      elif t > tmin:    # Need to reset prev_time below
-        tDS[t - tmin - 1] += dat - prev_time
-        tDSSq[t - tmin - 1] += (dat - prev_time)**2
-      prev_time = dat
-      tS[t - tmin] += dat
-      tSSq[t - tmin] += dat**2
+      dat = float(temp[5])
+
+      if line.startswith('CORR_K '):
+        tK[rCount_K] += dat
+        tKSq[rCount_K] += dat**2
+        rCount_K += 1
+      elif line.startswith('CORR_S '):
+        tS[rCount_S] += dat
+        tSSq[rCount_S] += dat**2
+        rCount_S += 1
+
     elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
       check = 1
+      if not rCount_K == Npts or not rCount_S == Npts:
+        print infile, "gives wrong number of points"
+        sys.exit(1)
   if check == -1:
     print toOpen[0], "did not complete"
     sys.exit(1)
 
-# Check special case that last block is full
-# Assume last few measurements are equally spaced
-if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  if count == 0:
-    print "ERROR: no data to average after file %s:" % toOpen
-    sys.exit(1)
-  for t in range(Npts):
-    Kdat[t].append(tK[t] / float(count))
-    KdatSq[t].append(tKSq[t] / float(count))
-    Sdat[t].append(tS[t] / float(count))
-    SdatSq[t].append(tSSq[t] / float(count))
-  for t in range(1, Npts):
-    DKdat[t - 1].append(tDK[t - 1] / float(count))
-    DKdatSq[t - 1].append(tDKSq[t - 1] / float(count))
-    DSdat[t - 1].append(tDS[t - 1] / float(count))
-    DSdatSq[t - 1].append(tDSSq[t - 1] / float(count))
+# Check special cases
+# 1) Last block is full (ssume last few measurements are equally spaced)
+# 2) Only a single block
+if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]) or len(Kdat[0]) < 1:
+  for i in range(Npts):
+    Kdat[i].append(tK[i] / float(count))
+    KdatSq[i].append(tKSq[i] / float(count))
+    Sdat[i].append(tS[i] / float(count))
+    SdatSq[i].append(tSSq[i] / float(count))
   # Record block data
   block_data[0].append(count)
   block_data[1].append(begin)
@@ -219,100 +185,115 @@ Nblocks = len(Kdat[0])
 
 
 # ------------------------------------------------------------------
-# Now we can construct jackknife samples through single-block elimination
-# Require multiple blocks for now
+# If only one block, just do a single fit with propagated uncertainties
+# from the covariance matrix
+# In this case 'count' remains the total number of measurements
+# optimize.leastsq does not scale by chiSq_dof, which we desire
 if Nblocks == 1:
-  print "ERROR: need multiple blocks to take average"
-  sys.exit(1)
+  outfile = open('results/fit.corr', 'w')
+  print "Single fit with range %.4g <= r <= %.4g" % (rMin, rMax)
+  print >> outfile, "Single fit with range %.4g <= r <= %.4g" % (rMin, rMax)
 
-times  = np.arange(tmin, Nt / 2 + 1, dtype = np.int)
-Ktot   = np.array([sum(Kdat[t]) for t in range(Npts)])
-KtotSq = np.array([sum(KdatSq[t]) for t in range(Npts)])
-Stot   = np.array([sum(Sdat[t]) for t in range(Npts)])
-StotSq = np.array([sum(SdatSq[t]) for t in range(Npts)])
+  pts = np.array(r)
+  K = np.array([Kdat[x][0] for x in range(Npts)])
+  KErr = np.empty_like(K)
+  for x in range(Npts):
+    err = KdatSq[x][0] - Kdat[x][0]**2
+    KErr[x] = np.sqrt(err / (float(count) - 1.0))
 
-# For now, require that times be evenly spaced
-dt = times[1] - times[0]
-Dtimes = np.empty(Nt / 2 - tmin, dtype = np.float)
-for t in range(len(Dtimes)):
-  if (times[t + 1] - times[t]) != dt:
-    print "ERROR: requiring evenly spaced times but have",
-    print times
-    sys.exit(1)
-  Dtimes[t] = times[t] + 0.5 * float(dt)
-DKtot   = np.array([sum(DKdat[t]) for t in range(Npts - 1)])
-DKtotSq = np.array([sum(DKdatSq[t]) for t in range(Npts - 1)])
-DStot   = np.array([sum(DSdat[t]) for t in range(Npts - 1)])
-DStotSq = np.array([sum(DSdatSq[t]) for t in range(Npts - 1)])
+  temp, cov, infodict, mesg, success = \
+              optimize.leastsq(errfunc, p_in[:], args=(pts, K, KErr),
+                               full_output=True)
 
-# Monitor how many times the fits do or don't converge
-NS = 0
-NDK = 0
-NDS = 0
+  Delta = 0.5 * temp[1]
+  err = 0.5 * np.sqrt(cov[1][1])
+  print >> outfile, "Konishi %.6g %.4g" % (Delta, err)
+
+  S = np.array([Sdat[x][0] for x in range(Npts)])
+  SErr = np.empty_like(S)
+  for x in range(Npts):
+    err = SdatSq[x][0] - Sdat[x][0]**2
+    SErr[x] = np.sqrt(err / (float(count) - 1.0))
+
+  temp, cov, infodict, mesg, success = \
+              optimize.leastsq(errfunc, p_in[:], args=(pts, S, SErr),
+                               full_output=True)
+
+  Delta = 0.5 * temp[1]
+  err = 0.5 * np.sqrt(cov[1][1])
+  print >> outfile, "SUGRA %.6g %.4g" % (Delta, err)
+
+  runtime += time.time()
+  print "# Runtime: %.2g seconds" % runtime
+  print >> outfile, "# Runtime: %.2g seconds" % runtime
+  outfile.close()
+  sys.exit(0)
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# Now we can construct jackknife samples through single-block elimination
+columns = [('r', float), ('dat', float), ('err', float)]
+Ktot    = np.array([sum(Kdat[x]) for x in range(Npts)])
+KtotSq  = np.array([sum(KdatSq[x]) for x in range(Npts)])
+Stot    = np.array([sum(Sdat[x]) for x in range(Npts)])
+StotSq  = np.array([sum(SdatSq[x]) for x in range(Npts)])
 
 # Fit results for all jk samples
-Sout = np.empty((len(p_in), Nblocks), dtype = np.float)
-DKout = np.empty((len(p_in), Nblocks), dtype = np.float)
-DSout = np.empty((len(p_in), Nblocks), dtype = np.float)
+Kout = []
+Sout = []
 for i in range(Nblocks):    # Jackknife samples
-  # First cosh fits to SUGRA correlator
-  S    = np.empty(Npts, dtype = np.float)
-  Serr = np.empty(Npts, dtype = np.float)
-  for t in range(Npts):
-    S[t] = (Stot[t] - Sdat[t][i]) / (Nblocks - 1.)
-    temp = (StotSq[t] - SdatSq[t][i]) / (Nblocks - 1.)
-    Serr[t] = np.sqrt((temp - S[t]**2) / (Nblocks - 1.))
-  success = -1    # In case fit dies without returning
+  # Sort data in case that may help fitter
+  K = np.zeros(Npts, dtype = columns)
+  S = np.zeros_like(K)
+  for x in range(Npts):
+    K[x][0] = r[x]
+    K[x][1] = (Ktot[x] - Kdat[x][i]) / (Nblocks - 1.0)
+    temp = (KtotSq[x] - KdatSq[x][i]) / (Nblocks - 1.0)
+    K[x][2] = np.sqrt((temp - K[x][1]**2) / (Nblocks - 1.0))
+
+    S[x][0] = r[x]
+    S[x][1] = (Stot[x] - Sdat[x][i]) / (Nblocks - 1.0)
+    temp = (StotSq[x] - SdatSq[x][i]) / (Nblocks - 1.0)
+    S[x][2] = np.sqrt((temp - S[x][1]**2) / (Nblocks - 1.0))
+
+  # Sort -- note that r itself is not sorted
+  K = np.sort(K, order='r')
+  S = np.sort(S, order='r')
+
+  # Copy Konishi data into appropriate structures and fit
+  pts = np.zeros(Npts, dtype = float)
+  dat = np.zeros(Npts, dtype = float)
+  err = np.zeros(Npts, dtype = float)
+  for x in range(Npts):
+    pts[x] = K[x][0]
+    dat[x] = K[x][1]
+    err[x] = K[x][2]
   temp, cov, infodict, mesg, success = \
-              optimize.leastsq(cosherr, p_in[:], args=(times, S, Serr), \
+              optimize.leastsq(errfunc, p_in[:], args=(pts, dat, err), \
                                full_output=True)
   if success in (1, 2, 3, 4):         # Fit succeeded
-    for j in range(len(p_in)):
-      Sout[j][i] = temp[j]
-    NS += 1
+    Kout.append(0.5 * temp[1])
   else:                               # Ignore failed fits
     print mesg
 
-  # Now sinh fits to finite differences of Konishi and SUGRA correlators
-  DK    = np.empty(Npts - 1, dtype = np.float)
-  DKerr = np.empty(Npts - 1, dtype = np.float)
-  DS    = np.empty(Npts - 1, dtype = np.float)
-  DSerr = np.empty(Npts - 1, dtype = np.float)
-  for t in range(Npts - 1):
-    DK[t] = (DKtot[t] - DKdat[t][i]) / (Nblocks - 1.)
-    temp = (DKtotSq[t] - DKdatSq[t][i]) / (Nblocks - 1.)
-    DKerr[t] = np.sqrt((temp - DK[t]**2) / (Nblocks - 1.))
-    DS[t] = (DStot[t] - DSdat[t][i]) / (Nblocks - 1.)
-    temp = (DStotSq[t] - DSdatSq[t][i]) / (Nblocks - 1.)
-    DSerr[t] = np.sqrt((temp - DS[t]**2) / (Nblocks - 1.))
-
-  success = -1
+  # Copy SUGRA data into appropriate structures and fit
+  for x in range(Npts):
+    dat[x] = S[x][1]
+    err[x] = S[x][2]
   temp, cov, infodict, mesg, success = \
-              optimize.leastsq(sinherr, p_in[:], args=(Dtimes, DK, DKerr), \
+              optimize.leastsq(errfunc, p_in[:], args=(pts, dat, err), \
                                full_output=True)
-  if success in (1, 2, 3, 4):
-    for j in range(len(p_in)):
-      DKout[j][i] = temp[j]
-    NDK += 1
-  else:
+  if success in (1, 2, 3, 4):         # Fit succeeded
+    Sout.append(0.5 * temp[1])
+  else:                               # Ignore failed fits
     print mesg
 
-  success = -1
-  temp, cov, infodict, mesg, success = \
-              optimize.leastsq(sinherr, p_in[:], args=(Dtimes, DS, DSerr), \
-                               full_output=True)
-  if success in (1, 2, 3, 4):
-    for j in range(len(p_in)):
-      DSout[j][i] = temp[j]
-    NDS += 1
-  else:
-    print mesg
-
-  # Optionally monitor chiSq and confidence level of fits
-  # This requires using the correctly normalized standard error
+  # The uncorrelated chiSq isn't meaningful
+  # but might be worth monitoring to make sure it is <<1
 #  chiSq = (infodict['fvec']**2).sum()
-#  CL = 1.0 - special.gammainc(0.5 * dof, 0.5 * chiSq)
-#  print "%.4g %d --> %.4g" % (chiSq, dof, CL)
+#  print "chiSq %.4g" % chiSq
 # ------------------------------------------------------------------
 
 
@@ -320,38 +301,34 @@ for i in range(Nblocks):    # Jackknife samples
 # ------------------------------------------------------------------
 # Now we can average over jackknife samples and print out results
 # Ignore any failed fits
+Kpow = np.array(Kout)
+Spow = np.array(Sout)
+NK = len(Kpow)
+NS = len(Spow)
+
 print "Fitting with %d blocks of length %d MDTU..." % (Nblocks, block_size)
+print "Fit range %.4g <= r <= %.4g" % (rMin, rMax)
+print "%d of %d Konishi fits succeeded" % (NK, Nblocks)
 print "%d of %d SUGRA fits succeeded" % (NS, Nblocks)
-print "%d of %d Konishi finite difference fits succeeded" % (NDK, Nblocks)
-print "%d of %d SUGRA finite difference fits succeeded" % (NDS, Nblocks)
 
 outfile = open('results/fit.corr', 'w')
 print >> outfile, "# Fitting with %d blocks of length %d MDTU" \
                   % (Nblocks, block_size)
+print >> outfile, "Fit range %.4g <= r <= %.4g" % (rMin, rMax)
+print >> outfile, "%d of %d Konishi fits succeeded" % (NK, Nblocks)
 print >> outfile, "%d of %d SUGRA fits succeeded" % (NS, Nblocks)
-print >> outfile, "%d of %d Konishi finite difference fits succeeded" \
-                  % (NDK, Nblocks)
-print >> outfile, "%d of %d SUGRA finite difference fits succeeded" \
-                  % (NDS, Nblocks)
 
-tag = ["amplitude", "mass"]
+if NK > 0:
+  ave = np.average(Kpow)
+  var = (NK - 1.0) * np.sum((Kpow - ave)**2) / float(NK)
+  print >> outfile, "Konishi %.6g %.4g" % (ave, np.sqrt(var))
 if NS > 0:
-  for i in range(len(p_in)):
-    ave = np.average(Sout[i])
-    var = (NS - 1.) * np.sum((Sout[i] - ave)**2) / float(NS)
-    print >> outfile, "SUGRA %s %.6g %.4g" % (tag[i], ave, np.sqrt(var))
-if NDK > 0:
-  for i in range(len(p_in)):
-    ave = np.average(DKout[i])
-    var = (NDK - 1.) * np.sum((DKout[i] - ave)**2) / float(NDK)
-    print >> outfile, "DKonishi %s %.6g %.4g" % (tag[i], ave, np.sqrt(var))
-if NDS > 0:
-  for i in range(len(p_in)):
-    ave = np.average(DSout[i])
-    var = (NDS - 1.) * np.sum((DSout[i] - ave)**2) / float(NDS)
-    print >> outfile, "DSUGRA %s %.6g %.4g" % (tag[i], ave, np.sqrt(var))
+  ave = np.average(Spow)
+  var = (NS - 1.0) * np.sum((Spow - ave)**2) / float(NS)
+  print >> outfile, "SUGRA %.6g %.4g" % (ave, np.sqrt(var))
 
 runtime += time.time()
+print "# Runtime: %.2g seconds" % runtime
 print >> outfile, "# Runtime: %.2g seconds" % runtime
 
 # More detailed block information

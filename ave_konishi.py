@@ -7,7 +7,6 @@ import numpy as np
 # ------------------------------------------------------------------
 # Print blocked Konishi and SUGRA vacuum expectation values
 # with blocked standard errors
-# The latter should vanish
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)

@@ -5,11 +5,11 @@ import glob
 import time
 import numpy as np
 # ------------------------------------------------------------------
-# Extract the blocked Konishi and SUGRA effective dimension
-#   De_Eff = (1/2) log[C(r1) / C(r2)] / log[r2 / r1]
+# Compute the numerical derivative of the radial Konishi and SUGRA correlators
 # with blocked standard errors
 
-# For now only consider log-polar operator with ensemble subtraction
+# For now only consider log-polar operator
+# Subtraction should vanish in the derivative -- possible consistency check
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -59,6 +59,7 @@ if not os.path.isfile(firstfile):
   sys.exit(1)
 for line in open(firstfile):
   # Format: CORR_K label r tag1 tag2 dat_vev dat_vol
+  # Format: CORR_K label r dat_vev dat_vol
   if line.startswith('CORR_K '):
     temp = line.split()
     tag1 = int(temp[3])
@@ -171,12 +172,12 @@ if Nblocks == 1:
   sys.exit(1)
 
 columns = [('r', float), ('dat', float)]
-Ktot    = np.array([sum(Kdat[x]) for x in range(Npts)])
-Stot    = np.array([sum(Sdat[x]) for x in range(Npts)])
+Ktot   = np.array([sum(Kdat[x]) for x in range(Npts)])
+Stot   = np.array([sum(Sdat[x]) for x in range(Npts)])
 
 # Effective dimension estimates for all jk samples
-DeK = np.empty((Npts - 1, Nblocks), dtype = np.float)
-DeS = np.empty((Npts - 1, Nblocks), dtype = np.float)
+derivK = np.empty((Npts - 1, Nblocks), dtype = np.float)
+derivS = np.empty((Npts - 1, Nblocks), dtype = np.float)
 for i in range(Nblocks):    # Jackknife samples
   # Need to sort data before we know which to divide!
   K = np.zeros(Npts, dtype = columns)
@@ -192,10 +193,8 @@ for i in range(Nblocks):    # Jackknife samples
   K = np.sort(K, order='r')
   S = np.sort(S, order='r')
   for x in range(Npts - 1):
-    DeK[x][i] = np.log(K[x][1] / K[x + 1][1])
-    DeK[x][i] *= 0.5 / np.log(K[x + 1][0] / K[x][0])
-    DeS[x][i] = np.log(S[x][1] / S[x + 1][1])
-    DeS[x][i] *= 0.5 / np.log(S[x + 1][0] / S[x][0])
+    derivK[x][i] = (K[x + 1][1] - K[x][1]) / (K[x + 1][0] - K[x][0])
+    derivS[x][i] = (S[x + 1][1] - S[x][1]) / (S[x + 1][0] - S[x][0])
 # ------------------------------------------------------------------
 
 
@@ -203,24 +202,28 @@ for i in range(Nblocks):    # Jackknife samples
 # ------------------------------------------------------------------
 # Now we can average over jackknife samples and print out results
 print "Analyzing %d blocks of length %d MDTU" % (Nblocks, block_size)
+Kfile = open('results/deriv_konishi.dat', 'w')
+print >> Kfile, "# Analyzing %d blocks of length %d MDTU" \
+                % (Nblocks, block_size)
 
-outfile = open('results/eff_delta.dat', 'w')
-print >> outfile, "# Analyzing %d blocks of length %d MDTU" \
-                  % (Nblocks, block_size)
-print >> outfile, "# r    De_K      err     De_S      err"
+Sfile = open('results/deriv_sugra.dat', 'w')
+print >> Sfile, "# Analyzing %d blocks of length %d MDTU" \
+                % (Nblocks, block_size)
+
 for x in range(Npts - 1):
   mid_r = 0.5 * (K[x][0] + K[x + 1][0])
 
   # Konishi
-  ave = np.average(DeK[x])
-  var = (Nblocks - 1.0) * np.sum((DeK[x] - ave)**2) / float(Nblocks)
-  print >> outfile, "%.4g %.6g %.4g" % (mid_r, ave, np.sqrt(var)),
+  ave = np.average(derivK[x])
+  var = (Nblocks - 1.0) * np.sum((derivK[x] - ave)**2) / float(Nblocks)
+  print >> Kfile, "%.4g %.6g %.4g" % (mid_r, -0.5 * ave, 0.5 * np.sqrt(var))
 
   # SUGRA
-  ave = np.average(DeS[x])
-  var = (Nblocks - 1.0) * np.sum((DeS[x] - ave)**2) / float(Nblocks)
-  print >> outfile, "%.6g %.4g" % (ave, np.sqrt(var))
-outfile.close()
+  ave = np.average(derivS[x])
+  var = (Nblocks - 1.0) * np.sum((derivS[x] - ave)**2) / float(Nblocks)
+  print >> Sfile, "%.4g %.6g %.4g" % (mid_r, -0.5 * ave, 0.5 * np.sqrt(var))
+Kfile.close()
+Sfile.close()
 
 runtime += time.time()
 print "Runtime: %0.1f seconds" % runtime
