@@ -307,14 +307,15 @@ NK = len(Kpow)
 NS = len(Spow)
 
 print "Fitting with %d blocks of length %d MDTU..." % (Nblocks, block_size)
-print "Fit range %.4g <= r <= %.4g" % (rMin, rMax)
+print "Fit range %.4g <= r <= %.4g contains %d points" % (rMin, rMax, Npts)
 print "%d of %d Konishi fits succeeded" % (NK, Nblocks)
 print "%d of %d SUGRA fits succeeded" % (NS, Nblocks)
 
 outfile = open('results/fit.corr', 'w')
 print >> outfile, "# Fitting with %d blocks of length %d MDTU" \
                   % (Nblocks, block_size)
-print >> outfile, "Fit range %.4g <= r <= %.4g" % (rMin, rMax)
+print >> outfile, "Fit range %.4g <= r <= %.4g contains %d points" \
+                  % (rMin, rMax, Npts)
 print >> outfile, "%d of %d Konishi fits succeeded" % (NK, Nblocks)
 print >> outfile, "%d of %d SUGRA fits succeeded" % (NS, Nblocks)
 

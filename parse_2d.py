@@ -29,12 +29,12 @@ FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
 print >> DET, "MDTU,|det-1|,|Re(det)-1|"
-EIG = open('data/eig.csv', 'w')
-print >> EIG, "MDTU,0,2,4,6,8,10"
 BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans"
 MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
+EIG = open('data/eig.csv', 'w')
+print >> EIG, "MDTU,0,2,4,6,8,10"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -53,6 +53,8 @@ WALLTIME = open('data/walltime.csv', 'w')
 print >> WALLTIME, "t,walltime"
 WALLTU = open('data/wallTU.csv', 'w')
 print >> WALLTU, "t,cost"
+COND_NUM = open('data/cond_num.csv', 'w')
+print >> COND_NUM, "t,cond_num"
 
 # Run parameters
 NSTEP = open('data/Nstep.csv', 'w')
@@ -67,8 +69,10 @@ TU = open('data/TU.csv', 'w')
 print >> TU, "t,MDTU"
 
 # Status checks and running sums for the ensemble as a whole
+fermAct = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
+CG = 1
 traj = 0;
 MDTU = 0;
 # ------------------------------------------------------------------
@@ -107,17 +111,17 @@ for temp_tag in open('list.txt'):
       # but don't print nonsense wall clock time
       walltime = -2;
 
+    # Extract Nc for bosonic action and Polyakov loop normalizations
+    elif line.startswith('N=(2, 2) SYM, '):
+      temp1 = line.split(',')
+      Nc = float(((temp1[2]).split())[2])
     # Extract volume for monopole world line density
     elif line.startswith('nx '):
       vol = float((line.split())[1])
     elif line.startswith('nt '):
       vol *= float((line.split())[1])
 
-    # Extract Nc for bosonic action and Polyakov loop normalizations
-    elif line.startswith('N=(2, 2) SYM, '):
-      temp1 = line.split(',')
-      Nc = float(((temp1[2]).split())[2])
-    elif line.startswith('trajecs'):
+    elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
       break       # Don't go through whole file yet
@@ -155,9 +159,38 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
+  Nroot = 1   # Default
+  min_eig = 1
+  max_eig = -1
+  NEED_LINES = 1    # May not need to check measurement file
+  NEED_DET = 1      # for these if they're in the main output file
+  NEED_WIDTHS = 1
+  NEED_SCALAR_EIGS = 1
+  scalar_eig_ave = ''
+  scalar_eig_ext = ''
+  scalar_eig_width = ''
   for line in open(infile):
+    # See how many fermion forces we will have below
+    # Retain case insensitivity for now
+    if line.lower().startswith('using nroot '):
+      Nroot = int((line.split())[3])
+
+    # Extract spectral range for eigenvalues
+    # Format: RHMC Norder # for spectral range [min, max]
+    elif line.startswith('RHMC Norder '):
+      if 'spectral' in line:
+        temp1 = line.rstrip()       # Kill newline
+        temp2 = temp1.rstrip(']')   # Kill ]
+        temp1 = (temp2.split('['))[-1]
+        temp2 = temp1.split(',')
+        min_eig = float(temp2[0])
+        max_eig = float(temp2[1])
+      else:         # Original 15-pole format didn't state spectral range
+        min_eig = 1.0e-7
+        max_eig = 1000.0
+
     # Extract constant run parameters
-    if line.startswith('traj_length '):
+    elif line.startswith('traj_length '):
       tlength = float((line.split())[1])
       print >> TLENGTH, "%d,%g" % (endtraj, tlength)
     elif line.startswith('nstep '):
@@ -187,7 +220,7 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Now extract evolution observables and physical observables
-    # Acceptance comes before measurements
+    # Acceptance comes before (most) measurements
     elif ' delta S = ' in line:
       traj += 1
       temp = MDTU + tlength
@@ -206,40 +239,59 @@ for temp_tag in open('list.txt'):
       # Instead just print out absolute value and consider its running average
       print >> ABS_DS, "%d,%g" % (traj, abs(float(dS)))
 
-      # Will be smeared out by running averages
+      # Acceptance is smeared out by running averages
       if line.startswith('ACCEPT'):
         print >> ACCP, "%d,1" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
       else:
         print >> ACCP, "%d,0" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
+      fermAct = [-1.0, -1.0]                        # Reset
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
       force_g = float((line.split())[-1])
     elif line.startswith('MONITOR_FORCE_FERMION0 '):
       force_f = float((line.split())[-1])
-      print >> FORCE, "%d,%g,%g" % (traj, force_g, force_f)
+      if Nroot == 1:
+        print >> FORCE, "%d,%g,%g,null,null" % (traj, force_g, force_f)
+    elif line.startswith('MONITOR_FORCE_FERMION1 '):
+      force_f2 = float((line.split())[-1])
+      if Nroot == 2:
+        print >> FORCE, "%d,%g,%g,%g,null" % (traj, force_g, force_f, force_f2)
+    elif line.startswith('MONITOR_FORCE_FERMION2 '):
+      force_f3 = float((line.split())[-1])
+      if Nroot == 3:
+        print >> FORCE, "%d,%g,%g,%g,%g" \
+                        % (traj, force_g, force_f, force_f2, force_f3)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
+    # Ignore first FLINK printed as test of configuration reloading
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
       if starting == 1:
         starting = 0
+        link_width = float('nan')
       else:
-        ave_link = float((line.split())[3])
+        temp = line.split()
+        ave_link = float(temp[3])
         print >> FLINK, "%g,%g" % (MDTU, ave_link)
+        if len(temp) > 4:
+          link_width = float(temp[4]) # To be printed with other widths
+        else:
+          link_width = float('nan')
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # Gauge measurements come next:
     # plaquette, Polyakov loop, bosonic action... and CG iterations
+    # Normalize first three using Nc extracted above
     elif line.startswith('GMES '):
       temp = line.split()
-      print >> PLAQ, "%g,%g" % (MDTU, float(temp[4]))
+      print >> PLAQ, "%g,%g" % (MDTU, float(temp[4]) / Nc)
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
-      # Normalize bosonic action and Polyakov loop using Nc extracted above
       print >> SB, "%g,%g" % (MDTU, float(temp[5]) / (1.5 * Nc**2))
 
       poly_r = float(temp[1]) / Nc
@@ -267,12 +319,17 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Check to see if run seems to have finished properly
+  if CG == -1:
+    print infile, "encountered CG non-convergence"
+    print >> ERRFILE, infile, "encountered CG non-convergence"
+    CG = 1
   if walltime == -1:
     print infile, "didn't print final timing"
     print >> ERRFILE, infile, "didn't print final timing"
   elif walltime == -2:
     # Placeholder file -- error has been addressed as well as possible,
     # but don't print nonsense wall clock time
+    fermAct = [-1.0, -1.0]                        # Reset
     pass
   else:   # We are good to go
     ave_time = walltime / traj_per_file
@@ -285,7 +342,7 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Now deal with the corresponding "eig" file, if it is present
-  # These are always paired (checked by check_eig_pairs.py),
+  # These are always paired (checked by check_eig_pairs.py)
   # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
   infile = 'Out/eig.' + cfg
   if not os.path.isfile(infile):
@@ -302,15 +359,38 @@ for temp_tag in open('list.txt'):
         if stamp != oldstamp:
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
+
       elif line.startswith('EIGENVALUE '):
         temp = line.split()
         index = int(temp[1])
+        dat = float(temp[2])
         if index < 11 and index % 2 == 0:
-          eig[index / 2] = float(temp[2])
+          eig[index / 2] = dat
+        if index == 0 and dat < min_eig:        # Check spectral range
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+
+      elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
+        dat = float((line.split())[2])
+        if dat > max_eig:
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+
+        # Monitor (log of) condition number
+        cond_num = math.log(dat / eig[0])
+        print >> COND_NUM, "%d,%g" % (traj, cond_num)
+
       elif 'WARNING' in line:
         print infile, "saturated eigenvalue iterations"
         print >> ERRFILE, infile, "saturated eigenvalue iterations"
       elif line.startswith('RUNNING COMPLETED'):
+        if check == 1:    # Check that we have one measurement per file
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
         check = 1
     if check == -1:
       print infile, "did not complete"
@@ -333,10 +413,10 @@ for temp_tag in open('list.txt'):
     # which wasn't always printed in output (though it is now)
     # For now, extract it from the path
     C2 = 1.0
-    if '-c' in os.getcwd():
-      temp1 = os.getcwd()
+    temp1 = os.getcwd()
+    if '-c' in temp1:
       temp2 = temp1.split('-c')
-      C2 = float(((temp1[1]).split('/'))[0])
+      C2 = float(((temp2[1]).split('/'))[0])
 
     # We have a file, so let's cycle over its lines
     check = -1
@@ -347,20 +427,45 @@ for temp_tag in open('list.txt'):
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
+      elif line.startswith('FLINK '): # Will be printed with other widths
+        temp = line.split()
+        if len(temp) > 7:
+          link_width = float(temp[7])
+        else:
+          link_width = float('nan')
+
+      # ----------------------------------------------------------
+      # Fermion bilinear Ward identity
+      elif 'CONGRAD' in line:
+        CG = -1
       elif line.startswith('SUSY '):
         temp = line.split()
         trace = float(temp[1])
         gauge = float(temp[3])
-        susy = (C2 * gauge - trace) / (C2 * gauge + trace)
-        print >> BILIN, "%g,%g" % (MDTU, susy)
+        a = C2 * gauge
+        b = trace
+        susy = (a - b) / math.sqrt(a * a + b * b)
+
+        # The imaginary part of the bilinear should vanish on average,
+        # but large fluctuations may signal pathology
+        zero = float(temp[2])
+        print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
+      # ----------------------------------------------------------
+
+      # ----------------------------------------------------------
+      # Monopole world line density
       elif 'WARNING' in line:
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
-      elif line.startswith('MONOPOLE'):
+      elif line.startswith('MONOPOLE '):
         mono = float((line.split())[6])
         print >> MONO, "%g,%g" % (MDTU, mono / (2.0 * vol))
       elif line.startswith('RUNNING COMPLETED'):
         check = 1
+    if CG == -1:
+      print infile, "encountered CG non-convergence"
+      print >> ERRFILE, infile, "encountered CG non-convergence"
+      CG = 1
     if check == -1:
       print infile, "did not complete"
       print >> ERRFILE, infile, "did not complete"
@@ -378,9 +483,9 @@ POLY.close()
 POLY_MOD.close()
 FLINK.close()
 DET.close()
-EIG.close()
 BILIN.close()
 MONO.close()
+EIG.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
@@ -389,6 +494,7 @@ FORCE.close()
 CG_ITERS.close()
 WALLTIME.close()
 WALLTU.close()
+COND_NUM.close()
 NSTEP.close()
 STEPSIZE.close()
 TLENGTH.close()
