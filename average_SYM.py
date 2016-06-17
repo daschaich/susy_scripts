@@ -147,7 +147,7 @@ for obs in ['poly_mod', 'poly_mod_polar', 'SB', 'SF', 'Flink', 'mono']:
 # For the core-minutes per MDTU
 # we're again interested in the first datum on each line
 # but have to work in terms of trajectories rather than MDTU
-for obs in ['wallTU', 'cg_iters', 'accP']:
+for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
   count = 0
   ave = 0.          # Accumulate within each block
   datList = []
