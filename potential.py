@@ -163,7 +163,7 @@ for MDTU in cfgs:
         tWSq[j][t] += dat**2
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
-        print infile, "reports two measurements"
+        print toOpen[0], "reports two measurements"
       check = 1
   if check == -1:
     print toOpen[0], "did not complete"
@@ -226,7 +226,7 @@ jkA = np.zeros_like(jkC)
 
 # !!! Temporary hack to provide jackknife ratios
 # Will write each jackknife estimate to this file for post-processing
-tempfilename = 'data/C' + loop + '.jk'
+tempfilename = 'results/C' + loop + '.jk'
 tempfile = open(tempfilename, 'w')
 
 # All fits
