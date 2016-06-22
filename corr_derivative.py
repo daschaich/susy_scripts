@@ -8,20 +8,14 @@ import numpy as np
 # Compute the numerical derivative of the radial Konishi and SUGRA correlators
 # with blocked standard errors
 
-# For now only consider log-polar operator
-# Subtraction should vanish in the derivative -- possible consistency check
+# For now only consider log-polar scalar field
 
-# Parse arguments: first is thermalization cut,
-# second is block size (should be larger than autocorrelation time)
-# We discard any partial blocks at the end
-# Third argument tells us which files to analyze
-#   (for example, "corr", "konishi0", "subtracted0")
-if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
+# Parse argument: which file to analyze
+# This file already handles the thermalization cut and blocking
+if len(sys.argv) < 2:
+  print "Usage:", str(sys.argv[0]), "<file>"
   sys.exit(1)
-cut = int(sys.argv[1])
-block_size = int(sys.argv[2])
-tag = str(sys.argv[3])
+toOpen = str(sys.argv[1])
 runtime = -time.time()
 # ------------------------------------------------------------------
 
@@ -29,47 +23,32 @@ runtime = -time.time()
 
 # ------------------------------------------------------------------
 # First make sure we're calling this from the right place
-if not os.path.isdir('Out'):
-  print "ERROR: Out/ does not exist"
+if not os.path.isfile(toOpen):
+  print "ERROR:", toOpen, "does not exist"
   sys.exit(1)
 
-# Construct list of which configurations have been analyzed
-cfgs = []
-files = 'Out/' + tag + '.*'
-for filename in glob.glob(files):
-  cfg = int(filename.split('.')[-1])    # Number after last .
-  if cfg not in cfgs and cfg > cut:
-    cfgs.append(cfg)
-cfgs.sort()
-
-if len(cfgs) == 0:
-  print "ERROR: no files", files, "found"
-  sys.exit(1)
-
-# If we're missing some initial measurements,
-# increase thermalization cut
-cut = cfgs[0]
-
-# Cycle through first output file to associate scalar distances
-# with the corresponding label in the output
+# Take a first pass through the file to read the number of blocks
+# and associate scalar distances with the corresponding label in the output
 r = []          # List of r
-firstfile = 'Out/' + tag + '.' + str(cfgs[0])
-if not os.path.isfile(firstfile):
-  print "ERROR:", firstfile, "does not exist"
-  sys.exit(1)
-for line in open(firstfile):
-  # Format: CORR_K label r tag1 tag2 dat_vev dat_vol
-  # Format: CORR_K label r dat_vev dat_vol
-  if line.startswith('CORR_K '):
+for line in open(toOpen):
+  if line.startswith('Nblock '):
+    Nblocks = int((line.split())[1])
+
+  # !!! Assume measurements always separated by 10 MDTU
+  elif line.startswith('Nmeas '):
+    block_size = 10 * int((line.split())[1])
+
+  # Format: BLOCK_K block# label r tag1 tag2 dat
+  elif line.startswith('BLOCK_K 0 '):
     temp = line.split()
-    tag1 = int(temp[3])
-    tag2 = int(temp[4])
+    tag1 = int(temp[4])
+    tag2 = int(temp[5])
     if tag1 == 0 and tag2 == 0:
-      tr = float(temp[2])
+      tr = float(temp[3])
       if tr == 0:     # Skip r=0!
         continue
       r.append(tr)
-  elif line.startswith('CORR_S '):
+  elif line.startswith('BLOCK_S 0 '):
     break             # Don't go through whole file yet
 
 Npts = len(r)
@@ -78,88 +57,41 @@ Npts = len(r)
 
 
 # ------------------------------------------------------------------
-# Construct arrays of blocked measurements for each correlator
+# Read in blocked measurements of each correlator
 # K = Konishi, S = SUGRA (averaged over all independent components)
-# For now only consider log-polar operator with ensemble subtraction
-Kdat = [[] for x in range(Npts)]
-Sdat = [[] for x in range(Npts)]
+# For now only consider log-polar scalar field
+Kdat = np.empty((Npts, Nblocks), dtype = np.float)
+Sdat = np.empty_like(Kdat)
 
-# Monitor block lengths, starting and ending MDTU
-block_data = [[], [], []]
-count = 0         # How many measurements in each block
-begin = cut       # Where each block begins, to be incremented
+check = -1
+for line in open(toOpen):
+  # Format: BLOCK_K block# label r tag1 tag2 dat
+  if line.startswith('BLOCK'):
+    temp = line.split()
+    if float(temp[3]) == 0: # Skip r=0!
+      continue
 
-# Accumulators
-tK = [[] for x in range(Npts)]
-tS = [[] for x in range(Npts)]
-for i in range(Npts):
-  tK[i] = 0.0
-  tS[i] = 0.0
+    # Shift label on r since we skip r=0...
+    block = int(temp[1])
+    label = int(temp[2]) - 1
+    tag1 = int(temp[4])
+    tag2 = int(temp[5])
+    if not tag1 == 0 or not tag2 == 0:
+      continue
+    dat = float(temp[6])
 
-for MDTU in cfgs:
-  # If we're done with this block, record it and reset for the next
-  if MDTU >= (begin + block_size):
-    for i in range(Npts):
-      Kdat[i].append(tK[i] / float(count))
-      Sdat[i].append(tS[i] / float(count))
-      tK[i] = 0.0
-      tS[i] = 0.0
-    # Record and reset block data
-    block_data[0].append(count)
-    count = 0
-    block_data[1].append(begin)
-    begin += block_size
-    block_data[2].append(begin)
+    if line.startswith('BLOCK_K '):
+      Kdat[label][block] = dat
+    elif line.startswith('BLOCK_S '):
+      Sdat[label][block] = dat
 
-  # Running averages
-  filename = 'Out/' + tag + '.' + str(MDTU)
-  toOpen = glob.glob(filename)
-  if len(toOpen) > 1:
-    print "ERROR: multiple files named %s:" % filename,
-    print toOpen
-  check = -1
-  for line in open(toOpen[0]):
-    # Format: CORR_? label r tag1 tag2 dat_vev dat_vol
-    if line.startswith('CORR'):
-      if line.startswith('CORR_K 0 0 0 0 '):
-        count += 1            # Only increment once per measurement!
-
-      temp = line.split()
-      if float(temp[2]) == 0: # Skip r=0!
-        continue
-
-      # Shift label on r since we skip r=0...
-      label = int(temp[1]) - 1
-      tag1 = int(temp[3])
-      tag2 = int(temp[4])
-      dat = float(temp[5])
-
-      # For now only consider log-polar operator with ensemble subtraction
-      if line.startswith('CORR_K ') and tag1 == 0 and tag2 == 0:
-        tK[label] += dat
-      elif line.startswith('CORR_S ') and tag1 == 0 and tag2 == 0:
-        tS[label] += dat
-
-    elif line.startswith('RUNNING COMPLETED'):
-      if check == 1:    # Check that we have one measurement per file
-        print infile, "reports two measurements"
-      check = 1
-  if check == -1:
-    print toOpen[0], "did not complete"
-    sys.exit(1)
-
-# Check special case that last block is full
-# Assume last few measurements are equally spaced
-if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
-  for i in range(Npts):
-    Kdat[i].append(tK[i] / float(count))
-    Sdat[i].append(tS[i] / float(count))
-  # Record block data
-  block_data[0].append(count)
-  block_data[1].append(begin)
-  block_data[2].append(begin + block_size)
-
-Nblocks = len(Kdat[0])
+  elif line.startswith('RUNNING COMPLETED'):
+    if check == 1:    # Check that we have one measurement per file
+      print infile, "reports two measurements"
+    check = 1
+if check == -1:
+  print toOpen, "did not complete"
+  sys.exit(1)
 # ------------------------------------------------------------------
 
 
@@ -172,12 +104,12 @@ if Nblocks == 1:
   sys.exit(1)
 
 columns = [('r', float), ('dat', float)]
-Ktot   = np.array([sum(Kdat[x]) for x in range(Npts)])
-Stot   = np.array([sum(Sdat[x]) for x in range(Npts)])
+Ktot    = np.array([sum(Kdat[x]) for x in range(Npts)])
+Stot    = np.array([sum(Sdat[x]) for x in range(Npts)])
 
 # Effective dimension estimates for all jk samples
 derivK = np.empty((Npts - 1, Nblocks), dtype = np.float)
-derivS = np.empty((Npts - 1, Nblocks), dtype = np.float)
+derivS = np.empty_like(derivK)
 for i in range(Nblocks):    # Jackknife samples
   # Need to sort data before we know which to divide!
   K = np.zeros(Npts, dtype = columns)
