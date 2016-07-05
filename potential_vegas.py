@@ -2,12 +2,14 @@
 from __future__ import print_function     # For vegas
 import sys
 import time
-from numpy import sqrt, sin, cos, pi, dot
+from numpy import sqrt, sin, exp, pi, dot
 import vegas
 # ------------------------------------------------------------------
 # Print r_I (as defined in notes)
 # corresponding to input integer displacement three-vector
-# Use vegas to numerically calculate the continuum Fourier transform
+# Use vegas to numerically calculate the infinite-volume Fourier transform
+# Vectors are so small that lists are ~20% faster than numpy arrays
+# np.dot also seems to slow things down by ~30%
 
 # Parse arguments: Three-component integer vector
 # and number of evaluations in vegas calculation
@@ -22,15 +24,15 @@ Nwarm = int(Neval / 10)
 runtime = -time.time()
 
 # For later convenience
-invSqrt2  = 1.0 / sqrt(2.0)
-invSqrt6  = 1.0 / sqrt(6.0)
-invSqrt12 = 1.0 / sqrt(12.0)
-twopi = 2.0 * pi
+invSqrt2  = 2.0 * pi / sqrt(2.0)
+invSqrt6  = 2.0 * pi / sqrt(6.0)
+invSqrt12 = 2.0 * pi / sqrt(12.0)
+halfpi = 0.5 * pi
 
 # Convert (n_x, n_y, n_z) to (r_1, r_2, r_3)
 tag = [n_x - n_y, n_x + n_y - 2 * n_z, n_x + n_y + n_z]
 print("tag: %d, %d, %d" % (tag[0], tag[1], tag[2]))
-r = [tag[0] * invSqrt2, tag[1] * invSqrt6, tag[2] * invSqrt12]
+r = [tag[0] / sqrt(2.0), tag[1] / sqrt(6.0), tag[2] / sqrt(12.0)]
 mag = sqrt(dot(r, r))
 print("|r| = %.4g" % mag)
 
@@ -41,12 +43,14 @@ print("|r| = %.4g" % mag)
 # Include factor of 1/2 for determinant squared times trace normalization
 def f(p):
   k = [0.0, 0.0, 0.0]
-  k[0] = twopi * (p[0] - p[1]) * invSqrt2
-  k[1] = twopi * (p[0] + p[1] - 2.0 * p[2]) * invSqrt6
-  k[2] = twopi * (p[0] + p[1] + p[2]) * invSqrt12
-  num = cos(dot(r, k))                # Can only handle real part of exp
+  k[0] = (p[0] - p[1]) * invSqrt2
+  k[1] = (p[0] + p[1] - 2.0 * p[2]) * invSqrt6
+  k[2] = (p[0] + p[1] + p[2]) * invSqrt12
+
+  # Can only handle real part of exp
+  num = exp(1.0j * (r[0] * k[0] + r[1] * k[1] + r[2] * k[2]))
   denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 + (sin(0.5 * k[2]))**2
-  return 0.5 * pi * num / denom
+  return halfpi * num.real / denom
 
 integ = vegas.Integrator([[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation

@@ -2,11 +2,11 @@
 from __future__ import print_function     # For vegas
 import sys
 import time
-from numpy import sqrt, sin, cos, pi
+from numpy import sqrt, sin, exp, pi
 import vegas
 # ------------------------------------------------------------------
 # Print r_I for simple cubic lattice as check
-# Use vegas to numerically calculate the continuum Fourier transform
+# Use vegas to numerically calculate the infinite-volume Fourier transform
 
 # Parse arguments: Three-component integer vector
 # and number of evaluations in vegas calculation
@@ -20,6 +20,9 @@ Neval = int(sys.argv[4])
 Nwarm = int(Neval / 10)
 runtime = -time.time()
 
+# For later convenience
+twopi  = 2.0 * pi
+
 # Print naive |r|
 mag = sqrt(n_x * n_x + n_y * n_y + n_z * n_z)
 print("|r| = %.4g" % mag)
@@ -28,10 +31,10 @@ print("|r| = %.4g" % mag)
 # Integrating over dp = dk / (2pi) removes 2pi factors from measure
 # Use standard Tr[T^A T^B] = 0.5\de^{AB} trace normalization...
 def f(p):
-  k = 2.0 * pi * p
-  num = cos(n_x * k[0] + n_y * k[1] + n_z * k[2])
+  k = twopi * p
+  num = exp(1.0j * (n_x * k[0] + n_y * k[1] + n_z * k[2]))
   denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 + (sin(0.5 * k[2]))**2
-  return pi * num / denom               # Absorb 2pi's into integration range
+  return pi * num.real / denom            # Absorb 2pi's into integration range
 
 integ = vegas.Integrator([[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation

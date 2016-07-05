@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import time
-import numpy as np
+from numpy import sqrt, sin, pi, dot, exp
 # ------------------------------------------------------------------
 # Print r_I (as defined in notes)
 # corresponding to input integer displacement three-vector
@@ -25,16 +25,15 @@ low  = 1 - L / 2
 high = L / 2 + 1    # Account for range() dropping upper limit
 
 # For later convenience
-invSqrt2  = 1.0 / np.sqrt(2.0)
-invSqrt6  = 1.0 / np.sqrt(6.0)
-invSqrt12 = 1.0 / np.sqrt(12.0)
-twopiOvL  = 2.0 * np.pi / float(L)
+invSqrt2  = 2.0 * pi / float(L * sqrt(2.0))
+invSqrt6  = 2.0 * pi / float(L * sqrt(6.0))
+invSqrt12 = 2.0 * pi / float(L * sqrt(12.0))
 
 # Convert n_i to r_i (uses usual ehat basis)
 tag = [n_x - n_y, n_x + n_y - 2 * n_z, n_x + n_y + n_z]
 print "tag: %d, %d, %d" % (tag[0], tag[1], tag[2])
-r = [tag[0] * invSqrt2, tag[1] * invSqrt6, tag[2] * invSqrt12]
-mag = np.sqrt(np.dot(r, r))
+r = [tag[0] / sqrt(2.0), tag[1] / sqrt(6.0), tag[2] / sqrt(12.0)]
+mag = sqrt(dot(r, r))
 print "|r| = %.4g" % mag
 # ------------------------------------------------------------------
 
@@ -55,23 +54,23 @@ for p1 in range(low, high):
 
       # Convert p_i to k_i using ghat basis
       # Pattern is same as tag above, but now have overall twopiOvL factor
-      k = np.empty((3), dtype = np.float)
-      k[0] = twopiOvL * (p1 - p2) * invSqrt2
-      k[1] = twopiOvL * (p1 + p2 - 2.0 * p3) * invSqrt6
-      k[2] = twopiOvL * (p1 + p2 + p3) * invSqrt12
+      k = [0.0, 0.0, 0.0]
+      k[0] = (p1 - p2) * invSqrt2
+      k[1] = (p1 + p2 - 2.0 * p3) * invSqrt6
+      k[2] = (p1 + p2 + p3) * invSqrt12
 
-      khat_mu = 2.0 * np.sin(0.5 * k)
-      khatSq = (khat_mu**2).sum()
+      # Accumulate exp(i r.k) / khatSq
+      num = exp(1.0j * (r[0] * k[0] + r[1] * k[1] + r[2] * k[2]))
+      denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 \
+                                   + (sin(0.5 * k[2]))**2
 
-      # Sum \prod_i cos(r_i k_i) / khatSq
-      num = np.exp(1.0j * np.dot(r, k))
-      one_ov_rI += num / khatSq
+      one_ov_rI += num / denom
 #      print "%d %d %d --> %.4g / %.4g = %.4g" \
 #            % (p1, p2, p3, num, khatSq, num / khatSq)
 
-# Constant overall factor of 4pi / L^3,
+# Constant overall factor of 4pi / 4L^3,
 # plus factor of 1/2 for determinant squared times trace normalization
-one_ov_rI *= 2.0 * np.pi / float(L**3)
+one_ov_rI *= 0.5 * pi / float(L**3)
 
 # Print along with r_I itself
 rI = 1.0 / (one_ov_rI)
