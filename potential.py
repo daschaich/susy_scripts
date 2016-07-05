@@ -102,8 +102,7 @@ for line in open(firstfile):
     temp = line.split()
     if int(temp[3]) > 1:      # Only consider first t=1!
       break
-    if float(temp[2]) > 0.5:  # Ignore degenerate r=0!
-      temp_r.append(float(temp[2]))
+    temp_r.append(float(temp[2]))
 Npts = len(temp_r)
 x_r = np.array(temp_r, dtype = np.float)
 #print x_r
@@ -151,9 +150,7 @@ for MDTU in cfgs:
     # Format: $tag_LOOP # r t dat
     if line.startswith(loop + '_LOOP '):
       temp = line.split()
-      if float(temp[2]) < 0.5:  # Ignore degenerate r=0!
-        continue
-      j = int(temp[1]) - 1      # Shift because ignoring degenerate r=0
+      j = int(temp[1])
       t = int(temp[3]) - 1      # Shift to index from zero
       dat = float(temp[4])
       if j == 0 and t == 0:
