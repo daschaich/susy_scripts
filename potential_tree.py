@@ -29,7 +29,7 @@ invSqrt2  = 2.0 * pi / float(L * sqrt(2.0))
 invSqrt6  = 2.0 * pi / float(L * sqrt(6.0))
 invSqrt12 = 2.0 * pi / float(L * sqrt(12.0))
 
-# Convert n_i to r_i (uses usual ehat basis)
+# Convert n_i to r_i using usual ehat basis
 tag = [n_x - n_y, n_x + n_y - 2 * n_z, n_x + n_y + n_z]
 print "tag: %d, %d, %d" % (tag[0], tag[1], tag[2])
 r = [tag[0] / sqrt(2.0), tag[1] / sqrt(6.0), tag[2] / sqrt(12.0)]
@@ -41,7 +41,7 @@ print "|r| = %.4g" % mag
 
 # ------------------------------------------------------------------
 # Integrate over (p1, p2, p3), each from 0 to L-1,
-# except for (0, 0, 0), which is treated separately
+# except for (0, 0, 0), which must be treated separately
 # Be lazy and re-compute (almost) everything within the lowest-level loop
 one_ov_rI = 0.0 + 0.0j
 for p1 in range(low, high):
@@ -53,7 +53,7 @@ for p1 in range(low, high):
         continue
 
       # Convert p_i to k_i using ghat basis
-      # Pattern is same as tag above, but now have overall twopiOvL factor
+      # Pattern is same as tag above, now with 2pi factors
       k = [0.0, 0.0, 0.0]
       k[0] = (p1 - p2) * invSqrt2
       k[1] = (p1 + p2 - 2.0 * p3) * invSqrt6

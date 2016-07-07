@@ -16,13 +16,6 @@ n_z = int(sys.argv[3])
 L = int(sys.argv[4])
 runtime = -time.time()
 
-# Summation range will be -L / 2 + 1, ..., L / 2 inclusive
-if not L % 2 == 0:
-  print "Error: Need even L rather than", L
-  sys.exit(1)
-low  = 1 - L / 2
-high = L / 2 + 1    # Account for range() dropping upper limit
-
 # For later convenience
 twopiOvL  = 2.0 * pi / float(L)
 
@@ -35,25 +28,19 @@ print "|r| = %.4g" % mag
 
 # ------------------------------------------------------------------
 # Integrate over (p1, p2, p3), each from 0 to L-1,
-# except for (0, 0, 0), which is treated separately
+# except for (0, 0, 0), which must be treated separately
 # Be lazy and re-compute (almost) everything within the lowest-level loop
 one_ov_rI = 0.0
-for p1 in range(low, high):
-  for p2 in range(low, high):
-    for p3 in range(low, high):
+for p1 in range(L):
+  for p2 in range(L):
+    for p3 in range(L):
       # Omit zero-mode contribution
       # TODO: Separate analytical computation possible?
       if p1 == 0 and p2 == 0 and p3 == 0:
         continue
 
-      # Convert p_i to k_i using ghat basis
-      # Pattern is same as tag above, but now have overall twopiOvL factor
-      k = [0.0, 0.0, 0.0]
-      k[0] = twopiOvL * p1
-      k[1] = twopiOvL * p2
-      k[2] = twopiOvL * p3
-
       # Accumulate exp(i r.k) / khatSq
+      k = [twopiOvL * p1, twopiOvL * p2, twopiOvL * p3]
       num = exp(1.0j * (n_x * k[0] + n_y * k[1] + n_z * k[2]))
       denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 \
                                    + (sin(0.5 * k[2]))**2
