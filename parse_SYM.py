@@ -134,14 +134,15 @@ for temp_tag in open('list.txt'):
       walltime = -2;
 
     # Extract Nc for bosonic action and Polyakov loop normalizations
-    # Unfortunately, we switched formatting in early 2014
-    elif line.startswith('N=4 SYM '):
-      temp1 = line.split()
-      temp2 = (temp1[2]).split(')')
-      Nc = float(((temp2[0]).split('('))[-1])
+    # Convert it to DIMF to handle SU(N) runs
+    # Should no longer need to handle pre-2014 formatting
     elif line.startswith('N=4 SYM, '):
       temp1 = line.split(',')
       Nc = float(((temp1[1]).split())[2])
+      DIMF = Nc**2
+      temp = os.getcwd()
+      if 'slnc' in temp:
+        DIMF -= 1
 
     # Extract volume for monopole world line density
     elif line.startswith('nx '):
@@ -257,9 +258,9 @@ for temp_tag in open('list.txt'):
     # Normalize using volume and Nc extracted above
     elif line.startswith('action: gauge '):
       if fermAct[0] < 0:
-        fermAct[0] = float((line.split())[8]) / (16.0 * vol * Nc**2)
+        fermAct[0] = float((line.split())[8]) / (16.0 * vol * DIMF)
       elif fermAct[1] < 0:
-        fermAct[1] = float((line.split())[8]) / (16.0 * vol * Nc**2)
+        fermAct[1] = float((line.split())[8]) / (16.0 * vol * DIMF)
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -337,7 +338,7 @@ for temp_tag in open('list.txt'):
       print >> PLAQ, "%g,%g,%g" % (MDTU, ss_plaq, st_plaq)
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
-      print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * Nc**2))
+      print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * DIMF))
 
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc
