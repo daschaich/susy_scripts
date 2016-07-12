@@ -8,51 +8,52 @@ import vegas
 # Print r_I (as defined in notes)
 # corresponding to input integer displacement three-vector
 # Use vegas to numerically calculate the infinite-volume Fourier transform
-# Vectors are so small that lists are ~20% faster than numpy arrays
-# np.dot also seems to slow things down by ~30%
 
 # Parse arguments: Three-component integer vector
 # and number of evaluations in vegas calculation
 if len(sys.argv) < 5:
   print("Usage:", str(sys.argv[0]), "<n_x> <n_y> <n_z> <Neval>")
   sys.exit(1)
-n_x = int(sys.argv[1])
-n_y = int(sys.argv[2])
-n_z = int(sys.argv[3])
+n = [0, 0, 0]
+n[0] = int(sys.argv[1])
+n[1] = int(sys.argv[2])
+n[2] = int(sys.argv[3])
 Neval = int(sys.argv[4])
 Nwarm = int(Neval / 10)
 runtime = -time.time()
 
-# For later convenience
-invSqrt2  = 2.0 * pi / sqrt(2.0)
-invSqrt6  = 2.0 * pi / sqrt(6.0)
-invSqrt12 = 2.0 * pi / sqrt(12.0)
-halfpi = 0.5 * pi
+# Timeslice basis vectors as 3x3 matrix
+invSqrt2  = 1.0 / sqrt(2.0)
+invSqrt6  = 1.0 / sqrt(6.0)
+invSqrt12 = 1.0 / sqrt(12.0)
+twopi_i   = 2.0j * pi
+twopi     = 2.0 * pi
+ehat = [[invSqrt2,        invSqrt6,        invSqrt12], \
+        [-1.0 * invSqrt2, invSqrt6,        invSqrt12], \
+        [0.0,             -2.0 * invSqrt6, invSqrt12]]
 
-# Convert n_i to r_i using usual ehat basis
-tag = [n_x - n_y, n_x + n_y - 2 * n_z, n_x + n_y + n_z]
-print("tag: %d, %d, %d" % (tag[0], tag[1], tag[2]))
-r = [tag[0] / sqrt(2.0), tag[1] / sqrt(6.0), tag[2] / sqrt(12.0)]
+# Print naive |r| using ehat
+r = [0.0, 0.0, 0.0]
+for i in range(3):
+  for j in range(3):
+    r[j] += n[i] * ehat[i][j]
+
 mag = sqrt(dot(r, r))
 print("|r| = %.4g" % mag)
+# ------------------------------------------------------------------
 
-# Function to integrate
-# Convert p_i to k_i using ghat basis
-# Pattern is same as tag above, now with 2pi factors
-# Now integrating over dp = dk / (2pi), so no more 2pi factors in measure
-# Include factor of 1/2 for determinant squared times trace normalization
+
+
+# ------------------------------------------------------------------
+# Function to integrate -- can only handle real part of exp
+# Integrating over dp = dk / (2pi) removes 2pi factors from measure
+# Determinants cancel, so include only factor of 2 for trace normalization
 def f(p):
-  k = [0.0, 0.0, 0.0]
-  k[0] = (p[0] - p[1]) * invSqrt2
-  k[1] = (p[0] + p[1] - 2.0 * p[2]) * invSqrt6
-  k[2] = (p[0] + p[1] + p[2]) * invSqrt12
+  num = exp(twopi_i * (n[0] * p[0] + n[1] * p[1] + n[2] * p[2]))
+  denom = (sin(pi * p[0]))**2 + (sin(pi * p[1]))**2 + (sin(pi * p[2]))**2
+  return twopi * num.real / denom
 
-  # Can only handle real part of exp
-  num = exp(1.0j * (r[0] * k[0] + r[1] * k[1] + r[2] * k[2]))
-  denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 + (sin(0.5 * k[2]))**2
-  return halfpi * num.real / denom
-
-integ = vegas.Integrator([[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5]])
+integ = vegas.Integrator([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation
 result = integ(f, nitn=20, neval=Neval)   # Actual estimation
 

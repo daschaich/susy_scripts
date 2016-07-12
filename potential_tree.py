@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import time
-from numpy import sqrt, sin, pi, dot, exp
+from numpy import sqrt, sin, exp, pi, dot
 # ------------------------------------------------------------------
 # Print r_I (as defined in notes)
 # corresponding to input integer displacement three-vector
@@ -9,30 +9,31 @@ from numpy import sqrt, sin, pi, dot, exp
 
 # Parse arguments: Three-component integer vector and L
 if len(sys.argv) < 5:
-  print "Usage:", str(sys.argv[0]), "<n_x> <n_y> <n_z> <L>"
+  print "Usage:", str(sys.argv[0]), "<n_1> <n_2> <n_3> <L>"
   sys.exit(1)
-n_x = int(sys.argv[1])
-n_y = int(sys.argv[2])
-n_z = int(sys.argv[3])
+n = [0, 0, 0]
+n[0] = int(sys.argv[1])
+n[1] = int(sys.argv[2])
+n[2] = int(sys.argv[3])
 L = int(sys.argv[4])
 runtime = -time.time()
 
-# Summation range will be -L / 2 + 1, ..., L / 2 inclusive
-if not L % 2 == 0:
-  print "Error: Need even L rather than", L
-  sys.exit(1)
-low  = 1 - L / 2
-high = L / 2 + 1    # Account for range() dropping upper limit
+# Timeslice basis vectors as 3x3 matrix
+invSqrt2  = 1.0 / sqrt(2.0)
+invSqrt6  = 1.0 / sqrt(6.0)
+invSqrt12 = 1.0 / sqrt(12.0)
+pi_ov_L   = pi / float(L)
+twopiOvL  = 2.0j * pi / float(L)
+ehat = [[invSqrt2,        invSqrt6,        invSqrt12], \
+        [-1.0 * invSqrt2, invSqrt6,        invSqrt12], \
+        [0.0,             -2.0 * invSqrt6, invSqrt12]]
 
-# For later convenience
-invSqrt2  = 2.0 * pi / float(L * sqrt(2.0))
-invSqrt6  = 2.0 * pi / float(L * sqrt(6.0))
-invSqrt12 = 2.0 * pi / float(L * sqrt(12.0))
+# Print naive |r| using ehat
+r = [0.0, 0.0, 0.0]
+for i in range(3):
+  for j in range(3):
+    r[j] += n[i] * ehat[i][j]
 
-# Convert n_i to r_i using usual ehat basis
-tag = [n_x - n_y, n_x + n_y - 2 * n_z, n_x + n_y + n_z]
-print "tag: %d, %d, %d" % (tag[0], tag[1], tag[2])
-r = [tag[0] / sqrt(2.0), tag[1] / sqrt(6.0), tag[2] / sqrt(12.0)]
 mag = sqrt(dot(r, r))
 print "|r| = %.4g" % mag
 # ------------------------------------------------------------------
@@ -44,33 +45,23 @@ print "|r| = %.4g" % mag
 # except for (0, 0, 0), which must be treated separately
 # Be lazy and re-compute (almost) everything within the lowest-level loop
 one_ov_rI = 0.0 + 0.0j
-for p1 in range(low, high):
-  for p2 in range(low, high):
-    for p3 in range(low, high):
+for p1 in range(L):
+  for p2 in range(L):
+    for p3 in range(L):
       # Omit zero-mode contribution
       # TODO: Separate analytical computation possible?
-      if p1 == 0 and p2 == 0 and p3 == 0:
+      if p1 + p2 + p3 == 0:
         continue
 
-      # Convert p_i to k_i using ghat basis
-      # Pattern is same as tag above, now with 2pi factors
-      k = [0.0, 0.0, 0.0]
-      k[0] = (p1 - p2) * invSqrt2
-      k[1] = (p1 + p2 - 2.0 * p3) * invSqrt6
-      k[2] = (p1 + p2 + p3) * invSqrt12
-
       # Accumulate exp(i r.k) / khatSq
-      num = exp(1.0j * (r[0] * k[0] + r[1] * k[1] + r[2] * k[2]))
-      denom = (sin(0.5 * k[0]))**2 + (sin(0.5 * k[1]))**2 \
-                                   + (sin(0.5 * k[2]))**2
-
+      num = exp(twopiOvL * (n[0] * p1 + n[1] * p2 + n[2] * p3))
+      denom = (sin(pi_ov_L * p1))**2 + (sin(pi_ov_L * p2))**2 \
+                                     + (sin(pi_ov_L * p3))**2
       one_ov_rI += num / denom
-#      print "%d %d %d --> %.4g / %.4g = %.4g" \
-#            % (p1, p2, p3, num, khatSq, num / khatSq)
 
-# Constant overall factor of 4pi / 4L^3,
-# plus factor of 1/2 for determinant squared times trace normalization
-one_ov_rI *= 0.5 * pi / float(L**3)
+# Constant overall factor of 4pi / 4L^3
+# Determinants cancel, so include only factor of 2 for trace normalization
+one_ov_rI *= 2.0 * pi / float(L**3)
 
 # Print along with r_I itself
 rI = 1.0 / (one_ov_rI)
