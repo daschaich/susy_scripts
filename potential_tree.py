@@ -60,8 +60,8 @@ for p1 in range(L):
       one_ov_rI += num / denom
 
 # Constant overall factor of 4pi / 4L^3
-# Determinants cancel, so include only factor of 2 for trace normalization
-one_ov_rI *= 2.0 * pi / float(L**3)
+# Don't add any extra normalization (determinants cancel)
+one_ov_rI *= pi / float(L**3)
 
 # Print along with r_I itself
 rI = 1.0 / (one_ov_rI)

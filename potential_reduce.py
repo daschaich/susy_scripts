@@ -23,10 +23,10 @@ if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
 
-# Only constructed lookup table for volumes up to 8nt24 so far!!!
+# Lookup table is customized for lattice volume 8nt24
 temp = os.getcwd()
 if not '_8nt24' in temp:
-  print "ERROR: Can only handle volumes up to 8nt24"
+  print "ERROR: Customized for lattice volume 8nt24"
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -34,90 +34,28 @@ if not '_8nt24' in temp:
 
 # ------------------------------------------------------------------
 # The lookup table, plus tables of the same size for running averages
-# We can ignore the sign of r1, but not r2 or r3
-# r2 ranges from -6 through 8: total 15, shifted by 6
-# r3 ranges from -3 through 9: total 13, shifted by 3
-# awk '{print "rI["$1"]["$2+6"]["$3+3"] = "$5}' <file>
-max_x = 5;    max_y = 15;     max_z = 13
-count = np.zeros((max_x, max_y, max_z), dtype = np.int)
-ave = np.zeros((max_x, max_y, max_z), dtype = np.float)
-rI = np.empty((max_x, max_y, max_z), dtype = np.float)
-for a in range(max_x):
-  for b in range(max_y):
-    for c in range(max_z):      # Negative default will make it obvious
+num_x = 3;    num_y = 3;      num_z = 4
+count = np.zeros((num_x, num_y, num_z), dtype = np.int)
+ave = np.zeros((num_x, num_y, num_z), dtype = np.float)
+rI = np.empty((num_x, num_y, num_z), dtype = np.float)
+for a in range(num_x):
+  for b in range(num_y):
+    for c in range(num_z):      # Negative default will make it obvious
       rI[a][b][c] = -1.0        # if we overlooked a vector below
-rI[0][6][6] = 0.542
-rI[0][4][4] = 0.790
-rI[1][7][4] = 0.802
-rI[0][8][5] = 0.823
-rI[1][5][5] = 0.824
-rI[0][6][9] = 1.052
-rI[2][6][3] = 1.276
-rI[0][4][7] = 1.303
-rI[1][5][8] = 1.361
-rI[0][8][8] = 1.368
-rI[1][7][7] = 1.368
-rI[1][9][3] = 1.417
-rI[0][10][4] = 1.484
-rI[2][6][6] = 1.625
-rI[2][8][2] = 1.713
-rI[2][4][4] = 1.713
-rI[0][2][5] = 1.795
-rI[1][9][6] = 1.801
-rI[0][10][7] = 1.811
-rI[1][3][6] = 1.853
-rI[3][7][1] = 1.976
-rI[3][5][5] = 1.977
-rI[3][7][4] = 1.991
-rI[3][5][2] = 1.993
-rI[1][11][2] = 2.027
-rI[2][10][4] = 2.084
-rI[2][8][5] = 2.085
-rI[1][11][5] = 2.091
-rI[2][10][1] = 2.105
-rI[2][2][5] = 2.105
-rI[2][4][7] = 2.108
-rI[0][6][12] = 2.223
-rI[0][12][3] = 2.345
-rI[3][9][3] = 2.388
-rI[3][3][3] = 2.388
-rI[0][8][11] = 2.415
-rI[1][5][11] = 2.425
-rI[0][10][10] = 2.468
-rI[1][1][7] = 2.473
-rI[3][5][8] = 2.497
-rI[0][12][6] = 2.524
-rI[3][7][7] = 2.541
-rI[3][9][6] = 2.562
-rI[2][10][7] = 2.584
-rI[0][0][6] = 2.615
-rI[3][3][6] = 2.633
-rI[3][9][0] = 2.634
-rI[2][2][8] = 2.669
-rI[4][6][3] = 2.678
-rI[2][6][9] = 2.704
-rI[0][2][8] = 2.733
-rI[1][11][8] = 2.751
-rI[2][4][10] = 2.815
-rI[2][12][3] = 2.830
-rI[1][13][4] = 2.866
-rI[3][11][2] = 2.973
-rI[3][1][4] = 2.975
-rI[4][8][2] = 2.981
-rI[4][4][4] = 2.982
-rI[1][9][9] = 2.982
-rI[4][6][6] = 3.003
-rI[4][6][0] = 3.004
-rI[0][4][10] = 3.009
-rI[0][12][9] = 3.079
-rI[1][13][1] = 3.104
-rI[2][12][6] = 3.127
-rI[0][14][5] = 3.135
-rI[2][8][8] = 3.133
-rI[2][0][6] = 3.133
-rI[2][12][0] = 3.135
-rI[1][13][7] = 3.138
-rI[0][14][2] = 3.138
+rI[0][0][1] = 0.925
+rI[0][1][1] = 1.443
+rI[1][1][1] = 1.827
+rI[0][0][2] = 1.856
+rI[0][1][2] = 2.215
+rI[1][1][2] = 2.490
+rI[0][2][2] = 2.838
+rI[0][0][3] = 2.890
+rI[1][2][2] = 3.042
+rI[0][1][3] = 3.117
+rI[1][1][3] = 3.309
+rI[2][2][2] = 3.514
+rI[0][2][3] = 3.605
+rI[1][2][3] = 3.761
 # ------------------------------------------------------------------
 
 
@@ -153,9 +91,9 @@ for filename in glob.glob(files):
       # This will also take care of the three different types of loops
       if not t == old_t:
         label = 0
-        for a in range(max_x):
-          for b in range(max_y):
-            for c in range(max_z):
+        for a in range(num_x):
+          for b in range(num_y):
+            for c in range(num_z):
               if count[a][b][c] > 0:
                 dat = ave[a][b][c] / count[a][b][c]
                 print >> outfile, "%s %d %.4g %d %.6g" \
@@ -168,22 +106,18 @@ for filename in glob.glob(files):
         loop = str(temp[0])
         old_t = t
 
-      # Convert (n_x, n_y, n_z) to (r_1, r_2, r_3) tag,
-      # shifting r_2 and r_3 to keep them non-negative
-      # Instead of computing too-large distances,
-      # use rI array to figure out which are cut
-      n_x = int(temp[1])
-      n_y = int(temp[2])
-      n_z = int(temp[3])
-      rtag = [np.abs(n_x - n_y),
-              6 + n_x + n_y - 2 * n_z,
-              3 + n_x + n_y + n_z]
-      if rtag[0] >= max_x or rtag[1] >= max_y or rtag[2] >= max_z \
-                          or rI[rtag[0]][rtag[1]][rtag[2]] < 0:
+      # Convert (n_x, n_y, n_z) displacements to canonical form
+      # (absolute values in increasing order)
+      n_x = np.abs(int(temp[1]))
+      n_y = np.abs(int(temp[2]))
+      n_z = np.abs(int(temp[3]))
+      n = np.sort([n_x, n_y, n_z])
+      if n[0] >= num_x or n[1] >= num_y or n[2] >= num_z \
+                       or rI[n[0]][n[1]][n[2]] < 0:
         continue
 
-      ave[rtag[0]][rtag[1]][rtag[2]] += float(temp[5])
-      count[rtag[0]][rtag[1]][rtag[2]] += 1
+      ave[n[0]][n[1]][n[2]] += float(temp[5])
+      count[n[0]][n[1]][n[2]] += 1
 
     elif line.startswith('RUNNING COMPLETED'):
       print >> outfile, line.rstrip()
@@ -193,9 +127,9 @@ for filename in glob.glob(files):
 
       # Average final data set and reset before moving on to the next file
       label = 0
-      for a in range(max_x):
-        for b in range(max_y):
-          for c in range(max_z):
+      for a in range(num_x):
+        for b in range(num_y):
+          for c in range(num_z):
             if count[a][b][c] > 0:
               dat = ave[a][b][c] / count[a][b][c]
               print >> outfile, "%s %d %.4g %d %.6g" \

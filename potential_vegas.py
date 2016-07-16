@@ -26,8 +26,7 @@ runtime = -time.time()
 invSqrt2  = 1.0 / sqrt(2.0)
 invSqrt6  = 1.0 / sqrt(6.0)
 invSqrt12 = 1.0 / sqrt(12.0)
-twopi_i   = 2.0j * pi
-twopi     = 2.0 * pi
+twopi     = 2.0j * pi
 ehat = [[invSqrt2,        invSqrt6,        invSqrt12], \
         [-1.0 * invSqrt2, invSqrt6,        invSqrt12], \
         [0.0,             -2.0 * invSqrt6, invSqrt12]]
@@ -47,11 +46,11 @@ print("|r| = %.4g" % mag)
 # ------------------------------------------------------------------
 # Function to integrate -- can only handle real part of exp
 # Integrating over dp = dk / (2pi) removes 2pi factors from measure
-# Determinants cancel, so include only factor of 2 for trace normalization
+# Don't add any extra normalization (determinants cancel)
 def f(p):
-  num = exp(twopi_i * (n[0] * p[0] + n[1] * p[1] + n[2] * p[2]))
+  num = exp(twopi * (n[0] * p[0] + n[1] * p[1] + n[2] * p[2]))
   denom = (sin(pi * p[0]))**2 + (sin(pi * p[1]))**2 + (sin(pi * p[2]))**2
-  return twopi * num.real / denom
+  return pi * num.real / denom
 
 integ = vegas.Integrator([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation

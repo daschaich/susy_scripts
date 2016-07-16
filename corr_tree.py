@@ -64,8 +64,8 @@ for p1 in range(L):
         toSum += num / denom
 
 # Overall square root and constant factor of sqrt(4pi^2 / 4L^4),
-# Determinants cancel, so include only factor of 2 for trace normalization
-one_ov_rI = pi * sqrt(2.0 * toSum) / float(L**2)
+# Don't add any extra normalization (determinants cancel)
+one_ov_rI = pi * sqrt(toSum) / float(L**2)
 
 # Print along with r_I itself
 rI = 1.0 / (one_ov_rI)
