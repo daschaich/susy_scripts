@@ -7,7 +7,8 @@ import numpy as np
 from scipy import optimize
 # ------------------------------------------------------------------
 # Just combine Wilson loop data with the same r_I (unweighted averages)
-# r_I computed with vegas as described in notes, and copied into a lookup table
+# r_I computed with 8nt24 discrete Fourier transform,
+# and copied into a lookup table
 
 # Parse argument: which files to consider (we'll do all of them)
 if len(sys.argv) < 2:
@@ -21,18 +22,19 @@ if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
 
-# Lookup table is customized for lattice volume 8nt24,
-# but other volumes should work up to potentially missing large-r points
+# Lookup table is specific to lattice volume 8nt24,
+# Other volumes need to be re-run
 temp = os.getcwd()
 if not '_8nt24' in temp:
   print "Warning: Customized for lattice volume 8nt24"
+  sys.exit(1)
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
 # The lookup table, plus tables of the same size for running averages
-num_x = 3;    num_y = 3;      num_z = 4
+num_x = 2;    num_y = 3;      num_z = 4
 count = np.zeros((num_x, num_y, num_z), dtype = np.int)
 ave = np.zeros((num_x, num_y, num_z), dtype = np.float)
 rI = np.empty((num_x, num_y, num_z), dtype = np.float)
@@ -40,20 +42,16 @@ for a in range(num_x):
   for b in range(num_y):
     for c in range(num_z):      # Negative default will make it obvious
       rI[a][b][c] = -1.0        # if we overlooked a displacement
-rI[0][0][1] = 0.920
-rI[0][1][1] = 1.412
-rI[0][0][2] = 1.752
-rI[1][1][1] = 1.810
-rI[0][1][2] = 2.155
-rI[1][1][2] = 2.461
-rI[0][0][3] = 2.778
-rI[0][2][2] = 2.792
-rI[1][2][2] = 3.021
-rI[0][1][3] = 3.051
-rI[1][1][3] = 3.272
-rI[2][2][2] = 3.503
-rI[0][2][3] = 3.568
-rI[1][2][3] = 3.741
+rI[0][0][1] = 0.913
+rI[0][1][1] = 1.385
+rI[0][0][2] = 1.694
+rI[1][1][1] = 1.752
+rI[0][1][2] = 2.045
+rI[1][1][2] = 2.298
+rI[0][0][3] = 2.468
+rI[0][2][2] = 2.541
+rI[0][1][3] = 2.660
+rI[1][2][2] = 2.707
 # ------------------------------------------------------------------
 
 
@@ -63,7 +61,7 @@ rI[1][2][3] = 3.741
 files = 'Out/' + tag + '.*'
 for filename in glob.glob(files):
   cfg = str(filename.split('.')[-1])       # Number after last .
-  outfilename = 'Out/' + tag + '-reduced.' + cfg
+  outfilename = 'Out/' + tag + '-FVreduced.' + cfg
   outfile = open(outfilename, 'w')
 
   copyHeader = 1
