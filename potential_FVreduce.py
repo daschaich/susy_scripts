@@ -22,11 +22,17 @@ if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
 
-# Lookup table is specific to lattice volume 8nt24,
+# Lookup table is specific to lattice volume
 # Other volumes need to be re-run
 temp = os.getcwd()
-if not '_8nt24' in temp:
-  print "Warning: Customized for lattice volume 8nt24"
+if '_8nt24' in temp:
+  vol = '8nt24'
+  num_x = 2;    num_y = 3;      num_z = 4
+elif '_12nt24' in temp:
+  vol = '12nt24'
+  num_x = 3;    num_y = 4;      num_z = 6
+else:
+  print "ERROR: Lattice volume not yet implemented"
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -34,7 +40,6 @@ if not '_8nt24' in temp:
 
 # ------------------------------------------------------------------
 # The lookup table, plus tables of the same size for running averages
-num_x = 2;    num_y = 3;      num_z = 4
 count = np.zeros((num_x, num_y, num_z), dtype = np.int)
 ave = np.zeros((num_x, num_y, num_z), dtype = np.float)
 rI = np.empty((num_x, num_y, num_z), dtype = np.float)
@@ -42,16 +47,47 @@ for a in range(num_x):
   for b in range(num_y):
     for c in range(num_z):      # Negative default will make it obvious
       rI[a][b][c] = -1.0        # if we overlooked a displacement
-rI[0][0][1] = 0.913
-rI[0][1][1] = 1.385
-rI[0][0][2] = 1.694
-rI[1][1][1] = 1.752
-rI[0][1][2] = 2.045
-rI[1][1][2] = 2.298
-rI[0][0][3] = 2.468
-rI[0][2][2] = 2.541
-rI[0][1][3] = 2.660
-rI[1][2][2] = 2.707
+
+if vol == '8nt24':
+  rI[0][0][1] = 0.913
+  rI[0][1][1] = 1.385
+  rI[0][0][2] = 1.694
+  rI[1][1][1] = 1.752
+  rI[0][1][2] = 2.045
+  rI[1][1][2] = 2.298
+  rI[0][0][3] = 2.468
+  rI[0][2][2] = 2.541
+  rI[0][1][3] = 2.660
+  rI[1][2][2] = 2.707
+
+elif vol == '12nt24':
+  rI[0][0][1] =  0.926
+  rI[0][1][1] =  1.434
+  rI[0][0][2] =  1.794
+  rI[1][1][1] =  1.856
+  rI[0][1][2] =  2.231
+  rI[1][1][2] =  2.576
+  rI[0][0][3] =  2.928
+  rI[0][2][2] =  2.956
+  rI[1][2][2] =  3.230
+  rI[0][1][3] =  3.254
+  rI[1][1][3] =  3.523
+  rI[2][2][2] =  3.824
+  rI[0][2][3] =  3.888
+  rI[1][2][3] =  4.110
+  rI[0][0][4] =  4.165
+  rI[0][1][4] =  4.398
+  rI[1][1][4] =  4.606
+  rI[2][2][3] =  4.649
+  rI[0][3][3] =  4.736
+  rI[1][3][3] =  4.926
+  rI[0][2][4] =  4.939
+  rI[1][2][4] =  5.123
+  rI[0][0][5] =  5.247
+  rI[0][1][5] =  5.420
+  rI[2][3][3] =  5.424
+  rI[1][1][5] =  5.585
+  rI[2][2][4] =  5.609
 # ------------------------------------------------------------------
 
 
