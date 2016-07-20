@@ -17,18 +17,19 @@ import numpy as np
 # Third argument tells us how many operators to consider per measurement
 # Fourth argument tells us how many smearings to consider per measurement
 # Fifth argument tells us the directory to analyze
-if len(sys.argv) < 6:
+# Sixth argument tells us whether to consider the Konishi ("K") or SUGRA ("S")
+if len(sys.argv) < 7:
   print "Usage:", str(sys.argv[0]),
-  print "<cut> <block> <# ops> <# smear> <dir>"
+  print "<cut> <block> <# ops> <# smear> <dir> <op>"
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
 ops_per_smear = int(sys.argv[3])
 num_smear = int(sys.argv[4])
 smear = ['2', '0', '1', '3', '4']
-num_ops = ops_per_smear * num_smear   # Either Konishi or SUGRA
-tot_ops = 2 * num_ops                 # Both Konishi and SUGRA
+num_ops = ops_per_smear * num_smear
 tag = str(sys.argv[5])
+op = 'O' + str(sys.argv[6]) + ' '
 runtime = -time.time()
 
 # Quick sanity checks
@@ -37,6 +38,9 @@ if ops_per_smear < 1 or ops_per_smear > 3:
   sys.exit(1)
 if num_smear > len(smear):
   print "ERROR: Only set up", len(smear), "smearings per measurement"
+  sys.exit(1)
+if op != 'OK ' and op != 'OS ':
+  print "ERROR: Unrecognized target", op
   sys.exit(1)
 # ------------------------------------------------------------------
 
@@ -83,9 +87,9 @@ if blmax < 0:
 # for the Konishi (K) and SUGRA (S) operators
 # We also need to accumulate two arrays of products for each operator
 # These list definitions are a little awkward: the last index comes first
-Kdat = [[[] for i in range(blmax + 1)] for j in range(tot_ops)]
-AKdat = [[[[] for i in range(blmax)] for j in range(tot_ops)] for k in range(tot_ops)]
-BKdat = [[[[] for i in range(blmax)] for j in range(tot_ops)] for k in range(tot_ops)]
+Kdat = [[[] for i in range(blmax + 1)] for j in range(num_ops)]
+AKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
+BKdat = [[[[] for i in range(blmax)] for j in range(num_ops)] for k in range(num_ops)]
 
 # Monitor block lengths, starting and ending MDTU
 block_data = [[], [], []]
@@ -93,8 +97,8 @@ count = 0         # How many measurements in each block
 begin = cut       # Where each block begins, to be incremented
 
 # Accumulators
-tK = np.zeros((tot_ops, blmax + 1), dtype = np.float)
-tAK = np.zeros((tot_ops, tot_ops, blmax), dtype = np.float)
+tK = np.zeros((num_ops, blmax + 1), dtype = np.float)
+tAK = np.zeros((num_ops, num_ops, blmax), dtype = np.float)
 tBK = np.zeros_like(tAK)
 for MDTU in cfgs:
   # If we're done with this block, record it and reset for the next
@@ -102,13 +106,13 @@ for MDTU in cfgs:
     if count == 0:
       print "ERROR: no data to average after file %s:" % toOpen
       sys.exit(1)
-    for i in range(tot_ops):
+    for i in range(num_ops):
       Kdat[i][blmax].append(tK[i][blmax] / float(count))
       tK[i][blmax] = 0.0
       for bl in range(blmax):
         Kdat[i][bl].append(tK[i][bl] / float(count))
         tK[i][bl] = 0.0
-        for j in range(tot_ops):
+        for j in range(num_ops):
           AKdat[i][j][bl].append(tAK[i][j][bl] / float(count))
           BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
           tAK[i][j][bl] = 0.0
@@ -119,8 +123,8 @@ for MDTU in cfgs:
     begin += block_size
     block_data[2].append(begin)
 
-  # Running averages
-  dat = np.zeros((tot_ops, blmax + 1), dtype = np.float)
+  # Running averages require data from every directory
+  dat = np.zeros((num_ops, blmax + 1), dtype = np.float)
   filename = tag + '/mcrg.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
@@ -130,7 +134,7 @@ for MDTU in cfgs:
   for line in open(toOpen[0]):
     # Format: O? smear bl op dat
     # Three interpolating operators for each continuum op defined at top
-    if line.startswith('OK ') or line.startswith('OS '):
+    if line.startswith(op):
       temp = line.split()
       this_smear = int(temp[1])
       N = -1
@@ -139,20 +143,14 @@ for MDTU in cfgs:
           N = i
       if N < 0:
         continue
-
-      # Combine Konishi and SUGRA by padding the latter
-      pad = 0
-      if line.startswith('OS '):
-        pad = num_ops
-
       bl = int(temp[2])
       interp = int(temp[3])
       if interp == 0:
-        dat[pad + ops_per_smear * N][bl] = float(temp[4])       # PP
+        dat[ops_per_smear * N][bl] = float(temp[4])       # PP
       elif interp == 2 and ops_per_smear > 1:
-        dat[pad + ops_per_smear * N + 1][bl] = float(temp[4])   # UU
+        dat[ops_per_smear * N + 1][bl] = float(temp[4])   # UU
       elif interp == 1 and ops_per_smear > 2:
-        dat[pad + ops_per_smear * N + 2][bl] = float(temp[4])   # Mixed
+        dat[ops_per_smear * N + 2][bl] = float(temp[4])   # Mixed
 
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
@@ -164,11 +162,11 @@ for MDTU in cfgs:
 
   # Accumulate operator and products A(n), B(n) -- note shifted index
   count += 1                        # Only tick once per measurement
-  for i in range(tot_ops):
+  for i in range(num_ops):
     tK[i][blmax] += dat[i][blmax]
     for bl in range(blmax):
       tK[i][bl] += dat[i][bl]
-      for j in range(tot_ops):
+      for j in range(num_ops):
         tAK[i][j][bl] += dat[i][bl + 1] * dat[j][bl]
         tBK[i][j][bl] += dat[i][bl + 1] * dat[j][bl + 1]
 
@@ -178,11 +176,11 @@ if cfgs[-1] >= (begin + block_size - cfgs[-1] + cfgs[-2]):
   if count == 0:
     print "ERROR: no data to average after file %s:" % toOpen
     sys.exit(1)
-  for i in range(tot_ops):
+  for i in range(num_ops):
     Kdat[i][blmax].append(tK[i][blmax] / float(count))
     for bl in range(blmax):
       Kdat[i][bl].append(tK[i][bl] / float(count))
-      for j in range(tot_ops):
+      for j in range(num_ops):
         AKdat[i][j][bl].append(tAK[i][j][bl] / float(count))
         BKdat[i][j][bl].append(tBK[i][j][bl] / float(count))
   # Record block data
@@ -208,31 +206,29 @@ if Nblocks == 1:
 Ktot = np.empty_like(tK)
 AKtot = np.empty_like(tAK)
 BKtot = np.empty_like(tBK)
-for i in range(tot_ops):
+for i in range(num_ops):
   Ktot[i][blmax] = sum(Kdat[i][blmax])
   for bl in range(blmax):
     Ktot[i][bl] = sum(Kdat[i][bl])
-    for j in range(tot_ops):
+    for j in range(num_ops):
       AKtot[i][j][bl] = sum(AKdat[i][j][bl])
       BKtot[i][j][bl] = sum(BKdat[i][j][bl])
 
-# All jackknife results
-# Print both sorted eigenvalues and corresponding Delta = 4 - y
-jklambda = np.zeros((tot_ops, blmax, Nblocks), dtype = np.float)
-jkDelta  = np.zeros_like(jklambda)
+# All jackknife results -- only care about Delta = 4 - y
+jkDeltaK = np.zeros((blmax, Nblocks), dtype = np.float)
 for n in range(Nblocks):  # Jackknife samples
   # It's a little awkward that the indices of the individual operators
   # are shifted relative to all the others
-  K = np.zeros(tot_ops, dtype = np.float)
+  K = np.zeros(num_ops, dtype = np.float)
   temp = np.zeros_like(K)
-  AK = np.zeros((tot_ops, tot_ops), dtype = np.float)
+  AK = np.zeros((num_ops, num_ops), dtype = np.float)
   BK = np.zeros_like(AK)
   for bl in range(blmax):
-    for i in range(tot_ops):
+    for i in range(num_ops):
       temp[i] = (Ktot[i][bl] - Kdat[i][bl][n]) / (Nblocks - 1.0)
       K[i] = (Ktot[i][bl + 1] - Kdat[i][bl + 1][n]) / (Nblocks - 1.0)
-    for i in range(tot_ops):
-      for j in range(tot_ops):
+    for i in range(num_ops):
+      for j in range(num_ops):
         AK[i][j] = (AKtot[i][j][bl] - AKdat[i][j][bl][n]) / (Nblocks - 1.0)
         AK[i][j] -= K[i] * temp[j]
 
@@ -244,9 +240,7 @@ for n in range(Nblocks):  # Jackknife samples
     eig, vecs = np.linalg.eig(TK)
 
     # Check for complex or negative eigenvalues
-    temp = np.sort(eig)       # Orders from smallest to largest
-    eig = temp[::-1]          # Reverse order
-    for i in range(tot_ops):
+    for i in range(num_ops):
       if eig[i].real < 0.0:
         print "ERROR: Negative eigenvalue"
         print eig
@@ -255,8 +249,8 @@ for n in range(Nblocks):  # Jackknife samples
         print "ERROR: Complex eigenvalue"
         print eig
         sys.exit(1)
-      jklambda[i][bl][n] = eig[i].real
-      jkDelta[i][bl][n] = 4.0 - np.log(eig[i].real) / np.log(2.0)
+    # Absolute value no longer needed
+    jkDeltaK[bl][n] = 4.0 - np.log(np.amax(eig)) / np.log(2.0)
 
     # Optional monitoring for initial debugging / sanity checks
 #    if n == 0:
@@ -264,7 +258,7 @@ for n in range(Nblocks):  # Jackknife samples
 #      print "BK:", BK
 #      print "BKinv:", BKinv
 #      print "TK:", TK
-#      print eig, "-->", la_max
+#      print eig, "-->", np.amax(eig)
 #      print ""
 #      sys.exit(0)
 # ------------------------------------------------------------------
@@ -273,30 +267,14 @@ for n in range(Nblocks):  # Jackknife samples
 
 # ------------------------------------------------------------------
 # Now we can average over jackknife samples and print out results
-print "Analyzing with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print "%d operators in the stability matrix" % tot_ops
-
-outfile = open('results/MCRG.dat', 'w')
-print >> outfile, "# Analyzing with %d blocks of length %d MDTU" \
-                  % (Nblocks, block_size)
-print >> outfile, "# %d operators in the stability matrix" % tot_ops
+print "Analyzing %s with %d blocks of length %d MDTU" \
+      % (op.rstrip(), Nblocks, block_size)
+print "%d operators in the stability matrix" % num_ops
 
 for bl in range(blmax):
-  for i in range(tot_ops):
-    ave = np.average(jkDelta[i][bl])
-    err = (Nblocks - 1.0) * np.sum((jkDelta[i][bl] - ave)**2) / float(Nblocks)
-    print >> outfile, "Delta%d %d %.6g %.4g" % (i, bl + 1, ave, err),
-    ave = np.average(jklambda[i][bl])
-    err = (Nblocks - 1.0) * np.sum((jklambda[i][bl] - ave)**2) / float(Nblocks)
-    print >> outfile, "from lambda = %.6g %.4g" % (ave, err)
-  print >> outfile, ""
-
-# More detailed block information
-#for i in range(Nblocks):
-#  print >> outfile, \
-#        "# Block %2d has %d measurements from MDTU in [%d, %d)" \
-#        % (i + 1, block_data[0][i], block_data[1][i], block_data[2][i])
-outfile.close()
+  ave = np.average(jkDeltaK[bl])
+  err = (Nblocks - 1.0) * np.sum((jkDeltaK[bl] - ave)**2) / float(Nblocks)
+  print "Delta%s %d %.6g %.4g" % (str(sys.argv[6]), bl + 1, ave, err)
 
 runtime += time.time()
 print "Runtime: %0.1f seconds" % runtime
