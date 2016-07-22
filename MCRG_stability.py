@@ -264,7 +264,7 @@ for n in range(Nblocks):  # Jackknife samples
 #      print "BK:", BK
 #      print "BKinv:", BKinv
 #      print "TK:", TK
-#      print eig, "-->", la_max
+#      print eig, "-->", jklambda[i][bl][n], jkDelta[i][bl][n]
 #      print ""
 #      sys.exit(0)
 # ------------------------------------------------------------------
@@ -284,11 +284,12 @@ print >> outfile, "# %d operators in the stability matrix" % tot_ops
 for bl in range(blmax):
   for i in range(tot_ops):
     ave = np.average(jkDelta[i][bl])
-    err = (Nblocks - 1.0) * np.sum((jkDelta[i][bl] - ave)**2) / float(Nblocks)
-    print >> outfile, "Delta%d %d %.6g %.4g" % (i, bl + 1, ave, err),
+    var = (Nblocks - 1.0) * np.sum((jkDelta[i][bl] - ave)**2) / float(Nblocks)
+    print >> outfile, "Delta%d %d %.6g %.4g" % (i, bl + 1, ave, np.sqrt(var)),
+
     ave = np.average(jklambda[i][bl])
-    err = (Nblocks - 1.0) * np.sum((jklambda[i][bl] - ave)**2) / float(Nblocks)
-    print >> outfile, "from lambda = %.6g %.4g" % (ave, err)
+    var = (Nblocks - 1.0) * np.sum((jklambda[i][bl] - ave)**2) / float(Nblocks)
+    print >> outfile, "from lambda = %.6g %.4g" % (ave, np.sqrt(var))
   print >> outfile, ""
 
 # More detailed block information
