@@ -52,7 +52,7 @@ def f(p):
   denom = (sin(pi * p[0]))**2 + (sin(pi * p[1]))**2 + (sin(pi * p[2]))**2
   return pi * num.real / denom
 
-integ = vegas.Integrator([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
+integ = vegas.Integrator(3 * [[0.0, 1.0]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation
 result = integ(f, nitn=20, neval=Neval)   # Actual estimation
 

@@ -58,7 +58,7 @@ def f(p):
         + (sin(pi * p[2]))**2 + (sin(pi * p[3]))**2
   return piSq * num.real / denom
 
-integ = vegas.Integrator([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
+integ = vegas.Integrator(4 * [[0.0, 1.0]])
 integ(f, nitn=7, neval=Nwarm)             # Initial adaptation
 result = integ(f, nitn=20, neval=Neval)   # Actual estimation
 
