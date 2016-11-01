@@ -108,9 +108,7 @@ for i in range(len(files)):
     print PBCfiles[i], "did not complete"
     sys.exit(1)
 
-#TODO: HERE
 # Construct jackknife samples through single elimination
-print "From %d measurements," % len(ratio),
 average(ratio, "ratio")
 average(phasePBC, "<e^{i alpha}>_PBC")
 average(phaseAPBC, "<e^{i alpha}>_APBC")
