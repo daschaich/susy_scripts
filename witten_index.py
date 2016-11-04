@@ -40,16 +40,20 @@ def average(dat, tag):
   tot = np.sum(dat)
   N = len(dat)
   jkre = np.empty(N, dtype = np.float)
-  jkim = np.empty(N, dtype = np.float)
-  jkmag = np.empty(N, dtype = np.float)
-  jkphase = np.empty(N, dtype = np.float)
+  jkim = np.empty_like(jkre)
+  jkmag = np.empty_like(jkre)
+  jkphase = np.empty_like(jkre)
   for i in range(N):
     temp = (tot - dat[i]) / (N - 1.0)
     jkre[i] = np.real(temp)
     jkim[i] = np.imag(temp)
     jkmag[i] = np.absolute(temp)
     jkphase[i] = np.angle(temp)
-  #  print "%.8g %.8g" % (np.real(dat[i]), np.imag(dat[i]))
+    # Shift phase from  [-pi, pi) to [0, 2pi)
+#    if jkphase[i] < 0:
+#      jkphase[i] += 2.0 * np.pi
+#    print "%.4g %.4g" % (np.real(dat[i]), np.imag(dat[i]))
+#    print "%.4g %.4g --> %.4g" % (jkre[i], jkim[i], jkphase[i])
 
   ave_re = np.average(jkre)
   var_re = (N - 1.0) * np.sum((jkre - ave_re)**2) / float(N)
