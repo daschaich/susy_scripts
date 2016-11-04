@@ -12,7 +12,7 @@ import vegas
 # Try to set up parallel evaluation
 # Need some global variables (initialized in main()
 n = [0, 0, 0, 0]
-twopi = 2.0j * np.pi
+twopi = 2.0 * np.pi
 piSq = np.pi * np.pi
 # ------------------------------------------------------------------
 
@@ -30,10 +30,10 @@ def f(p):
   for i in range(p.shape[0]):
     temp[i] = n[0] * p[i][0] + n[1] * p[i][1] \
             + n[2] * p[i][2] + n[3] * p[i][3]
-    num[i] = (np.exp(twopi * temp[i])).real
+    num[i] = np.cos(twopi * temp[i])
     denom[i] = (np.sin(np.pi * p[i][0]))**2 + (np.sin(np.pi * p[i][1]))**2 \
              + (np.sin(np.pi * p[i][2]))**2 + (np.sin(np.pi * p[i][3]))**2
-  return piSq * num.real / denom
+  return piSq * num / denom
 # ------------------------------------------------------------------
 
 
