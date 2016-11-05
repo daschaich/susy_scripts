@@ -49,9 +49,10 @@ def average(dat, tag):
     jkim[i] = np.imag(temp)
     jkmag[i] = np.absolute(temp)
     jkphase[i] = np.angle(temp)
-    # Shift phase from  [-pi, pi) to [0, 2pi)
-#    if jkphase[i] < 0:
-#      jkphase[i] += 2.0 * np.pi
+    # Try to use either [-pi, pi) or [0, 2pi)
+    # to avoid ~2pi jumps in data being averaged
+    if jkphase[i] < -1:
+      jkphase[i] += 2.0 * np.pi
 #    print "%.4g %.4g" % (np.real(dat[i]), np.imag(dat[i]))
 #    print "%.4g %.4g --> %.4g" % (jkre[i], jkim[i], jkphase[i])
 
