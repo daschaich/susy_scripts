@@ -79,14 +79,15 @@ int main(int argc, char *argv[]) {
   abserr = atof(argv[5]) / PISQ;
 
   // Arguments: NDIM, NCOMP, function to integrate, user data, nvec
-  //            EPSREL, EPSABS, VERBOSE, SEED
+  //            EPSREL, EPSABS, VERBOSE+LEVEL, SEED
   //            MINEVAL, MAXEVAL, KEY1, KEY2, KEY3, MAXPASS,
   //            BORDER, MAXCHISQ, MINDEVIATION,
   //            NGIVEN, LDXGIVEN=NDIM, XGIVEN, NEXTRA, PEAKFINDER
   //            STATEFILE, SPIN
+  // VERBOSE+LEVEL = 2+2^8 = 258
   dtime = -dclock();
   llDivonne(4, 1, f, (void*)n, 1,
-            1e-4, abserr, 2, 0,
+            1e-8, abserr, 258, 1,
             0, 1e12, 47, 1, 1, 5,       // Need long long ints!
             0.0, 10.0, 0.25,
             0, 4, NULL, 0, NULL,

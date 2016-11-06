@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   //            GRIDNO, STATEFILE, SPIN
   dtime = -dclock();
   llVegas(4, 1, f, (void*)n, 1,
-          1e-4, abserr, 2, 0,
+          1e-8, abserr, 2, 0,
           0, 1e12, 1e5, 1e5, 1000,    // Need long long ints!
           0, NULL, NULL,
           &neval, &fail, &integral, &error, &prob);
