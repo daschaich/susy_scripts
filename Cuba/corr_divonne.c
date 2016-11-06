@@ -62,7 +62,7 @@ static int f(const int *ndim, const cubareal *p,
 
 // -----------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  int i, n[4], fail;
+  int i, n[4], nregions, fail;
   long long int neval;
   cubareal integral, error, prob;
   double abserr, dtime, val, err;
@@ -80,14 +80,18 @@ int main(int argc, char *argv[]) {
 
   // Arguments: NDIM, NCOMP, function to integrate, user data, nvec
   //            EPSREL, EPSABS, VERBOSE, SEED
-  //            MINEVAL, MAXEVAL, NSTART, NINCREASE, NBATCH
-  //            GRIDNO, STATEFILE, SPIN
+  //            MINEVAL, MAXEVAL, KEY1, KEY2, KEY3, MAXPASS,
+  //            BORDER, MAXCHISQ, MINDEVIATION,
+  //            NGIVEN, LDXGIVEN=NDIM, XGIVEN, NEXTRA, PEAKFINDER
+  //            STATEFILE, SPIN
   dtime = -dclock();
-  llVegas(4, 1, f, (void*)n, 1,
-          1e-4, abserr, 2, 0,
-          0, 1e12, 1e5, 1e5, 1000,    // Need long long ints!
-          0, NULL, NULL,
-          &neval, &fail, &integral, &error, &prob);
+  llDivonne(4, 1, f, (void*)n, 1,
+            1e-4, abserr, 2, 0,
+            0, 1e12, 47, 1, 1, 5,       // Need long long ints!
+            0.0, 10.0, 0.25,
+            0, 4, NULL, 0, NULL,
+            NULL, NULL,
+            &nregions, &neval, &fail, &integral, &error, &prob);
   integral *= PISQ;
   error *= PISQ;
 
@@ -96,7 +100,7 @@ int main(int argc, char *argv[]) {
   if (fail == 0)
     printf("\n\nSuccess after %.2gM evalutions\n", (neval / 1e6));
   else
-    printf("\n\nFailure after %.2gM evalutions\n", (neval / 1e6));
+    printf("\n\nFailure after %2gM evalutions\n", (neval / 1e6));
   printf("result = %.8g %.4g with Q = %.2g\n",
          (double)integral, (double)error, 1 - (double)prob);
 
