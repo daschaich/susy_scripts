@@ -64,7 +64,7 @@ static int f(const int *ndim, const cubareal *p,
 int main(int argc, char *argv[]) {
   int i, n[4], nregions, fail;
   long long int neval;
-  cubareal integral, error, prob;
+  cubareal integral, error, prob, test, test_err;
   double abserr, dtime, val, err;
 
   // Read in command-line arguments
@@ -78,30 +78,56 @@ int main(int argc, char *argv[]) {
     n[i] = atoi(argv[i + 1]);
   abserr = atof(argv[5]) / PISQ;
 
+  // Strategy: Require consistency upon changing boundary from
+  //           1e-8 to 1e-12.  If test passes, use latter result
+
   // Arguments: NDIM, NCOMP, function to integrate, user data, nvec
   //            EPSREL, EPSABS, VERBOSE+LEVEL, SEED
   //            MINEVAL, MAXEVAL, KEY1, KEY2, KEY3, MAXPASS,
   //            BORDER, MAXCHISQ, MINDEVIATION,
   //            NGIVEN, LDXGIVEN=NDIM, XGIVEN, NEXTRA, PEAKFINDER
   //            STATEFILE, SPIN
-  // VERBOSE+LEVEL = 2+2^8 = 258
+  // KEY1=9 uses cubature rule of degree 9
+  // KEY2=1 uses number of samples needed to reach desired accuracy
+  // Points within BORDER of the integration boundary
+  // will be evaluated by extrapolating from the interior
   dtime = -dclock();
   llDivonne(4, 1, f, (void*)n, 1,
-            1e-8, abserr, 258, 1,
-            0, 1e12, 47, 1, 1, 5,       // Need long long ints!
-            0.0, 10.0, 0.25,
+            1e-8, abserr, 2, 0,
+            0, 1e12, 9, 1, 1, 5,       // Need long long ints!
+            1e-8, 10.0, 0.25,
+            0, 4, NULL, 0, NULL,
+            NULL, NULL,
+            &nregions, &neval, &fail, &test, &test_err, &prob);
+  llDivonne(4, 1, f, (void*)n, 1,
+            1e-8, abserr, 2, 0,
+            0, 1e12, 9, 1, 1, 5,       // Need long long ints!
+            1e-12, 10.0, 0.25,
             0, 4, NULL, 0, NULL,
             NULL, NULL,
             &nregions, &neval, &fail, &integral, &error, &prob);
+
+  val = fabs(test - integral);
+  err = sqrt(test_err * test_err + error * error);
+  if (val >= err) {
+    printf("ERROR: Results sensitive to BORDER parameter:\n");
+    printf("      |%.8g - %.8g| = %.8g\n", test, integral, val);
+    printf("  vs. sqrt(%.4g^2 + %.4g^2) = %.4g\n", test_err, error, err);
+    return -1;
+  }
+  printf("\nResults pass BORDER test:\n");
+  printf("      |%.8g - %.8g| = %.8g\n", test, integral, val);
+  printf("  vs. sqrt(%.4g^2 + %.4g^2) = %.4g\n", test_err, error, err);
+
+  // Test has passed, so go ahead and print 1e-12 result
   integral *= PISQ;
   error *= PISQ;
 
-  // Have checked that 1 - prob matches confidence level
-  // from chi^2 and dof reported after the final iteration
+  // Checked that 1 - prob matched confidence level for vegas
   if (fail == 0)
-    printf("\n\nSuccess after %.2gM evalutions\n", (neval / 1e6));
+    printf("\nSuccess after %.2gM evalutions\n", (neval / 1e6));
   else
-    printf("\n\nFailure after %2gM evalutions\n", (neval / 1e6));
+    printf("\nFailure after %2gM evalutions\n", (neval / 1e6));
   printf("result = %.8g %.4g with Q = %.2g\n",
          (double)integral, (double)error, 1 - (double)prob);
 
