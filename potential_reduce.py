@@ -42,7 +42,9 @@ else:
 if L == 8:
   num_x = 3;    num_y = 3;      num_z = 4
 elif L == 12:
+  num_x = 4;    num_y = 5;      num_z = 6
 elif L == 16:
+  num_x = 5;    num_y = 6;      num_z = 8
 count = np.zeros((num_x, num_y, num_z), dtype = np.int)
 ave = np.zeros((num_x, num_y, num_z), dtype = np.float)
 rI = np.empty((num_x, num_y, num_z), dtype = np.float)
