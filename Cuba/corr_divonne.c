@@ -78,8 +78,9 @@ int main(int argc, char *argv[]) {
     n[i] = atoi(argv[i + 1]);
   abserr = atof(argv[5]) / PISQ;
 
-  // Strategy: Require consistency upon changing boundary from
-  //           1e-8 to 1e-12.  If test passes, use latter result
+  // Strategy: Require consistency upon changing BORDER from
+  //           1e-6 to 1e-8.  If test passes, use latter result
+  //           Also require confidence level > 0.5 in every case
 
   // Arguments: NDIM, NCOMP, function to integrate, user data, nvec
   //            EPSREL, EPSABS, VERBOSE+LEVEL, SEED
@@ -95,29 +96,40 @@ int main(int argc, char *argv[]) {
   llDivonne(4, 1, f, (void*)n, 1,
             1e-8, abserr, 2, 0,
             0, 1e12, 9, 1, 1, 5,       // Need long long ints!
-            1e-8, 10.0, 0.25,
+            1e-6, 10.0, 0.25,
             0, 4, NULL, 0, NULL,
             NULL, NULL,
             &nregions, &neval, &fail, &test, &test_err, &prob);
+  if (prob >= 0.5) {
+    printf("ERROR: confidence level %.2g from border=1e-6\n",
+           1.0 - (double)prob);
+    return -1;
+  }
+
   llDivonne(4, 1, f, (void*)n, 1,
             1e-8, abserr, 2, 0,
             0, 1e12, 9, 1, 1, 5,       // Need long long ints!
-            1e-12, 10.0, 0.25,
+            1e-8, 10.0, 0.25,
             0, 4, NULL, 0, NULL,
             NULL, NULL,
             &nregions, &neval, &fail, &integral, &error, &prob);
+  if (prob >= 0.5) {
+    printf("ERROR: confidence level %.2g from border=1e-8\n",
+           1.0 - (double)prob);
+    return -1;
+  }
 
   val = fabs(test - integral);
-  err = sqrt(test_err * test_err + error * error);
+  err = test_err + error;
   if (val >= err) {
     printf("ERROR: Results sensitive to BORDER parameter:\n");
-    printf("      |%.8g - %.8g| = %.8g\n", test, integral, val);
-    printf("  vs. sqrt(%.4g^2 + %.4g^2) = %.4g\n", test_err, error, err);
+    printf("      |%.4g - %.4g| = %.4g\n", test, integral, val);
+    printf("  vs. %.4g + %.4g = %.4g\n", test_err, error, err);
     return -1;
   }
   printf("\nResults pass BORDER test:\n");
-  printf("      |%.8g - %.8g| = %.8g\n", test, integral, val);
-  printf("  vs. sqrt(%.4g^2 + %.4g^2) = %.4g\n", test_err, error, err);
+  printf("      |%.4g - %.4g| = %.4g\n", test, integral, val);
+  printf("  vs. %.4g + %.4g = %.4g\n", test_err, error, err);
 
   // Test has passed, so go ahead and print 1e-12 result
   integral *= PISQ;
@@ -125,11 +137,11 @@ int main(int argc, char *argv[]) {
 
   // Checked that 1 - prob matched confidence level for vegas
   if (fail == 0)
-    printf("\nSuccess after %.2gM evalutions\n", (neval / 1e6));
+    printf("\nSuccess after %.2gM evaluations\n", (neval / 1e6));
   else
-    printf("\nFailure after %2gM evalutions\n", (neval / 1e6));
+    printf("\nFailure after %.2gM evaluations\n", (neval / 1e6));
   printf("result = %.8g %.4g with Q = %.2g\n",
-         (double)integral, (double)error, 1 - (double)prob);
+         (double)integral, (double)error, 1.0 - (double)prob);
 
   // Print r_I itself with propagated uncertainty
   //  delta(1 / sqrt(r)) = delta(r) / 2r^(3 / 2)

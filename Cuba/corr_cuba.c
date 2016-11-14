@@ -94,9 +94,9 @@ int main(int argc, char *argv[]) {
   // Have checked that 1 - prob matches confidence level
   // from chi^2 and dof reported after the final iteration
   if (fail == 0)
-    printf("\n\nSuccess after %.2gM evalutions\n", (neval / 1e6));
+    printf("\n\nSuccess after %.2gM evaluations\n", (neval / 1e6));
   else
-    printf("\n\nFailure after %.2gM evalutions\n", (neval / 1e6));
+    printf("\n\nFailure after %.2gM evaluations\n", (neval / 1e6));
   printf("result = %.8g %.4g with Q = %.2g\n",
          (double)integral, (double)error, 1 - (double)prob);
 
