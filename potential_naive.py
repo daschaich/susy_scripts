@@ -121,6 +121,7 @@ r = sorted(r, key=lambda x: x[0])
 
 # ------------------------------------------------------------------
 # Cycle through all files matching input tag
+ave = np.zeroes(Npts, dtype = np.float)
 for filename in all_files:
   cfg = str(filename.split('.')[-1])       # Number after last .
   outfilename = 'Out/' + tag + '-naive.' + cfg
