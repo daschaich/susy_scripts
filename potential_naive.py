@@ -59,7 +59,7 @@ def A4map(x_in, y_in, z_in, L):
 r = []          # List of two-component lists: first value, then count
 files = 'Out/' + tag + '.*'
 all_files = glob.glob(files)
-for line in open(temp[0]):
+for line in open(all_files[0]):
   if line.startswith('nx '):
     L = int((line.split())[1])
   # Format: hvy_pot: MAX_T = #, MAX_X = #
