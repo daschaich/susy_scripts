@@ -22,9 +22,10 @@ if not os.path.isdir('Out'):
 
 # Convenience constants
 TOL = 1.0e-6
-invSq2  = 1.0 / np.sqrt(2)
-invSq6  = 1.0 / np.sqrt(6)
-invSq12 = 1.0 / np.sqrt(12)
+invSq2  = 1.0 / np.sqrt(2.0)
+invSq6  = 1.0 / np.sqrt(6.0)
+invSq12 = 1.0 / np.sqrt(12.0)
+invSq20 = 1.0 / np.sqrt(20.0)
 # ------------------------------------------------------------------
 
 
@@ -37,14 +38,15 @@ def A4map(x_in, y_in, z_in, L):
   for x in [x_in + L, x_in, x_in - L]:
     for y in [y_in + L, y_in, y_in - L]:
       for z in [z_in + L, z_in, z_in - L]:
-        test = np.sqrt((x**2 + y**2 + z**2) * 0.75 \
-                       - (x * (y + z) + y * z) * 0.5)
+        # This looks like the 3d-reduced basis...
+#        test = np.sqrt((x**2 + y**2 + z**2) * 0.75 \
+#                       - (x * (y + z) + y * z) * 0.5)
 
-        # Sanity check -- can be commented out for more speed
-#        x_a4 = (x - y) * invSq2
-#        y_a4 = (x + y - 2.0 * z) * invSq6
-#        z_a4 = (x + y + z) * invSq12
-#        check = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2)
+        x_a4 = (x - y) * invSq2
+        y_a4 = (x + y - 2.0 * z) * invSq6
+        z_a4 = (x + y + z) * invSq12
+        t_a4 = (x + y + z) * invSq20
+        test = np.sqrt(x_a4**2 + y_a4**2 + z_a4**2 + t_a4**2)
 #        if np.fabs(test - check) > TOL:
 #          print "ERROR: %.4g isn't %.4g for (%d, %d, %d)" \
 #                % (check, test, x, y, z)
@@ -121,7 +123,7 @@ r = sorted(r, key=lambda x: x[0])
 
 # ------------------------------------------------------------------
 # Cycle through all files matching input tag
-ave = np.zeroes(Npts, dtype = np.float)
+ave = np.zeros(Npts, dtype = np.float)
 for filename in all_files:
   cfg = str(filename.split('.')[-1])       # Number after last .
   outfilename = 'Out/' + tag + '-naive.' + cfg
@@ -150,7 +152,7 @@ for filename in all_files:
       # This will also take care of the three different types of loops
       if not t == old_t:
         for label in range(Npts):
-          dat = ave[label] / r[label][1]
+          dat = ave[label] / float(r[label][1])
           print >> outfile, "%s %d %.4g %d %.6g" \
                             % (loop, label, r[label][0], old_t, dat)
 
@@ -167,7 +169,7 @@ for filename in all_files:
       if this_r - MAX_r > -TOL:
         continue
       done = -1
-      for j in range(len(r)):
+      for j in range(Npts):
         if np.fabs(r[j][0] - this_r) < TOL:
           done = 1
           ave[j] += float(temp[5])
@@ -183,19 +185,13 @@ for filename in all_files:
       check = 1
 
       # Average final data set and reset before moving on to the next file
-      label = 0
-      for a in range(num_x):
-        for b in range(num_y):
-          for c in range(num_z):
-            if count[a][b][c] > 0:
-              dat = ave[a][b][c] / count[a][b][c]
-              print >> outfile, "%s %d %.4g %d %.6g" \
-                                % (loop, label, rI[a][b][c], old_t, dat)
-              label += 1
+      for label in range(Npts):
+        dat = ave[label] / float(r[label][1])
+        print >> outfile, "%s %d %.4g %d %.6g" \
+                          % (loop, label, r[label][0], old_t, dat)
 
-              # Reset
-              ave[a][b][c] = 0.0
-              count[a][b][c] = 0
+        # Reset
+        ave[label] = 0
 
   outfile.close()
   if check == -1:
