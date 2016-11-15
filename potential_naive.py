@@ -177,7 +177,6 @@ for filename in all_files:
         sys.exit(1)
 
     elif line.startswith('RUNNING COMPLETED'):
-      print >> outfile, line.rstrip()
       if check == 1:    # Check that we have one measurement per file
         print filename, "reports two measurements"
       check = 1
@@ -197,6 +196,7 @@ for filename in all_files:
               ave[a][b][c] = 0.0
               count[a][b][c] = 0
 
+  print >> outfile, "RUNNING COMPLETED"
   outfile.close()
   if check == -1:
     print filename, "did not complete"

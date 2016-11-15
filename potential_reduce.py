@@ -196,7 +196,6 @@ for filename in glob.glob(files):
       count[n[0]][n[1]][n[2]] += 1
 
     elif line.startswith('RUNNING COMPLETED'):
-      print >> outfile, line.rstrip()
       if check == 1:    # Check that we have one measurement per file
         print filename, "reports two measurements"
       check = 1
@@ -216,6 +215,7 @@ for filename in glob.glob(files):
               ave[a][b][c] = 0.0
               count[a][b][c] = 0
 
+  print >> outfile, "RUNNING COMPLETED"
   outfile.close()
   if check == -1:
     print filename, "did not complete"
