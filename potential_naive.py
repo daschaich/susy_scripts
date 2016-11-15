@@ -19,6 +19,12 @@ runtime = -time.time()
 if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
+
+# Convenience constants
+TOL = 1.0e-6
+invSq2  = 1.0 / np.sqrt(2)
+invSq6  = 1.0 / np.sqrt(6)
+invSq12 = 1.0 / np.sqrt(12)
 # ------------------------------------------------------------------
 
 
