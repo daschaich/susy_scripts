@@ -57,11 +57,9 @@ def A4map(x_in, y_in, z_in, L):
 # Also record list of values with corresponding multiplicity
 # Decide where to cut r based on MAX_X
 r = []          # List of two-component lists: first value, then count
-firstfile = 'Out/' + tag + '.' + str(cfgs[0])
-if not os.path.isfile(firstfile):
-  print "ERROR:", firstfile, "does not exist"
-  sys.exit(1)
-for line in open(firstfile):
+files = 'Out/' + tag + '.*'
+all_files = glob.glob(files)
+for line in open(temp[0]):
   if line.startswith('nx '):
     L = int((line.split())[1])
   # Format: hvy_pot: MAX_T = #, MAX_X = #
@@ -117,8 +115,7 @@ r = sorted(r, key=lambda x: x[0])
 
 # ------------------------------------------------------------------
 # Cycle through all files matching input tag
-files = 'Out/' + tag + '.*'
-for filename in glob.glob(files):
+for filename in all_files:
   cfg = str(filename.split('.')[-1])       # Number after last .
   outfilename = 'Out/' + tag + '-naive.' + cfg
   outfile = open(outfilename, 'w')
