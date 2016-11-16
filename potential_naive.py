@@ -149,20 +149,20 @@ for filename in all_files:
       # Average and reset if we've moved on to the next t
       # This will also take care of the three different types of loops
       if not t == old_t:
-        for label in range(Npts):
-          dat = ave[label] / r[label][1]
+        for j in range(Npts):
+          dat = ave[j] / r[j][1]
           print >> outfile, "%s %d %.4g %d %.6g" \
-                            % (loop, label, r[label][0], old_t, dat)
+                            % (loop, j, r[j][0], old_t, dat)
 
           # Reset
-          ave[label] = 0
+          ave[j] = 0
         loop = str(temp[0])
         old_t = t
 
       # Accumulate data if this_r < MAX_r
-      n_x = int(temp[1])
-      n_y = int(temp[2])
-      n_z = int(temp[3])
+      x = int(temp[1])
+      y = int(temp[2])
+      z = int(temp[3])
       this_r = lookup[x][y + MAX_X][z + MAX_X]
       if this_r - MAX_r > -TOL:
         continue
@@ -182,19 +182,13 @@ for filename in all_files:
       check = 1
 
       # Average final data set and reset before moving on to the next file
-      label = 0
-      for a in range(num_x):
-        for b in range(num_y):
-          for c in range(num_z):
-            if count[a][b][c] > 0:
-              dat = ave[a][b][c] / count[a][b][c]
-              print >> outfile, "%s %d %.4g %d %.6g" \
-                                % (loop, label, rI[a][b][c], old_t, dat)
-              label += 1
+      for j in range(Npts):
+        dat = ave[j] / r[j][1]
+        print >> outfile, "%s %d %.4g %d %.6g" \
+                          % (loop, j, r[j][0], old_t, dat)
 
-              # Reset
-              ave[a][b][c] = 0.0
-              count[a][b][c] = 0
+        # Reset
+        ave[j] = 0
 
   print >> outfile, "RUNNING COMPLETED"
   outfile.close()
