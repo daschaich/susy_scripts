@@ -84,6 +84,7 @@ for line in open(all_files[0]):
         test = A4map(MAX_X + 1, y, z, L)
         if test < MAX_r:
           MAX_r = test
+#          print MAX_r, "from", MAX_X+1, y, z
 #    print MAX_r
 
   # Format: *_LOOP n_x n_y n_z t dat
