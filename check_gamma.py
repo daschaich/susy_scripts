@@ -28,6 +28,9 @@ for line in open(infile):
     temp = line.rstrip()    # Extract lambda from end of line
     la = float((temp.split('='))[-1])
 
+print "lambda = %g" % la
+print "mu = %g" % mu
+
 ga = mu / math.sqrt(la)
 check = mu * Nt / rt
 print "gamma = %.4g = %.4g" % (ga, check)
