@@ -7,6 +7,8 @@ from subprocess import call
 # ------------------------------------------------------------------
 # Impose consistent conventions for lambda and error_per_site,
 # which were temporarily redefined for "slnc_code_2" computations
+# While lambda is safe to recompute arbitrarily many times,
+# we need to make sure that error_per_site is only replaced once
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
@@ -32,7 +34,9 @@ for filename in glob.glob('Out/*'):
 
     if line.startswith('lambda '):
       continue
-    elif line.startswith('error_per_site '):
+    # Need to make sure that error_per_site is only replaced once
+    # Fortunately it always seems to have been 1e-5
+    elif line.startswith('error_per_site 1e-05'):
       err = math.sqrt(float((line.split())[1]))
       print >> outfile, "error_per_site %g" % err
     elif line.startswith('lambda='):
