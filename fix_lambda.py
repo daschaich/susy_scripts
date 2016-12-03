@@ -51,6 +51,6 @@ for filename in glob.glob('Out/*'):
   if check > 0:
     os.rename('TEMP', filename)
   else:
-    os.remove('TEMP', filename)
+    os.remove('TEMP')
 # ------------------------------------------------------------------
 
