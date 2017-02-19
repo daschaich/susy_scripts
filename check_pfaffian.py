@@ -37,8 +37,8 @@ for i in range(len(toCheck)):
     elif line.startswith('Columns '):
       temp = line.split()
       matvecs += int(temp[4])
-      re = float(temp[9])
-      im = float(temp[10])
+      re = float(temp[-2])
+      im = float(temp[-1])
 
       log_mag += np.log(re**2 + im**2) / 2.0
       phase += np.angle(re + 1j * im)
