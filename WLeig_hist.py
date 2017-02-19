@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # ------------------------------------------------------------------
 # Plot histogram of Wilson line eigenvalues from output files 'WLeig'
+# For now only consider unitarized (and not full) Wilson lines
 # Assume only thermalized measurements have been run
 # Save resulting plot as WLeig_hist_$tag.pdf
 
@@ -34,8 +35,8 @@ for filename in files:
   for line in open(filename):
     if line.startswith('nt '):
       nt = float((line.split())[1])
-    # Format: LINES*_EIG x y t dir Nc*phase
-    elif line.startswith('LINES_EIG ') or line.startswith('LINES_POLAR_EIG '):
+    # Format: LINES_POLAR_EIG x y t dir Nc*phase
+    elif line.startswith('LINES_POLAR_EIG '):
       temp = line.split()
       for i in range(Nc):
         dat.append(float(temp[-1 - i]))
@@ -63,7 +64,7 @@ plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
                       r'$\frac{\pi}{2}$', r'$\pi$'])
 plt.grid(True)
 
-plt.title('Phase of Wilson line eigenvalues')
+plt.title('Phase of unitarized Wilson line eigenvalues')
 plt.xlabel('Phase')
 plt.ylabel('Relative frequency')
 plt.legend()
