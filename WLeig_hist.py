@@ -34,8 +34,8 @@ for filename in files:
   for line in open(filename):
     if line.startswith('nt '):
       nt = float((line.split())[1])
-    # Format: LINES_EIG x y t dir Nc*phase
-    elif line.startswith('LINES_EIG '):
+    # Format: LINES*_EIG x y t dir Nc*phase
+    elif line.startswith('LINES_EIG ') or line.startswith('LINES_POLAR_EIG '):
       temp = line.split()
       for i in range(Nc):
         dat.append(float(temp[-1 - i]))
@@ -65,7 +65,7 @@ plt.grid(True)
 
 plt.title('Phase of Wilson line eigenvalues')
 plt.xlabel('Phase')
-plt.ylabel('Frequency')
+plt.ylabel('Relative frequency')
 plt.legend()
 
 # Save a pdf
