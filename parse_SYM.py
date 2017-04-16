@@ -42,7 +42,7 @@ print >> LINES_MOD_POLAR, "MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|"
 FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
-print >> DET, "MDTU,|det - 1|^2,1-Re(det),Im(det)"
+print >> DET, "MDTU,|det-1|^2,1-Re(det),Im(det)"
 WIDTHS = open('data/widths.csv', 'w')
 print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
