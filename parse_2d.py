@@ -21,6 +21,8 @@ PLAQ = open('data/plaq.csv', 'w')
 print >> PLAQ, "MDTU,plaq"
 SB = open('data/SB.csv', 'w')
 print >> SB, "MDTU,S_B"
+SF = open('data/SF.csv', 'w')
+print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
@@ -479,6 +481,7 @@ ERRFILE.close()
 MISSINGFILES.close()
 PLAQ.close()
 SB.close()
+SF.close()
 POLY.close()
 POLY_MOD.close()
 FLINK.close()
