@@ -53,7 +53,7 @@ if not len(dat) == Nc * nt * len(files):
   sys.exit(1)
 
 # Create histogram
-nbins = 30
+nbins = 20
 n, bins, patches = plt.hist(dat, nbins, log=False, normed=True, align='mid',
                             facecolor='blue', alpha=0.9, label=tag,
                             histtype='stepfilled')
