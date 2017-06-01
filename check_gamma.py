@@ -54,7 +54,7 @@ if math.fabs(combo - check) > TOL:
   print "Problem with combo: %.4g vs. %.4g" % (combo, check)
 
 # Format for tex tables...
-print "    %.3g & %.3g & %.7g & %.4g & %.8g               & %.4g" \
+print "    %.4g & %.4g & %.7g & %.4g & %.8g               & %.4g" \
       % (rt, rx, la, ga, mu, combo)
 # ------------------------------------------------------------------
 
