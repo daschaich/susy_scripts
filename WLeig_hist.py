@@ -35,7 +35,7 @@ for filename in files:
   for line in open(filename):
     if line.startswith('nt '):
       nt = float((line.split())[1])
-    # Format: LINES_POLAR_EIG x y t dir Nc*phase
+    # Format: LINES_POLAR_EIG x y z t dir {Nc x phase}
     elif line.startswith('LINES_POLAR_EIG '):
       temp = line.split()
       for i in range(Nc):
