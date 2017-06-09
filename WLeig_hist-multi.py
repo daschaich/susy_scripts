@@ -11,17 +11,22 @@ import matplotlib.pyplot as plt
 # Assume only thermalized measurements have been run
 # Save resulting plot as ./WLeig_hist.pdf
 
-# Parse arguments: first is number of ensembles,
-# each of which much then be listed
-# The last argument is the title for the plot
-if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<# of dirs>",
-  print "<name> of each dir <y-axis upper bound> <plot title tag>",
+# Parse arguments: SU(6), SU(9), SU(12) and optionally SU(16) ensembles,
+# following by the title for the plot
+if len(sys.argv) < 6:
+  print "Usage:", str(sys.argv[0]), "<SU(6) dir> <SU(9) dir>",
+  print "<SU(12) dir> [SU(16) dir (optional)]",
+  print "<y-axis upper bound> <plot title tag>",
   sys.exit(1)
-Ndirs = int(sys.argv[1])
+
+if len(sys.argv) < 7:
+  Ndirs = 3
+else:
+  Ndirs = 4
+
 dirnames = []
 for i in range(Ndirs):
-  dirnames.append(str(sys.argv[i + 2]))
+  dirnames.append(str(sys.argv[i + 1]))
 ymax = float(sys.argv[-2])
 title = str(sys.argv[-1])
 
@@ -62,26 +67,35 @@ for dirname in dirnames:
     print "ERROR: Have %d data from %d SU(%d) measurements with L=%d" \
           % (len(dat[count]), len(files), int(Nc), nt)
     sys.exit(1)
+
+  # Check that all phases are within [-pi, pi),
+  # accounting for rounding in output files
+  # Can be commented out to speed up analysis
+#  if max(dat[count]) > 3.142 or min(dat[count]) < -3.142:
+#    print "ERROR: %s phases exceed [-pi, pi): %.4g %.4g" \
+#          % (dirname, max(dat[count]), min(dat[count]))
+#    sys.exit(1)
   count += 1
 
 # Create histogram
-nbins = 15
+nbins = 10
 plt.figure(figsize=(6.40, 3.84))    # Gnuplot default
 plt.hist(dat[0], nbins, log=False, normed=True, align='mid',
-         facecolor='blue', alpha=0.75, label='SU(6)',
-         histtype='stepfilled', hatch='//')
+         edgecolor='blue', label='SU(6)', histtype='step', hatch='//')
 plt.hist(dat[1], nbins, log=False, normed=True, align='mid',
-         facecolor='green', alpha=0.75, label='SU(9)',
-         histtype='stepfilled', hatch='\\')
+         edgecolor='green', label='SU(9)', histtype='step', hatch='\\\\')
 plt.hist(dat[2], nbins, log=False, normed=True, align='mid',
-         facecolor='red', alpha=0.75, label='SU(12)',
-         histtype='stepfilled')
+         edgecolor='red', label='SU(12)', histtype='step', hatch='oo')
+
+if Ndirs == 4:
+  plt.hist(dat[3], nbins, log=False, normed=True, align='mid',
+           edgecolor='black', label='SU(16)', histtype='step', hatch='||')
 
 plt.axis([-np.pi, np.pi, 0.0, ymax])
 plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
            ['$-\pi$', r'$-\frac{\pi}{2}$', r'$0$', \
                       r'$\frac{\pi}{2}$', r'$\pi$'])
-plt.grid(True)
+plt.grid(False)
 
 plt.title('Phase of unitarized Wilson line eigenvalues, ' + title)
 plt.xlabel('Phase')
@@ -90,5 +104,5 @@ plt.legend()
 
 # Save a pdf
 outfile = 'WLeig_hist.pdf'
-plt.savefig(outfile, bbox_inches='tight')   # Reduce surrounding  whitespace
+plt.savefig(outfile, bbox_inches='tight')   # Reduce surrounding whitespace
 # ------------------------------------------------------------------

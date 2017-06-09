@@ -29,7 +29,7 @@ chmod 664 data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
-python ~schaich/scripts/check_eig_pairs.py
+python ~schaich/scripts/check_eig_pairs.py >> ERRORS
 
 # Replace Web page to update timestamp
 date=`date`
@@ -39,6 +39,7 @@ echo writeSYM $dir "$date"
 chmod 664 index.html
 
 # I like to monitor this
+grep Apparent ERRORS
 wc -l M*
 wc -l E*
 echo
