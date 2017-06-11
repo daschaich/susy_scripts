@@ -16,7 +16,6 @@ if len(sys.argv) > 1:
   sys.exit(1)
 
 # Check that we have output files to analyze
-dat = []
 files = glob.glob('Out/WLeig.*')
 if len(files) == 0:
   print "ERROR: no files Out/WLeig.* in this directory"
@@ -31,6 +30,7 @@ Nc = int((temp.split('_'))[0])
 tag = (cwd.split('/'))[-1]
 
 # Cycle through output files to load data
+dat = []
 for filename in files:
   check = -1
   for line in open(filename):
