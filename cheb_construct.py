@@ -53,6 +53,8 @@ for la in np.linspace(delta, la_max - delta, numPts):
   #        = 1 / (pi * sqrt{1 - x^2}) * (2sum_k c_k T_k(x) - c_0 T_0(x))
   rho = 2.0 * np.polynomial.chebyshev.chebval(x, coeffs)
   rho -= np.polynomial.chebyshev.chebval(x, coeffs[0])
+
+  # TODO: Integrate analytically
   rho *= norm
   nu += rho * delta
   print "%.4g %.6g %.6g" % (la, rho, nu)

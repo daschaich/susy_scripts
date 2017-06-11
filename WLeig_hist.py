@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 # Plot histogram of Wilson line eigenvalues from output files 'WLeig'
 # For now only consider unitarized (and not full) Wilson lines
 # Assume only thermalized measurements have been run
-# Save resulting plot as WLeig_hist_$tag.pdf
+# Save resulting plot as ./WLeig_hist_$tag.pdf
+# Extract $tag from path---no input arguments
 
 if len(sys.argv) > 1:
   print "Usage:", str(sys.argv[0])
@@ -53,16 +54,16 @@ if not len(dat) == Nc * nt * len(files):
   sys.exit(1)
 
 # Create histogram
-nbins = 20
-n, bins, patches = plt.hist(dat, nbins, log=False, normed=True, align='mid',
-                            facecolor='blue', alpha=0.9, label=tag,
-                            histtype='stepfilled')
+nbins = 10
+plt.figure(figsize=(6.40, 3.84))    # Gnuplot default
+plt.hist(dat, nbins, log=False, normed=True, align='mid',
+         edgecolor='blue', label=tag, histtype='step', hatch='//')
 
 plt.axis([-np.pi, np.pi, 0.0, 1.0])
 plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
            ['$-\pi$', r'$-\frac{\pi}{2}$', r'$0$', \
                       r'$\frac{\pi}{2}$', r'$\pi$'])
-plt.grid(True)
+plt.grid(False)
 
 plt.title('Phase of unitarized Wilson line eigenvalues')
 plt.xlabel('Phase')
@@ -71,5 +72,5 @@ plt.legend()
 
 # Save a pdf
 outfile = 'WLeig_hist_' + tag + '.pdf'
-plt.savefig(outfile)
+plt.savefig(outfile, bbox_inches='tight')   # Reduce surrounding whitespace
 # ------------------------------------------------------------------
