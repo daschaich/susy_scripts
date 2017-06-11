@@ -5,54 +5,40 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 # ------------------------------------------------------------------
-# Plot histogram of Wilson line magnitudes from output files 'WLeig'
+# Plot histogram of Wilson line magnitudes
 # For now only consider unitarized (and not full) Wilson lines
-# Assume only thermalized measurements have been run
 # Save resulting plot as ./WL_hist_$tag.pdf
 # Extract $tag from path---no input arguments
 
-if len(sys.argv) > 1:
-  print "Usage:", str(sys.argv[0])
+# Parse argument: Thermalization cut
+if len(sys.argv) < 2:
+  print "Usage:", str(sys.argv[0]), "<cut>"
   sys.exit(1)
+cut = int(sys.argv[1])
 
-# Check that we have output files to analyze
-files = glob.glob('Out/WLeig.*')
-if len(files) == 0:
-  print "ERROR: no files Out/WLeig.* in this directory"
+# First make sure we're calling this from the right place
+if not os.path.isdir('data'):
+  print "ERROR: data/ does not exist"
   sys.exit(1)
-
-# Extract Nc from path -- it's after 'Nc' then before '_'
-cwd = os.getcwd()
-temp = (cwd.split('Nc'))[1]
-Nc = int((temp.split('_'))[0])
 
 # Extract tag from path as everything after the last '/'
+cwd = os.getcwd()
 tag = (cwd.split('/'))[-1]
 
-# Cycle through output files to load data---normalize by Nc
+# Extract Nc-normalized modulus as third datum on each line of data file
+# (Format: MDTU,|Lx|,|Ly|,|Lz|,|L5|)
 dat = []
-for filename in files:
-  check = -1
-  for line in open(filename):
-    if line.startswith('nt '):
-      nt = float((line.split())[1])
-    # Format: LINES_POLAR_TR  x y z t dir real imag
-    elif line.startswith('LINES_POLAR_TR  '):
-      temp = line.split()
-      re = float(temp[-2])
-      im = float(temp[-1])
-      dat.append(np.sqrt(re * re + im * im) / float(Nc))
-    elif line.startswith('RUNNING COMPLETED'):
-      check = 1
-  if check == -1:
-    print filename, "did not complete"
-    sys.exit(1)
+for line in open('data/lines_mod_polar.csv'):
+  if line.startswith('M'):
+    continue
+  temp = line.split(',')
+  MDTU = float(temp[0])
+  if MDTU <= cut:
+    continue
+  dat.append(float(temp[3]))
 
-# Check that we have all the data we should
-if not len(dat) == nt * len(files):
-  print "ERROR: Have %d data from %d SU(%d) measurements with L=%d" \
-        % (len(dat), len(files), int(Nc), nt)
-  sys.exit(1)
+# Print number of measurements to allow offline checks
+print "%d measurements for %s" % (len(dat), tag)
 
 # Create histogram
 nbins = 20
