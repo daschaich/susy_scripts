@@ -281,7 +281,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
     jkC[index][i] = -1.0 * temp[1]
 
     # !!! Temporary hack to provide jackknife ratios
-    if t_min == 6:
+    if t_min == 7:
       print >> tempfile, "%.6g" % jkC[index][i]
 tempfile.close()
 # ------------------------------------------------------------------

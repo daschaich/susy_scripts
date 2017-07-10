@@ -25,11 +25,11 @@ if not os.path.isdir('Out'):
 # but other volumes should work up to potentially missing large-r points
 temp = os.getcwd()
 L = -1
-if '_8nt24' in temp:
+if '_8nt24' in temp or '_8nt32' in temp:
   L = 8
 elif '_12nt24' in temp:
   L = 12
-elif '_16nt24' in temp:
+elif '_16nt24' in temp or '_16nt32' in temp:
   L = 16
 else:
   print "Error: Unrecognized lattice volume in", temp

@@ -94,11 +94,11 @@ int main(int argc, char *argv[]) {
   // Have checked that 1 - prob matches confidence level
   // from chi^2 and dof reported after the final iteration
   if (fail == 0)
-    printf("\n\nSuccess after %.2gM evaluations\n", (neval / 1e6));
+    printf("\nSuccess after %.2gM evaluations\n", (neval / 1e6));
   else
-    printf("\n\nFailure after %.2gM evaluations\n", (neval / 1e6));
+    printf("\nFailure after %.2gM evaluations\n", (neval / 1e6));
   printf("result = %.8g %.4g with Q = %.2g\n",
-         (double)integral, (double)error, 1 - (double)prob);
+         (double)integral, (double)error, 1.0 - (double)prob);
 
   // Print r_I itself with propagated uncertainty
   //  delta(1 / sqrt(r)) = delta(r) / 2r^(3 / 2)
