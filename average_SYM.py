@@ -60,9 +60,12 @@ if good == -1:
 
 # ------------------------------------------------------------------
 # Plaquette is special -- average two data per line
+# Also look at difference plaq_ss - plaq_st
 count = 0
-ave = 0.          # Accumulate within each block
+ave = 0.0         # Accumulate within each block
+diff = 0.0
 datList = []
+diffList = []
 begin = cut       # Where each block begins, to be incremented
 plaqfile = 'data/plaq.csv'
 for line in open(plaqfile):
@@ -73,13 +76,16 @@ for line in open(plaqfile):
   if MDTU <= cut:
     continue
   elif MDTU > begin and MDTU < (begin + block_size):
-    ave += (float(temp[1]) + float(temp[2])) / 2.0
+    ave += 0.5 * (float(temp[1]) + float(temp[2]))
+    diff += float(temp[1]) - float(temp[2])
     count += 1
   elif MDTU >= (begin + block_size):  # Move on to next block
     datList.append(ave / count)
+    diffList.append(diff / count)
     begin += block_size
     count = 1                     # Next block begins with this line
-    ave = (float(temp[1]) + float(temp[2])) / 2.0
+    ave = 0.5 * (float(temp[1]) + float(temp[2]))
+    diff = float(temp[1]) - float(temp[2])
 
 # Now print mean and standard error, assuming N>1
 dat = np.array(datList)
@@ -90,6 +96,14 @@ else:
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1)
   outfilename = 'results/plaq.dat'
+  outfile = open(outfilename, 'w')
+  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  outfile.close()
+
+  dat = np.array(diffList)
+  ave = np.mean(dat, dtype = np.float64)
+  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1)
+  outfilename = 'results/plaq_diff.dat'
   outfile = open(outfilename, 'w')
   print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
   outfile.close()
@@ -105,7 +119,7 @@ else:
 for obs in ['poly_mod', 'poly_mod_polar', 'SB', 'SF', 'Flink', 'mono']:
   skip = -1
   count = 0
-  ave = 0.          # Accumulate within each block
+  ave = 0.0         # Accumulate within each block
   datList = []
   begin = cut       # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
@@ -154,7 +168,7 @@ for obs in ['poly_mod', 'poly_mod_polar', 'SB', 'SF', 'Flink', 'mono']:
 for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
   skip = -1
   count = 0
-  ave = 0.          # Accumulate within each block
+  ave = 0.0         # Accumulate within each block
   datList = []
   begin = t_cut     # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
