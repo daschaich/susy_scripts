@@ -105,7 +105,13 @@ MDTU = 0;
 # Cycle through files out.$load-$save from list.txt
 for temp_tag in open('list.txt'):
   tag = temp_tag.rstrip()
+  # Check to make sure that actual files are present
+  if not "out" in tag:
+    print "No Out/out.* files found"
+    print >> ERRFILE, "No Out/out.* files found"
+    sys.exit(1)
   load, cfg = tag.split('-')
+
   # Initialize running sums and set dummy walltime
   # If the walltime isn't overwritten, then the run died
   # or its output file is corrupted
