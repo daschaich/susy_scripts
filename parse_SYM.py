@@ -106,7 +106,7 @@ MDTU = 0;
 for temp_tag in open('list.txt'):
   tag = temp_tag.rstrip()
   # Check to make sure that actual files are present
-  if not "out" in tag:
+  if "Configs" in tag:
     print "No Out/out.* files found"
     print >> ERRFILE, "No Out/out.* files found"
     sys.exit(1)
