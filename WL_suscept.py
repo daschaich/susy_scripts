@@ -114,10 +114,10 @@ for obs in ['lines_mod_polar']:
 
   # Now we can average over jackknife samples and print out results
   ave = np.mean(chi, dtype = np.float64)
-  err = np.std(chi, dtype = np.float64) / np.sqrt(N - 1.0)
+  var = (N - 1.0) * np.sum((chi - ave)**2) / float(N)
   outfilename = 'results/' + obs + '.suscept'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  print >> outfile, "%.8g %.4g # %d" % (ave, np.sqrt(var), N)
   outfile.close()
 # ------------------------------------------------------------------
 
