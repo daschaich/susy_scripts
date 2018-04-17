@@ -78,7 +78,7 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
   echo "nz $L" >> temp
   echo "nt $Nt" >> temp
   echo "PBC -1" >> temp
-  echo "iseed ${last}41$i" >> temp
+  echo "iseed ${last}${lambda/\./41}${L}$i" >> temp
 
   echo "Nroot 1" >> temp
   echo "Norder 9" >> temp
