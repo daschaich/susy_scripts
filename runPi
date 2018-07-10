@@ -31,18 +31,21 @@ skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
 # Common parameters for all jobs
 tag=rt${rt}_b${bmass}_G$G
 echo "#!/bin/sh" > temp
-echo "#PBS -l nodes=$node" >> temp
-echo "#PBS -l walltime=$time" >> temp
-echo "#PBS -A latticesusy" >> temp
-echo "#PBS -q pi" >> temp
-echo "#PBS -j oe" >> temp
-echo "#PBS -N HMC4_${L}nt${Nt}_$tag" >> temp
-echo "#PBS -o job.\$PBS_JOBID.out" >> temp
-echo "#PBS -k oe" >> temp
-echo "#PBS -m ae -M daschaich@gmail.com" >> temp
+echo "#SBATCH --nodes=$node" >> temp
+echo "#SBATCH --ntasks-per-node=16" >> temp
+echo "#SBATCH --time=$time" >> temp
+echo "#SBATCH -A latticesusy" >> temp
+echo "#SBATCH --partition pi" >> temp
+echo "#SBATCH -J HMC4_${L}nt${Nt}_$tag" >> temp
+echo "#SBATCH -o job.%j.out" >> temp
+echo "#SBATCH --mail-user=daschaich@gmail.com" >> temp
+echo "#SBATCH --mail-type=end" >> temp
+if [ $# -gt 5 ]; then
+  echo "  #SBATCH -d after:$6" >> temp
+fi
 
 dir=/lqcdproj/latticesusy/N4/2d/Nc4_${L}nt${Nt}/$tag
-bin=/lqcdproj/latticesusy/N4/code/4dSYM/pi0_bins/susy_hmc-U4
+bin=/lqcdproj/latticesusy/N4/code/4dSYM/bins/susy_hmc-U4
 cd $dir
 echo "cd $dir" >> temp
 
@@ -68,10 +71,10 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
     exit 1
   fi
 
-  echo "echo \"Job \$PBS_JOBNAME started \"\`date\`\" jobid \$PBS_JOBID\" >> $out" >> temp
+  echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
   echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
-  echo "echo \"/usr/local/mvapich/bin/mpirun -np $cpus $bin\" >> $out" >> temp
-  echo "/usr/local/mvapich/bin/mpirun -np $cpus $bin << EOF >> $out" >> temp
+  echo "echo \"/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin\" >> $out" >> temp
+  echo "/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin << EOF >> $out" >> temp
   echo "prompt 0" >> temp
   echo "nx 1" >> temp
   echo "ny 1" >> temp
@@ -104,16 +107,11 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
   echo "fresh" >> temp
   echo "save_serial $lat.$next" >> temp
   echo "EOF" >> temp
-
   echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
   echo "chmod 666 $out $lat.$i* $lat.$next*" >> temp
   echo "" >> temp
 done
 
-if [ $# -gt 5 ]; then
-  qsub -W depend=afterok:$6.pi0s.fnal.gov temp -r n
-else
-  qsub temp -r n
-fi
+sbatch temp
 echo "Requested $time to run $iter jobs"
 rm -f temp

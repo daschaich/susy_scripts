@@ -34,17 +34,16 @@ Nvec=12
 # Common parameters for all jobs
 tag=l${lambda}_b${bmass}_G$G
 echo "#!/bin/sh" > temp
-echo "#PBS -l nodes=$node" >> temp
-echo "#PBS -l walltime=$time" >> temp
-echo "#PBS -A latticesusy" >> temp
-echo "#PBS -q ds" >> temp
-echo "#PBS -j oe" >> temp
-echo "#PBS -N eig${L}nt${Nt}_$tag" >> temp
-echo "#PBS -o out.eig.\$PBS_JOBID.out" >> temp
-echo "#PBS -k oe" >> temp
+echo "#SBATCH --nodes=$node" >> temp
+echo "#SBATCH --ntasks-per-node=32" >> temp
+echo "#SBATCH --time=$time" >> temp
+echo "#SBATCH -A latticesusy" >> temp
+echo "#SBATCH --partition ds" >> temp
+echo "#SBATCH -J eig${L}nt${Nt}_$tag" >> temp
+echo "#SBATCH -o out.eig.%j" >> temp
 
 dir=/lqcdproj/latticesusy/N4/APBC/Nc2_${L}nt${Nt}/$tag
-bin=/lqcdproj/latticesusy/N4/code/4dSYM/ds_bins/susy_eig
+bin=/lqcdproj/latticesusy/N4/code/4dSYM/bins/susy_eig
 cd $dir
 echo "cd $dir" >> temp
 
@@ -52,7 +51,6 @@ echo "cd $dir" >> temp
 iter=0
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   iter=$[$iter + 1]
-  next=$[$i + $skip]
   out=$dir/Out/eig.$i
   lat=$dir/Configs/gauge
   if [ -f $out ]; then
@@ -66,10 +64,10 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
     exit 1
   fi
 
-  echo "echo \"Job \$PBS_JOBNAME started \"\`date\`\" jobid \$PBS_JOBID\" >> $out" >> temp
+  echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
   echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
-  echo "echo \"/usr/local/mvapich/bin/mpirun -np $cpus $bin\" >> $out" >> temp
-  echo "/usr/local/mvapich/bin/mpirun -np $cpus $bin << EOF  >> $out" >> temp
+  echo "echo \"/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin\" >> $out" >> temp
+  echo "/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin << EOF >> $out" >> temp
   echo "prompt 0" >> temp
   echo "nx $L" >> temp
   echo "ny $L" >> temp
@@ -109,6 +107,6 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo "" >> temp
 done
 
-qsub temp
+sbatch temp
 echo "Requested $time to run $iter eigenvalue measurements ($first through $last by $skip)"
 rm -f temp
