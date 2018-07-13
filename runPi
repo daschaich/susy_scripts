@@ -37,11 +37,11 @@ echo "#SBATCH --time=$time" >> temp
 echo "#SBATCH -A latticesusy" >> temp
 echo "#SBATCH --partition pi" >> temp
 echo "#SBATCH -J HMC4_${L}nt${Nt}_$tag" >> temp
-echo "#SBATCH -o job.%j.out" >> temp
+echo "#SBATCH -o out.hmc.%j" >> temp
 echo "#SBATCH --mail-user=daschaich@gmail.com" >> temp
 echo "#SBATCH --mail-type=end" >> temp
 if [ $# -gt 5 ]; then
-  echo "  #SBATCH -d after:$6" >> temp
+  echo "#SBATCH -d after:$6" >> temp
 fi
 
 dir=/lqcdproj/latticesusy/N4/2d/Nc4_${L}nt${Nt}/$tag
@@ -73,8 +73,8 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
 
   echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
   echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
-  echo "echo \"/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin\" >> $out" >> temp
-  echo "/usr/local/mvapich2-2.2/bin/mpirun -np $cpus $bin << EOF >> $out" >> temp
+  echo "echo \"srun -n $cpus $bin\" >> $out" >> temp
+  echo "srun -n $cpus $bin << EOF >> $out" >> temp
   echo "prompt 0" >> temp
   echo "nx 1" >> temp
   echo "ny 1" >> temp
