@@ -41,7 +41,7 @@ echo "#SBATCH -o out.hmc.%j" >> temp
 echo "#SBATCH --mail-user=daschaich@gmail.com" >> temp
 echo "#SBATCH --mail-type=end" >> temp
 if [ $# -gt 5 ]; then
-  echo "#SBATCH -d after:$6" >> temp
+  echo "#SBATCH -d afterok:$6" >> temp
 fi
 
 dir=/lqcdproj/latticesusy/N4/2d/Nc4_${L}nt${Nt}/$tag
