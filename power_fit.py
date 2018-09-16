@@ -24,7 +24,7 @@ if not os.path.isfile(filename):
 
 # ------------------------------------------------------------------
 # Read, parse and fit data
-# Assumed format: m dat err
+# Assumed format: L dat err
 for n in range(4):
   LList = []
   datList = []
