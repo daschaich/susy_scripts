@@ -8,7 +8,7 @@ fi
 tag=$1
 date=$2
 
-out="/nfs/beowulf03/schaich/SYM/$tag/index.html"
+out="/nfs/beowulf03/schaich/SYM/$tag/index.html"    # Customized for CU
 #echo "Writing $out"
 
 echo '<html><head>' > $out
@@ -42,7 +42,7 @@ echo '          <div id="plaq"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("plaq"),' >> $out # Where to put graph
 echo '                            "data/plaq.csv",' >> $out                 # URL for data series
-echo '                            { rollPeriod: 50,' >> $out                 # Options
+echo '                            { rollPeriod: 50,' >> $out                # Options
 echo '                              colors: ["blue", "orange", "red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out

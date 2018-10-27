@@ -20,7 +20,7 @@ MISSINGFILES = open('MISSING', 'w')
 SB = open('data/SB.csv', 'w')
 print >> SB, "MDTU,S_B"
 MYERS = open('data/Myers.csv', 'w')
-print >> MYERS, "MDTU,Myers/vol"
+print >> MYERS, "MDTU,Myers/Nt"
 ENERGY = open('data/energy.csv', 'w')
 print >> ENERGY, "MDTU,ENERGY"
 SF = open('data/SF.csv', 'w')
@@ -29,12 +29,8 @@ POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
-SCALAR_SQUARES= open('data/scalarsquares.csv', 'w')
-print >> SCALAR_SQUARES, "MDTU, Tr(X1)^2,Tr(X2)^2, Tr(X3)^2, Tr(X4)^2, Tr(X5)^2, Tr(X6)^2, Tr(X7)^2, Tr(X8)^2, Tr(X9)^2 "
-FLINK = open('data/Flink.csv', 'w')
-print >> FLINK, "MDTU,link"
-WIDTHS = open('data/widths.csv', 'w')
-print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
+SCALAR_SQUARES = open('data/scalarsquares.csv', 'w')
+print >> SCALAR_SQUARES, "MDTU,Tr(X1)^2,Tr(X2)^2,Tr(X3)^2,Tr(X4)^2,Tr(X5)^2,Tr(X6)^2,Tr(X7)^2,Tr(X8)^2,Tr(X9)^2"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
 print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
@@ -86,8 +82,8 @@ Myers = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
 CG = 1
-traj = 0;
-MDTU = 0;
+traj = 0
+MDTU = 0
 # ------------------------------------------------------------------
 
 
@@ -96,12 +92,18 @@ MDTU = 0;
 # Cycle through files out.$load-$save from list.txt
 for temp_tag in open('list.txt'):
   tag = temp_tag.rstrip()
+  # Check to make sure that actual files are present
+  if "Configs" in tag:
+    print "No Out/out.* files found"
+    print >> ERRFILE, "No Out/out.* files found"
+    sys.exit(1)
   load, cfg = tag.split('-')
+
   # Initialize running sums and set dummy walltime
   # If the walltime isn't overwritten, then the run died
   # or its output file is corrupted
-  walltime = -1;
-  stamp = "start";
+  walltime = -1
+  stamp = "start"
 
   # Open file
   # If not found, move on to next file instead of killing whole program,
@@ -116,32 +118,24 @@ for temp_tag in open('list.txt'):
   # If not starting from first file in this ensemble,
   # or if we seem to have skipped a file,
   # guess approximate starting trajectory
-  traj_per_file = -1;
-  vol = 1;
+  traj_per_file = -1
+  Nt = -1
   for line in open(infile):
     if line.startswith('PLACEHOLDER'):
       # Placeholder file -- error has been addressed as well as possible,
       # but don't print nonsense wall clock time
-      walltime = -2;
+      walltime = -2
 
     # Extract Nc for bosonic action and Polyakov loop normalizations
-    # Unfortunately, we switched formatting in early 2014
-    elif line.startswith('BMN '):
-      temp1 = line.split()
-      temp2 = (temp1[2]).split(')')
-      Nc = float(((temp2[0]).split('('))[-1])
+    # Define DIMF = Nc**2
     elif line.startswith('BMN, '):
-      temp1 = line.split(',')
-      Nc = float(((temp1[1]).split())[2])
-    
-    #print 'NCOL is', Nc
+      temp = line.split(',')
+      Nc = float(((temp[1]).split())[2])
+      DIMF = Nc**2
 
-
-    # Extract volume for monopole world line density
+    # Extract Nt
     elif line.startswith('nt '):
-      vol *= float((line.split())[1])
-
-#print 'vol is', vol
+      Nt = float((line.split())[1])
 
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
@@ -151,6 +145,10 @@ for temp_tag in open('list.txt'):
   if traj_per_file < 0:
     print infile, "never defines number of trajectories"
     print >> ERRFILE, infile, "never defines number of trajectories"
+    continue    # Skip to next file
+  elif Nt < 0:
+    print infile, "never defines Nt"
+    print >> ERRFILE, infile, "never defines Nt"
     continue    # Skip to next file
 
   if (traj == 0 and int(load) > 0) or (int(load) != oldcfg):
@@ -180,9 +178,6 @@ for temp_tag in open('list.txt'):
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
-  NEED_LINES = 1    # May not need to check measurement file
-  NEED_DET = 1      # for these if they're in the main output file
-  NEED_WIDTHS = 1
   NEED_SCALAR_EIGS = 1
   scalar_eig_ave = ''
   scalar_eig_ext = ''
@@ -197,10 +192,10 @@ for temp_tag in open('list.txt'):
     # Format: RHMC Norder # for spectral range [min, max]
     elif line.startswith('RHMC Norder '):
       if 'spectral' in line:
-        temp1 = line.rstrip()       # Kill newline
-        temp2 = temp1.rstrip(']')   # Kill ]
-        temp1 = (temp2.split('['))[-1]
-        temp2 = temp1.split(',')
+        temp = line.rstrip()       # Kill newline
+        temp2 = temp.rstrip(']')   # Kill ]
+        temp = (temp2.split('['))[-1]
+        temp2 = temp.split(',')
         min_eig = float(temp2[0])
         max_eig = float(temp2[1])
       else:         # Original 15-pole format didn't state spectral range
@@ -242,19 +237,22 @@ for temp_tag in open('list.txt'):
     # The exception is the fermion action
     # This is always measured twice (before and after the trajectory)
     # and which value we want depends on the accept/reject step...
-    # Normalize using volume and Nc extracted above
+    # Normalize using Nt and Nc extracted above
     elif line.startswith('action: so3 '):
-
       if fermAct[0] < 0:
-        fermAct[0] = float((line.split())[12]) / (16.0 * vol * Nc**2)
-        bAct[0] = float((line.split())[10]) / (1.0 * (Nc**2 - 1.0) * vol)  # SU(N)
-        Myers[0] = float((line.split())[8]) / (vol)
-        energy[0] = -1.0 * ((1.0*(Nc**2 - 1.0) * vol) - float((line.split())[8]))*(1/Nc**2)
+        split = line.split()
+        fermAct[0] = float(split[12]) / (16.0 * Nt * DIMF)
+        bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
+        temp = float(split[8])
+        Myers[0] = temp / Nt
+        energy[0] = -1.0 * ((DIMF - 1.0) * Nt - temp) / DIMF
       elif fermAct[1] < 0:
-        fermAct[1] = float((line.split())[12]) / (16.0 * vol * Nc**2)
-        bAct[1] = float((line.split())[10]) / (1.0 * (Nc**2 - 1.0) * vol)
-        Myers[1] = float((line.split())[8]) / (vol)
-        energy[1] = -1.0 * ((1.0*(Nc**2 - 1.0) * vol) - float((line.split())[8]))*(1/Nc**2)
+        split = line.split()
+        fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
+        bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
+        temp = float(split[8])
+        Myers[1] = temp / Nt
+        energy[1] = -1.0 * ((DIMF - 1.0) * Nt - temp) / DIMF
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -284,7 +282,6 @@ for temp_tag in open('list.txt'):
         print >> SB, "%g,%g" % (MDTU, bAct[1])
         print >> MYERS, "%g,%g" % (MDTU, Myers[1])
         print >> ENERGY, "%g,%g" % (MDTU, energy[1])
-        
       else:
         print >> ACCP, "%d,0" % traj
         print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
@@ -315,26 +312,8 @@ for temp_tag in open('list.txt'):
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # Ignore first FLINK printed as test of configuration reloading
-    elif line.startswith('START '):
-      starting = 1
-    elif line.startswith('FLINK '):
-      if starting == 1:
-        starting = 0
-        link_width = float('nan')
-      else:
-        temp = line.split()
-        ave_link = float(temp[6])
-        print >> FLINK, "%g,%g" % (MDTU, ave_link)
-        if len(temp) > 7:
-          link_width = float(temp[7]) # To be printed with other widths
-        else:
-          link_width = float('nan')
-    # ------------------------------------------------------------
-
-    # ------------------------------------------------------------
     # Polyakov loop and CG iterations
-
+    # First normalized using Nc extracted above
     elif line.startswith('GMES '):
       temp = line.split()
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
@@ -346,12 +325,10 @@ for temp_tag in open('list.txt'):
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
     # ------------------------------------------------------------
 
-
     # ------------------------------------------------------------
-    # Scalar squares (all 9)
+    # Nine scalar squares
     elif line.startswith('SCALAR SQUARES '):
       temp = line.split()
-      
       X1 = float(temp[2])
       X2 = float(temp[3])
       X3 = float(temp[4])
@@ -361,19 +338,21 @@ for temp_tag in open('list.txt'):
       X7 = float(temp[8])
       X8 = float(temp[9])
       X9 = float(temp[10])
-    
-      print >> SCALAR_SQUARES, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g" % (MDTU, X1, X2, X3, X4, X5, X6, X7, X8, X9)
+      print >> SCALAR_SQUARES, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g" \
+                               % (MDTU, X1, X2, X3, X4, X5, X6, X7, X8, X9)
+    # ------------------------------------------------------------
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
     # Some hacky backspaces for output formatting...
-    elif line.startswith('POLAR_EIG '):
+    elif line.startswith('SCALAR_EIG '):
       NEED_SCALAR_EIGS = -1
       temp = line.split()
       index = int(temp[1])
-      scalar_eig_ave += ',' + str(temp[2])
-      scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-      scalar_eig_width += ',' + str(temp[3])
+      if index == 0 or index == Nc - 1:
+        scalar_eig_ave += ',' + str(temp[2])
+        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+        scalar_eig_width += ',' + str(temp[3])
       if index == Nc - 1:
         print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
         print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
@@ -406,6 +385,7 @@ for temp_tag in open('list.txt'):
   elif walltime == -2:
     # Placeholder file -- error has been addressed as well as possible,
     # but don't print nonsense wall clock time
+    fermAct = [-1.0, -1.0]                        # Reset
     pass
   else:   # We are good to go
     ave_time = walltime / traj_per_file
@@ -489,9 +469,9 @@ for temp_tag in open('list.txt'):
     # which wasn't always printed in output (though it is now)
     # For now, extract it from the path
     C2 = 1.0
-    temp1 = os.getcwd()
-    if '-c' in temp1:
-      temp2 = temp1.split('-c')
+    temp = os.getcwd()
+    if '-c' in temp:
+      temp2 = temp.split('-c')
       C2 = float(((temp2[1]).split('/'))[0])
 
     # We have a file, so let's cycle over its lines
@@ -529,24 +509,15 @@ for temp_tag in open('list.txt'):
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
-      # Monopole world line density
-      elif 'WARNING' in line:
-        print infile, "has total_mono mismatch"
-        print >> ERRFILE, infile, "has total_mono mismatch"
-      elif line.startswith('MONOPOLE '):
-        mono = float((line.split())[10])
-        print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
-      # ----------------------------------------------------------
-
-      # ----------------------------------------------------------
       # Scalar eigenvalues
       # Some hacky backspaces for output formatting...
-      elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
+      elif NEED_SCALAR_EIGS > 0 and line.startswith('SCALAR_EIG '):
         temp = line.split()
         index = int(temp[1])
-        scalar_eig_ave += ',' + str(temp[2])
-        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-        scalar_eig_width += ',' + str(temp[3])
+        if index == 0 or index == Nc - 1:
+          scalar_eig_ave += ',' + str(temp[2])
+          scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+          scalar_eig_width += ',' + str(temp[3])
         if index == Nc - 1:
           print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
           print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
@@ -585,9 +556,7 @@ SF.close()
 POLY.close()
 POLY_MOD.close()
 SCALAR_SQUARES.close()
-FLINK.close()
 BILIN.close()
-WIDTHS.close()
 SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()

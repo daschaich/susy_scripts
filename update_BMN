@@ -1,17 +1,16 @@
 #!/bin/bash
 # ------------------------------------------------------------------
-if [ $# = 0 ]; then
-  echo "Usage : $0 ?? "
+if [ $# != 0 ]; then
+  echo "Usage: $0"
   exit 1
 fi
 
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
-path=$dir
-echo $path
+path=/nfs/beowulf03/schaich/SYM/$dir          # Customized for CU
 # ------------------------------------------------------------------
 
-tag1=${args[0]}
+
 
 # ------------------------------------------------------------------
 # Construct list of files in given ensemble, for parse_SYM.py
@@ -22,18 +21,25 @@ done
 sort temp -n | uniq > list.txt
 rm -f temp
 
+# Use list of files in given ensemble to extract time series data
 rm -f data/*.csv ERRORS
-python /Users/RG/Desktop/Runs1/SLURM/$tag1/parse_BMN.py
-chmod 666 data/*.csv
+echo "python ~schaich/scripts/parse_BMN.py"
+python ~schaich/scripts/parse_BMN.py
+chmod 664 data/*.csv
 rm -f list.txt            # Done with this
+
+# Not yet sure what structure BMN eigenvalues should have
+#python ~schaich/scripts/check_eig_pairs.py >> ERRORS
 
 # Replace Web page to update timestamp
 date=`date`
 rm -f index.html
-bash /Users/RG/Desktop/Runs1/SLURM/$tag1/writeBMN.sh $dir "$date"
-chmod 666 index.html
+echo writeSYM $dir "$date"
+~schaich/scripts/writeSYM $dir "$date"
+chmod 664 index.html
 
 # I like to monitor this
+#grep Apparent ERRORS
 wc -l M*
 wc -l E*
 echo

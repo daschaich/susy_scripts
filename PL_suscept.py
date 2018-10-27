@@ -58,6 +58,8 @@ if good == -1:
 
 
 # ------------------------------------------------------------------
+# We're interested in the first datum on each line
+# This is the modulus (followed by the real and imaginary parts)
 for obs in ['poly_mod']:
   skip = -1
   count = 0
@@ -75,7 +77,7 @@ for obs in ['poly_mod']:
     if MDTU <= cut:
       continue
     elif MDTU > begin and MDTU < (begin + block_size):
-      tr = float(temp[3])
+      tr = float(temp[1])
       ave += tr
       aveSq += tr * tr
       count += 1
@@ -88,7 +90,7 @@ for obs in ['poly_mod']:
       sqList.append(aveSq / count)
       begin += block_size
       count = 1                         # Next block begins here
-      tr = float(temp[3])
+      tr = float(temp[1])
       ave = tr
       aveSq = tr * tr
 

@@ -57,14 +57,16 @@ if good == -1:
 # ------------------------------------------------------------------
 
 
+
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action, fermion action, average link,
-# and monopole world line density
+# For the Polyakov loop, bosonic action, fermion action,
+# energy and 'Myers' scalar trilinear term
 # we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
 for obs in ['poly_mod', 'SB', 'SF', 'energy', 'Myers']:
+  skip = -1
   count = 0
-  ave = 0.          # Accumulate within each block
+  ave = 0.0         # Accumulate within each block
   datList = []
   begin = cut       # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
@@ -80,19 +82,22 @@ for obs in ['poly_mod', 'SB', 'SF', 'energy', 'Myers']:
       count += 1
     elif MDTU >= (begin + block_size):  # Move on to next block
       if count == 0:
-        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
-        sys.exit(1)
+        print "WARNING: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        skip = 1
+        break
       datList.append(ave / count)
       begin += block_size
       count = 1                         # Next block begins here
       ave = float(temp[1])
 
+  if len(datList) == 0:
+    skip = 1
+  if skip > 0:
+    continue
+
   # Now print mean and standard error, assuming N>1
   dat = np.array(datList)
   N = np.size(dat)
-  if N == 0:
-    print "WARNING: No", obs, "data"
-    continue
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
@@ -104,12 +109,13 @@ for obs in ['poly_mod', 'SB', 'SF', 'energy', 'Myers']:
 
 
 # ------------------------------------------------------------------
-# For the core-minutes per MDTU
+# For algorithmic/cost quantities
 # we're again interested in the first datum on each line
 # but have to work in terms of trajectories rather than MDTU
 for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
+  skip = -1
   count = 0
-  ave = 0.          # Accumulate within each block
+  ave = 0.0         # Accumulate within each block
   datList = []
   begin = t_cut     # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
@@ -125,19 +131,22 @@ for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
       count += 1
     elif traj >= (begin + t_block):     # Move on to next block
       if count == 0:
-        print "ERROR: no %s data to average at %d traj" % (obs, int(traj))
-        sys.exit(1)
+        print "WARNING: no %s data to average at %d traj" % (obs, int(traj))
+        skip = 1
+        break
       datList.append(ave / count)
       begin += t_block
       count = 1                         # Next block begins here
       ave = float(temp[1])
 
+  if len(datList) == 0:
+    skip = 1
+  if skip > 0:
+    continue
+
   # Now print mean and standard error, assuming N>1
   dat = np.array(datList)
   N = np.size(dat)
-  if N == 0:
-    print "WARNING: No", obs, "data"
-    continue
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
@@ -170,6 +179,7 @@ for obs in ['scalar_eig_ave']:
     ave.append(0.0)
     datList.append([])
 
+  skip = -1
   count = 0
   begin = cut       # Where each block begins, to be incremented
   for line in open(obsfile):
@@ -185,13 +195,19 @@ for obs in ['scalar_eig_ave']:
       count += 1
     elif MDTU >= (begin + block_size):  # Move on to next block
       if count == 0:
-        print "ERROR: no %s data to average at %d MDTU" % (obs, int(MDTU))
-        sys.exit(1)
+        print "WARNING: no %s data to average at %d MDTU" % (obs, int(MDTU))
+        skip = 1
+        break
       for i in range(len(ave)):
         datList[i].append(ave[i] / count)
         ave[i] = float(temp[i + 1])     # Next block begins here
       begin += block_size
       count = 1
+
+  if len(datList[0]) == 0:
+    skip = 1
+  if skip > 0:
+    continue
 
   # Now print mean and standard error, assuming N>1
   outfilename = 'results/' + obs + '.dat'
@@ -199,9 +215,6 @@ for obs in ['scalar_eig_ave']:
   for i in range(Nc):
     dat = np.array(datList[i])
     N = np.size(dat)
-    if N == 0:
-      print "WARNING: No", obs, "data"
-      continue
     ave[i] = np.mean(dat, dtype = np.float64)
     err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
     print >> outfile, "%.8g %.4g" % (ave[i], err),

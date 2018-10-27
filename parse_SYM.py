@@ -95,8 +95,8 @@ fermAct = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
 CG = 1
-traj = 0;
-MDTU = 0;
+traj = 0
+MDTU = 0
 # ------------------------------------------------------------------
 
 
@@ -115,8 +115,8 @@ for temp_tag in open('list.txt'):
   # Initialize running sums and set dummy walltime
   # If the walltime isn't overwritten, then the run died
   # or its output file is corrupted
-  walltime = -1;
-  stamp = "start";
+  walltime = -1
+  stamp = "start"
 
   # Open file
   # If not found, move on to next file instead of killing whole program,
@@ -131,20 +131,20 @@ for temp_tag in open('list.txt'):
   # If not starting from first file in this ensemble,
   # or if we seem to have skipped a file,
   # guess approximate starting trajectory
-  traj_per_file = -1;
-  vol = -1;
+  traj_per_file = -1
+  vol = -1
   for line in open(infile):
     if line.startswith('PLACEHOLDER'):
       # Placeholder file -- error has been addressed as well as possible,
       # but don't print nonsense wall clock time
-      walltime = -2;
+      walltime = -2
 
     # Extract Nc for bosonic action and Polyakov loop normalizations
     # Convert it to DIMF to handle SU(N) runs
     # Should no longer need to handle pre-2014 formatting
     elif line.startswith('N=4 SYM, '):
-      temp1 = line.split(',')
-      Nc = float(((temp1[1]).split())[2])
+      temp = line.split(',')
+      Nc = float(((temp[1]).split())[2])
       DIMF = Nc**2
       temp = os.getcwd()
       if 'slnc' in temp:
@@ -216,10 +216,10 @@ for temp_tag in open('list.txt'):
     # Format: RHMC Norder # for spectral range [min, max]
     elif line.startswith('RHMC Norder '):
       if 'spectral' in line:
-        temp1 = line.rstrip()       # Kill newline
-        temp2 = temp1.rstrip(']')   # Kill ]
-        temp1 = (temp2.split('['))[-1]
-        temp2 = temp1.split(',')
+        temp = line.rstrip()       # Kill newline
+        temp2 = temp.rstrip(']')   # Kill ]
+        temp = (temp2.split('['))[-1]
+        temp2 = temp.split(',')
         min_eig = float(temp2[0])
         max_eig = float(temp2[1])
       else:         # Original 15-pole format didn't state spectral range
@@ -558,9 +558,9 @@ for temp_tag in open('list.txt'):
     # which wasn't always printed in output (though it is now)
     # For now, extract it from the path
     C2 = 1.0
-    temp1 = os.getcwd()
-    if '-c' in temp1:
-      temp2 = temp1.split('-c')
+    temp = os.getcwd()
+    if '-c' in temp:
+      temp2 = temp.split('-c')
       C2 = float(((temp2[1]).split('/'))[0])
 
     # We have a file, so let's cycle over its lines
