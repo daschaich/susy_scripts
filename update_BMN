@@ -6,14 +6,14 @@ if [ $# != 0 ]; then
 fi
 
 temp=`pwd`
-dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
-path=/nfs/beowulf03/schaich/SYM/$dir          # Customized for CU
+dir=${temp##*BMN/}   # Strip everything up to and including "SYM/"
+path=/nfs/beowulf03/schaich/SYM/BMN/$dir      # Customized for CU
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Construct list of files in given ensemble, for parse_SYM.py
+# Construct list of files in given ensemble, for parse_BMN.py
 rm -f list.txt
 for i in $path/Out/out.* ; do
   echo ${i##*.} >> temp    # Strip everything up to and including the last "."
@@ -34,8 +34,8 @@ rm -f list.txt            # Done with this
 # Replace Web page to update timestamp
 date=`date`
 rm -f index.html
-echo writeSYM $dir "$date"
-~schaich/scripts/writeSYM $dir "$date"
+echo writeBMN $dir "$date"
+~schaich/scripts/writeBMN $dir "$date"
 chmod 664 index.html
 
 # I like to monitor this

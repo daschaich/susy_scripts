@@ -459,9 +459,9 @@ for temp_tag in open('list.txt'):
 
 
   # ----------------------------------------------------------------
-  # Now deal with the corresponding "corr" file, if it is present
+  # Now deal with the corresponding "bilin" file, if it is present
   # For now just care about fermion bilinears and related quantities
-  infile = 'Out/corr.' + cfg
+  infile = 'Out/bilin.' + cfg
   if not os.path.isfile(infile):
     print >> MISSINGFILES, infile
   else:

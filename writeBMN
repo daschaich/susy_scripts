@@ -8,7 +8,7 @@ fi
 tag=$1
 date=$2
 
-out="/nfs/beowulf03/schaich/SYM/$tag/index.html"    # Customized for CU
+out="/nfs/beowulf03/schaich/SYM/BMN/$tag/index.html"    # Customized for CU
 
 echo '<html><head>' > $out
 echo '<script type="text/javascript" src="http://www-hep.colorado.edu/~schaich/dygraph-combined.js"></script>' >> $out
@@ -159,7 +159,7 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Fermion bilinears ('$tag')</th><th>Intentionally left blank ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Fermion bilinears ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="bilin"></div>' >> $out
@@ -167,7 +167,6 @@ echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("bilin"),' >> $out
 echo '                            "data/bilin.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
-#echo '                              colors: ["blue", "red", "green"],' >> $out
 echo '                              colors: ["red", "blue"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out

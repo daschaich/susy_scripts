@@ -150,7 +150,7 @@ for temp_tag in open('list.txt'):
       if 'slnc' in temp:
         DIMF -= 1
 
-    # Extract volume for monopole world line density
+    # Extract volume for normalizations
     elif line.startswith('nx '):
       vol = float((line.split())[1])
     elif line.startswith('ny ') or line.startswith('nz '):
