@@ -1,0 +1,453 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <directory> <date>"
+  exit 1
+fi
+
+tag=$1
+date=$2
+
+out="$tag/index.html"
+
+echo '<html><head>' >> $out
+echo '<script type="text/javascript" src="http://www-hep.colorado.edu/~schaich/dygraph-combined.js"></script>' >> $out
+
+echo '<style type="text/css">' >> $out
+echo '  #main{' >> $out
+echo '    margin-right:19em;' >> $out
+echo '    position:relative;' >> $out
+echo '    min-height:0' >> $out
+echo '  }' >> $out
+echo '  #main h2 {background-color:#f0f0f0}' >> $out
+
+echo '  h1, h2, h3 {margin-bottom:1em}' >> $out
+echo '  h2, h3, h4 a, h5 a {padding:3px 10px}' >> $out
+echo '  h2, h3, h4, h5 {font-size:1em}' >> $out
+echo '</style>' >> $out
+
+echo '<title>'$tag'</title>' >> $out
+echo '</head>' >> $out
+echo '<body>' >> $out
+echo '<div id="main">' >> $out
+echo '  <p>Last update: '$date'</p>' >> $out
+echo '  <h1><a name="phys"></a> PWMM/BMN Time series plots </h1>' >> $out
+echo '  <hr><br>' >> $out
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Scalar Squares ('$tag')</th><th>Bosonic action (per site per DIMF) ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="plaq"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("plaq"),' >> $out # Where to put graph
+echo '                            "data/scalarsquares.csv",' >> $out                 # URL for data series
+echo '                            { rollPeriod: 50,' >> $out                 # Options
+echo '                              colors: ["black", "black", "black", "red", "orange", "blue", "magenta", "green", "brown"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="SB"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("SB"),' >> $out
+echo '                            "data/SB.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["blue", "orange"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 6)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Polyakov loop scatter plot ('$tag')</th><th>Re, Im and Mod(Polyakov loop) ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="poly"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("poly"),' >> $out
+echo '                            "data/poly.csv",' >> $out
+echo '                            { colors: ["blue"],' >> $out
+echo '                              drawPoints: true,' >> $out
+echo '                              strokeWidth: 0,' >> $out
+#echo '                              valueRange: [-0.25, 0.25],' >> $out
+echo '                              showLabelsOnHighlight: false,' >> $out
+echo '                              xValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="poly_mod"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("poly_mod"),' >> $out
+echo '                            "data/poly_mod.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["blue", "red", "green"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th> Myers (normalized by volume) ('$tag')</th><th>Scalar eigenvalue widths ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="scalar_eig"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("scalar_eig"),' >> $out
+echo '                            "data/Myers.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["red", "blue", "red", "red", "green", "green", "black", "black"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="scalar_eig_widths"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("scalar_eig_widths"),' >> $out
+echo '                            "data/scalar_eig_widths.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["blue", "red", "green", "black"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="bilin"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("bilin"),' >> $out
+echo '                            "data/bilin.csv",' >> $out
+echo '                            { rollPeriod: 5,' >> $out
+#echo '                              colors: ["blue", "red", "green"],' >> $out
+echo '                              colors: ["red", "blue"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+
+
+echo '  <h1><a name="evol"></a>Evolution observables</h1>' >> $out
+echo '  <hr><br>' >> $out
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>HMC acceptance ('$tag')</th><th>exp(-delta S) ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="accP"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("accP"),' >> $out
+echo '                            "data/accP.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [0, 1.01],' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 3)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="exp_dS"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("exp_dS"),' >> $out
+echo '                            "data/exp_dS.csv",' >> $out
+echo '                            { rollPeriod: 50,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [0, 2.01],' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>delta S ('$tag')</th><th>|delta S| ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="deltaS"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("deltaS"),' >> $out
+echo '                            "data/deltaS.csv",' >> $out
+echo '                            { rollPeriod: 5,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [-2.5, 2.51],' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="abs_dS"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("abs_dS"),' >> $out
+echo '                            "data/abs_dS.csv",' >> $out
+echo '                            { rollPeriod: 5,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              valueRange: [0, 5.01],' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 4)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Forces ('$tag')</th><th>CG iters per traj ('$tag')</th></tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="force"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("force"),' >> $out
+echo '                            "data/force.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["green", "red", "blue", "black"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 6)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="cg_iters"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("cg_iters"),' >> $out
+echo '                            "data/cg_iters.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Wall-clock seconds per traj ('$tag')</th><th>Core-minutes per MDTU ('$tag')</th></th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="walltime"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("walltime"),' >> $out
+echo '                            "data/walltime.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="wallTU"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("wallTU"),' >> $out
+echo '                            "data/wallTU.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>ln[condition#] ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="cond_num"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("cond_num"),' >> $out
+echo '                            "data/cond_num.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 6)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br><p align="right"><a href="#top">Return to top</a></p>' >> $out
+
+echo '  <h1><a name="run"></a>Run parameters</h1>' >> $out
+echo '  <hr><br>' >> $out
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Steps per trajec ('$tag')</th><th>HMC step size ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="Nstep"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("Nstep"),' >> $out
+echo '                            "data/Nstep.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red", "blue", "green"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="stepsize"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("stepsize"),' >> $out
+echo '                            "data/stepsize.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red", "blue", "green"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 5)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>Trajectory length ('$tag')</th><th>MD time units ('$tag')</th></tr>' >> $out
+echo '      <tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="tlength"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("tlength"),' >> $out
+echo '                            "data/tlength.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["green"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 3)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="TU"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("TU"),' >> $out
+echo '                            "data/TU.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["green"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 3)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br><p align="right"><a href="#top">Return to top</a></p>' >> $out
+echo '</div>' >> $out
+echo '</body>' >> $out
+echo '</html>' >> $out
