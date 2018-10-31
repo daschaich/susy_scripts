@@ -51,9 +51,14 @@ if dof < 1:
 
 # Fit!
 all_out = optimize.leastsq(errfunc, p_in[:], args=(r, dat, err),
-                           full_output = 1)
+                           full_output = 1, maxfev = 10000)
 p_out = all_out[0]
 covar = all_out[1]
+
+# Check for errors
+if int(all_out[-1]) > 4:
+  print "Error(%d): %s" % (int(all_out[-1]), all_out[-2])
+  sys.exit(1)
 
 # Error propagation for high-temperature (small-r) limit
 hiT = p_out[0] + p_out[3]
