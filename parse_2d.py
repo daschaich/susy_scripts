@@ -344,24 +344,24 @@ for temp_tag in open('list.txt'):
       temp = line.split()
       x_r = float(temp[1]) / Nc
       x_i = float(temp[2]) / Nc
-      print >> LINES, "%g,%g" % (x_r, x_i)
+      print >> LINE, "%g,%g" % (x_r, x_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
-      print >> LINES_MOD, "%g,%g" % (MDTU, x_mod)
+      print >> LINE_MOD, "%g,%g" % (MDTU, x_mod)
 
     # Unitarized Polyakov loop and spatial Wilson line
     elif line.startswith('LINES_POLAR '):
       temp = line.split()
-      poly_r = float(temp[7]) / Nc
-      poly_i = float(temp[8]) / Nc
+      poly_r = float(temp[3]) / Nc
+      poly_i = float(temp[4]) / Nc
       print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
       print >> POLY_MOD_POLAR, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
 
       x_r = float(temp[1]) / Nc
       x_i = float(temp[2]) / Nc
-      print >> LINES_POLAR, "%g,%g" % (x_r, x_i)
+      print >> LINE_POLAR, "%g,%g" % (x_r, x_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
-      print >> LINES_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
+      print >> LINE_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
