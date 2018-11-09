@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import glob
@@ -9,13 +9,13 @@ import numpy as np
 
 # Parse argument: the file to analyze
 if len(sys.argv) < 2:
-  print "Usage:", str(sys.argv[0]), "<file>"
+  print("Usage:", str(sys.argv[0]), "<file>")
   sys.exit(1)
 toOpen = str(sys.argv[1])
 
 # First make sure we're calling this from the right place
 if not os.path.isfile(toOpen):
-  print "ERROR:", toOpen, "does not exist"
+  print("ERROR:", toOpen, "does not exist")
   sys.exit(1)
 
 # Read in coefficients
@@ -57,5 +57,5 @@ for la in np.linspace(delta, la_max - delta, numPts):
   # TODO: Integrate analytically
   rho *= norm
   nu += rho * delta
-  print "%.4g %.6g %.6g" % (la, rho, nu)
+  print("%.4g %.6g %.6g" % (la, rho, nu))
 # ------------------------------------------------------------------
