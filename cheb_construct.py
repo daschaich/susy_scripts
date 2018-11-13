@@ -42,20 +42,27 @@ for line in open(toOpen):
 
 # TODO
 nu = 0
-numPts = 1000
+numPts = 10000
+la_sum = la_max + la_min
+la_dif = la_max - la_min
 delta = la_max / float(numPts)
 for la in np.linspace(delta, la_max - delta, numPts):
-  # Compute x variable in range -1 < x < 1
-  x = (2.0 * la - la_max - la_min) / (la_max - la_min)
+  # Rescale D.Ddag eigenvalue to 'x' in range [-1, 1]
+  # Recall la_max and la_min are also for D.Ddag eigenvalues |la|^2
+  # Eq. 16 of arXiv:1610.01576
+  x = (2.0 * la - la_sum) / la_dif
   norm = 1.0 / (np.pi * np.sqrt(1.0 - x * x))
 
   # rho(x) = 1 / (pi * sqrt{1 - x^2}) sum_k (2 - delta_{k0}) c_k T_k(x)
   #        = 1 / (pi * sqrt{1 - x^2}) * (2sum_k c_k T_k(x) - c_0 T_0(x))
+  # Eq. 19 of arXiv:1610.01576
   rho = 2.0 * np.polynomial.chebyshev.chebval(x, coeffs)
   rho -= np.polynomial.chebyshev.chebval(x, coeffs[0])
 
-  # TODO: Integrate analytically
+  # TODO: Compute directly from Chebyshev polynomial rather than summing rho
+  # With numPts<infty, probably missing many poles
+  # Should expect severe underestimate of total 16N^2 * vol...
   rho *= norm
   nu += rho * delta
-  print("%.4g %.6g %.6g" % (la, rho, nu))
+  print("%.5g %.6g %.6g" % (la, rho, nu))
 # ------------------------------------------------------------------
