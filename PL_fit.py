@@ -59,10 +59,10 @@ T = np.array(TList)
 dat = np.array(datList)
 err = np.array(errList)
 
-# For now, demand that we have degrees of freedom
+# Demand that we have degrees of freedom
 dof = len(T) - 4
 if dof < 1:
-  print("ERROR: dof > 0 required for now")
+  print("ERROR: dof > 0 required")
   sys.exit(1)
 
 # Extract and save fit parameters
