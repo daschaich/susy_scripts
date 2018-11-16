@@ -60,7 +60,7 @@ dat = np.array(datList)
 err = np.array(errList)
 
 # Demand that we have degrees of freedom
-dof = len(T) - 4
+dof = len(T) - len(p_in)
 if dof < 1:
   print("ERROR: dof > 0 required")
   sys.exit(1)
@@ -72,7 +72,7 @@ all_out = least_squares(errfunc, p_in, bounds=[lower, upper],
                         jac=jac, method='trf', args=(T, dat, err))
 p_out = all_out.x
 tj = all_out.jac
-covar = np.linalg.inv(np.dot(np.transpose(tj), tj))
+cov = np.linalg.inv(np.dot(np.transpose(tj), tj))
 
 if all_out.success < 0 or all_out.success > 4:
   print("ERROR: Fit failed with the following error message")
@@ -82,12 +82,12 @@ if all_out.success < 0 or all_out.success > 4:
 # Error propagation for low-temperature limit
 loT = p_out[0] - p_out[1]
 derivs = np.array([1.0, -1.0, 0.0, 0.0])
-loTerr = np.sqrt(np.dot(derivs, np.dot(covar, derivs)))
+loTerr = np.sqrt(np.dot(derivs, np.dot(cov, derivs)))
 
-print("Critical r_beta: %.6g %.4g" % (p_out[3], np.sqrt(covar[3][3])))
-print("High-temp limit: %.6g %.4g" % (p_out[0], np.sqrt(covar[0][0])))
+print("Critical r_beta: %.6g %.4g" % (p_out[3], np.sqrt(cov[3][3])))
+print("High-temp limit: %.6g %.4g" % (p_out[0], np.sqrt(cov[0][0])))
 print(" Low-temp limit: %.6g %.4g" % (loT, loTerr))
-print("    'Steepness': %.6g %.4g" % (p_out[2], np.sqrt(covar[2][2])))
+print("    'Steepness': %.6g %.4g" % (p_out[2], np.sqrt(cov[2][2])))
 
 # Compute chiSq and confidence level of fit
 chiSq = ((errfunc(p_out, T, dat, err))**2).sum()
