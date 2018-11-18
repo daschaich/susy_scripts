@@ -84,7 +84,7 @@ loT = p_out[0] - p_out[1]
 derivs = np.array([1.0, -1.0, 0.0, 0.0])
 loTerr = np.sqrt(np.dot(derivs, np.dot(cov, derivs)))
 
-print("Critical r_beta: %.6g %.4g" % (p_out[3], np.sqrt(cov[3][3])))
+print("  Critical T/mu: %.6g %.4g" % (p_out[3], np.sqrt(cov[3][3])))
 print("High-temp limit: %.6g %.4g" % (p_out[0], np.sqrt(cov[0][0])))
 print(" Low-temp limit: %.6g %.4g" % (loT, loTerr))
 print("    'Steepness': %.6g %.4g" % (p_out[2], np.sqrt(cov[2][2])))

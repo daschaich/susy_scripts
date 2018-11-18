@@ -4,7 +4,7 @@ import sys
 import glob
 import time
 import numpy as np
-from scipy import optimize
+from scipy.optimize import least_squares
 # ------------------------------------------------------------------
 # Blocked fits of Wilson loops to W(r, t) = w * exp(-V(r) * t)
 # followed by fits of V(r) to the Coulomb form r * V(r) = A * r + C
@@ -44,9 +44,37 @@ else:
   sys.exit(1)
 
 # errfunc will be minimized via least-squares optimization
+# p_in are order-of-magnitude initial guesses
 expfunc = lambda p, x: p[0] * np.exp(-p[1] * x)
 errfunc = lambda p, x, y, err: (expfunc(p, x) - y) / err
-p_in = [0.01, 0.1]   # Order-of-magnitude initial guesses
+p_in = np.array([0.01, 0.1])
+
+# Define corresponding Jacobian matrix
+def jac(p, x, y, err):
+  J = np.empty((x.size, p.size), dtype = np.float)
+  J[:, 0] = np.exp(-p[1] * x)
+  J[:, 1] = -p[0] * x * np.exp(-p[1] * x)
+  for i in range(p.size):
+    J[:, i] /= err
+  return J
+
+# Another least squares setup for the Coulomb potential fit
+#   r * V(r) = A * r - C
+# This is overkill for a linear extrapolation,
+# but as of November 2018 np.polyfit has a covariance issue
+# github.com/numpy/numpy/issues/11196
+linfunc = lambda V, x: V[0] * x - V[1]
+err_lin = lambda V, x, y, err: (linfunc(V, x) - y) / err
+V_in = np.array([0.01, 0.01])
+
+# Define corresponding Jacobian matrix
+def jac_lin(V, x, y, err):
+  J = np.empty((x.size, V.size), dtype = np.float)
+  J[:, 0] = x
+  J[:, 1] = -1.0
+  for i in range(V.size):
+    J[:, i] /= err
+  return J
 # ------------------------------------------------------------------
 
 
@@ -95,7 +123,6 @@ for line in open(firstfile):
       print "ERROR: Only measured Wilson loops to %d but MAX_T=%d" \
             % (max_meas, MAX_T)
       sys.exit(1)
-      print
 
   # Format: $tag_LOOP # r t dat
   elif line.startswith(loop + '_LOOP '):
@@ -235,7 +262,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
   for i in range(Nblocks):  # Jackknife samples
     jkVlist = [[] for x in range(Npts)]
     rV = np.empty(Npts, dtype = np.float)
-    weight = np.empty_like(rV)
+    rVerr = np.empty_like(rV)
 
     # Inner jackknife:
     # Fit W(r, t) = w * exp(-V(r) * t) for t_min <= t <= MAX_T
@@ -258,11 +285,19 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
           temp = (WInSq[j][t - 1] - WdatSq[j][t - 1][ii]) / (Ninner - 1.0)
           WErr[t - t_min] = np.sqrt(temp - W[t - t_min]**2)
 
-        # V(r) is second of two parameters returned as temp
-        temp, success = optimize.leastsq(errfunc, p_in[:], args=(x_t, W, WErr))
+        # V(r) is second of two parameters returned as all_out.x
+        # Simply ignore covariance matrix at this stage
+        # method='lm' is Levenberg--Marquardt (can't handle bounds)
+        all_out = least_squares(errfunc, p_in, jac=jac,
+                                method='lm', args=(x_t, W, WErr))
+        temp = all_out.x
+        if all_out.success < 0 or all_out.success > 4:
+          print("ERROR: Fit failed with the following error message")
+          print(errmsg)
+          sys.exit(1)
         jkVlist[j].append(float(temp[1]))
 
-    # Now we have an estimate of jkV, rV and weight
+    # Now we have an estimate of jkV, rV and rVerr
     if not len(jkVlist[0]) == Ninner:
       print "ERROR: Wrong number of samples in inner jackknife", Ninner,
       print "vs.", len(jkVlist[0])
@@ -271,17 +306,26 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
       jkV[j][index][i] = np.average(temp)
       rV[j] = x_r[j] * jkV[j][index][i]
       var = (Ninner - 1.0) * np.sum((temp - jkV[j][index][i])**2) / float(Ninner)
-      weight[j] = 1.0 / (x_r[j] * np.sqrt(var))    # Squared in fit
-#     print x_r[j], jkV[j][index][i], weight[j]
+      rVerr[j] = x_r[j] * np.sqrt(var)
+#     print x_r[j], jkV[j][index][i], rVerr[j]
 
     # Fit r * V(r) = A * r - C for all r
-    # [A, -C] are the two parameters returned as temp
-    temp = np.polyfit(x_r, rV, 1, full=False, w=weight)
+    # [A, C] are the two parameters returned as all_out.x
+    all_out = least_squares(err_lin, V_in, jac=jac_lin,
+                            method='lm', args=(x_r, rV, rVerr))
+    temp = all_out.x
+    if all_out.success < 0 or all_out.success > 4:
+      print("ERROR: Fit failed with the following error message")
+      print(errmsg)
+      sys.exit(1)
+
     jkA[index][i] = temp[0]
-    jkC[index][i] = -1.0 * temp[1]
+    jkC[index][i] = temp[1]
 
     # !!! Temporary hack to provide jackknife ratios
-    if t_min == 7:
+    if MAX_T == 11 and t_min == 7:
+      print >> tempfile, "%.6g" % jkC[index][i]
+    elif MAX_T == 15 and t_min == 12:
       print >> tempfile, "%.6g" % jkC[index][i]
 tempfile.close()
 # ------------------------------------------------------------------
