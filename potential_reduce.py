@@ -4,7 +4,6 @@ import sys
 import glob
 import time
 import numpy as np
-from scipy import optimize
 # ------------------------------------------------------------------
 # Just combine Wilson loop data with the same r_I (unweighted averages)
 # r_I computed with vegas as described in notes, and copied into a lookup table
@@ -47,11 +46,11 @@ elif L == 16:
   num_x = 5;    num_y = 6;      num_z = 8
 count = np.zeros((num_x, num_y, num_z), dtype = np.int)
 ave = np.zeros((num_x, num_y, num_z), dtype = np.float)
-rI = np.empty((num_x, num_y, num_z), dtype = np.float)
-for a in range(num_x):
-  for b in range(num_y):
-    for c in range(num_z):      # Negative default will make it obvious
-      rI[a][b][c] = -1.0        # if we overlooked a displacement
+rI = np.zeros_like(ave)
+# Initialize to a negative number to check for overlooked displacements
+rI -= 1.0
+
+# TODO: Replace these with results using 3d basis...
 rI[0][0][1] = 0.919
 rI[0][1][1] = 1.411
 rI[0][0][2] = 1.752
@@ -220,5 +219,7 @@ for filename in glob.glob(files):
   if check == -1:
     print filename, "did not complete"
     sys.exit(1)
-# ------------------------------------------------------------------
 
+runtime += time.time()
+print "Runtime: %0.1f seconds" % runtime
+# ------------------------------------------------------------------

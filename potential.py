@@ -288,7 +288,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
         # V(r) is second of two parameters returned as all_out.x
         # Simply ignore covariance matrix at this stage
         # method='lm' is Levenberg--Marquardt (can't handle bounds)
-        all_out = least_squares(errfunc, p_in, jac=jac,
+        all_out = least_squares(errfunc, p_in, jac=jac, max_nfev=10000,
                                 method='lm', args=(x_t, W, WErr))
         temp = all_out.x
         if all_out.success < 0 or all_out.success > 4:
@@ -311,7 +311,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
 
     # Fit r * V(r) = A * r - C for all r
     # [A, C] are the two parameters returned as all_out.x
-    all_out = least_squares(err_lin, V_in, jac=jac_lin,
+    all_out = least_squares(err_lin, V_in, jac=jac_lin, max_nfev=10000,
                             method='lm', args=(x_r, rV, rVerr))
     temp = all_out.x
     if all_out.success < 0 or all_out.success > 4:
