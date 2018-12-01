@@ -60,7 +60,7 @@ def jac(p, x, y, err):
 
 # Another least squares setup for the Coulomb potential fit
 #   r * V(r) = A * r - C
-# This is overkill for a linear extrapolation,
+# This is overkill for a linear fit
 # but as of November 2018 np.polyfit has a covariance issue
 # github.com/numpy/numpy/issues/11196
 linfunc = lambda V, x: V[0] * x - V[1]
@@ -229,7 +229,7 @@ for t in range(MAX_T):
 # ------------------------------------------------------------------
 # Now we can construct jackknife samples through single-block elimination,
 # and fit each Wilson loop to W(r, t) = w * exp(-V(r) * t)
-# and then fit r * V(r) = A * r + C to find the Coulomb coefficients
+# and then fit r * V(r) = A * r - C to find the Coulomb coefficients
 # Require multiple blocks instead of worrying about error propagation
 if Nblocks == 1:
   print "ERROR: need multiple blocks to take average"
@@ -295,6 +295,7 @@ for t_min in range(1, MAX_T - 1):         # Doesn't include MAX_T - 1
           print("ERROR: Fit failed with the following error message")
           print(errmsg)
           sys.exit(1)
+
         jkVlist[j].append(float(temp[1]))
 
     # Now we have an estimate of jkV, rV and rVerr
