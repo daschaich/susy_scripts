@@ -37,8 +37,6 @@ SCALAR_EIG = open('data/scalar_eig.csv', 'w')
 print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4"
-BILIN = open('data/bilin.csv', 'w')
-print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 
@@ -454,93 +452,6 @@ for temp_tag in open('list.txt'):
 
     print >> EIG, "%g,%g,%g,%g,%g,%g,%g" \
                   % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5])
-  # ----------------------------------------------------------------
-
-
-
-  # ----------------------------------------------------------------
-  # Now deal with the corresponding "bilin" file, if it is present
-  # For now just care about fermion bilinears and related quantities
-  infile = 'Out/bilin.' + cfg
-  if not os.path.isfile(infile):
-    print >> MISSINGFILES, infile
-  else:
-    # Need to worry about C2 in gauge action
-    # which wasn't always printed in output (though it is now)
-    # For now, extract it from the path
-    C2 = 1.0
-    temp = os.getcwd()
-    if '-c' in temp:
-      temp2 = temp.split('-c')
-      C2 = float(((temp2[1]).split('/'))[0])
-
-    # We have a file, so let's cycle over its lines
-    check = -1
-    for line in open(infile):
-      if line.startswith('Time stamp '):
-        stamp = line.rstrip()
-        if stamp != oldstamp:
-          print infile, "time stamp doesn't match final", oldstamp
-          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
-
-      elif line.startswith('FLINK '): # Will be printed with other widths
-        temp = line.split()
-        if len(temp) > 7:
-          link_width = float(temp[7])
-        else:
-          link_width = float('nan')
-
-      # ----------------------------------------------------------
-      # Fermion bilinear Ward identity
-      elif 'CONGRAD' in line:
-        CG = -1
-      elif line.startswith('SUSY '):
-        temp = line.split()
-        trace = float(temp[1])
-        gauge = float(temp[3])
-        a = C2 * gauge
-        b = trace
-        susy = (a - b) / math.sqrt(a * a + b * b)
-
-        # The imaginary part of the bilinear should vanish on average,
-        # but large fluctuations may signal pathology
-        zero = float(temp[2])
-        print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
-      # ----------------------------------------------------------
-
-      # ----------------------------------------------------------
-      # Scalar eigenvalues
-      # Some hacky backspaces for output formatting...
-      elif NEED_SCALAR_EIGS > 0 and line.startswith('SCALAR_EIG '):
-        temp = line.split()
-        index = int(temp[1])
-        if index == 0 or index == Nc - 1:
-          scalar_eig_ave += ',' + str(temp[2])
-          scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-          scalar_eig_width += ',' + str(temp[3])
-        if index == Nc - 1:
-          print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
-          print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
-          print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
-          scalar_eig_ave = ''
-          scalar_eig_ext = ''
-          scalar_eig_width = ''
-      # ---------------------------------------------------------
-
-
-
-      elif line.startswith('RUNNING COMPLETED'):
-        if check == 1:    # Check that we have one measurement per file
-          print infile, "reports two measurements"
-          print >> ERRFILE, infile, "reports two measurements"
-        check = 1
-    if CG == -1:
-      print infile, "encountered CG non-convergence"
-      print >> ERRFILE, infile, "encountered CG non-convergence"
-      CG = 1
-    if check == -1:
-      print infile, "did not complete"
-      print >> ERRFILE, infile, "did not complete"
 # ------------------------------------------------------------------
 
 
@@ -556,7 +467,6 @@ SF.close()
 POLY.close()
 POLY_MOD.close()
 SCALAR_SQUARES.close()
-BILIN.close()
 SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
