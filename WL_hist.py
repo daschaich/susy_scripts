@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # Plot histogram of Wilson line magnitudes
 # For now only consider unitarized (and not full) Wilson lines
 # Save resulting plot as ./WL_hist_$tag.pdf
-# Extract $tag from path---no input arguments
+# Extract $tag from path rather than input argument
 
 # Parse argument: Thermalization cut
 if len(sys.argv) < 2:

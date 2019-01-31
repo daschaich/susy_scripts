@@ -15,7 +15,7 @@ if len(sys.argv) < 2:
 filename = str(sys.argv[1])
 
 if not os.path.isfile(filename):
-  print(("ERROR:", filename, "does not exist"))
+  print("ERROR:", filename, "does not exist")
   sys.exit(1)
 
 # errfunc will be minimized via least-squares optimization
