@@ -21,8 +21,6 @@ SB = open('data/SB.csv', 'w')
 print >> SB, "MDTU,S_B"
 MYERS = open('data/Myers.csv', 'w')
 print >> MYERS, "MDTU,Myers/Nt"
-ENERGY = open('data/energy.csv', 'w')
-print >> ENERGY, "MDTU,ENERGY"
 SF = open('data/SF.csv', 'w')
 print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
@@ -75,7 +73,6 @@ print >> TU, "t,MDTU"
 # Status checks and running sums for the ensemble as a whole
 fermAct = [-1.0, -1.0]
 bAct = [-1.0, -1.0]
-energy = [-1.0, -1.0]
 Myers = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
@@ -243,14 +240,12 @@ for temp_tag in open('list.txt'):
         bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         temp = float(split[8])
         Myers[0] = temp / Nt
-        energy[0] = -1.0 * ((DIMF - 1.0) * Nt - temp) / DIMF
       elif fermAct[1] < 0:
         split = line.split()
         fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
         bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         temp = float(split[8])
         Myers[1] = temp / Nt
-        energy[1] = -1.0 * ((DIMF - 1.0) * Nt - temp) / DIMF
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -279,17 +274,14 @@ for temp_tag in open('list.txt'):
         print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
         print >> SB, "%g,%g" % (MDTU, bAct[1])
         print >> MYERS, "%g,%g" % (MDTU, Myers[1])
-        print >> ENERGY, "%g,%g" % (MDTU, energy[1])
       else:
         print >> ACCP, "%d,0" % traj
         print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
         print >> SB, "%g,%g" % (MDTU, bAct[0])
         print >> MYERS, "%g,%g" % (MDTU, Myers[0])
-        print >> ENERGY, "%g,%g" % (MDTU, energy[0])
       fermAct = [-1.0, -1.0]                        # Reset
       bAct = [-1.0, -1.0]
       Myers = [-1.0, -1.0]
-      energy = [-1.0, -1.0]
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
@@ -461,7 +453,6 @@ for temp_tag in open('list.txt'):
 ERRFILE.close()
 MISSINGFILES.close()
 SB.close()
-ENERGY.close()
 MYERS.close()
 SF.close()
 POLY.close()
