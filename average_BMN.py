@@ -3,6 +3,7 @@ import os
 import sys
 import glob
 import numpy as np
+import acor         # Uses "the Kubo formula" to compute autocorrelation time
 # ------------------------------------------------------------------
 # Parse dygraph data files to construct averages and standard errors
 # given a thermalization cut and block size
@@ -59,9 +60,94 @@ if good == -1:
 
 
 # ------------------------------------------------------------------
+# Check that block size is larger
+# than poly_mod and 9th scalar square auto-correlation times
+# For poly_mod we want the first datum on each line (following MDTU)
+# Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
+dat = []
+sep = 1
+prev = start
+for line in open('data/poly_mod.csv'):
+  if line.startswith('M'):
+    continue
+  temp = line.split(',')
+  MDTU = int(temp[0])
+
+  # Need to check separation and update prev before skipping to therm cut
+  if not MDTU - prev == sep:
+    print "Error: poly_mod meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep)
+    sys.exit(1)
+  prev = MDTU
+
+  if MDTU <= cut:
+    continue
+  dat.append(float(temp[1]))
+
+# Discard this mean and sigma -- we'll recompute it later
+tau, mean, sigma = acor.acor(np.array(dat))
+tau *= sep
+if tau > block_size:
+  print "Error: poly_mod autocorrelation time %d" % tau,
+  print "is larger than block size %d" % block_size,
+  print "in %s" % path
+  sys.exit(1)
+
+# Record poly_mod auto-correlation time for future reference
+# Include average and effective number of independent measurements
+eff_stat = np.floor(len(dat) * sep / tau)
+outfilename = 'results/poly_mod.autocorr'
+outfile = open(outfilename, 'w')
+print >> outfile, "%d --> %.8g %.4g # %d" % (tau, mean, sigma, eff_stat)
+outfile.close()
+
+# Next, for the scalar square we want the last (tenth) datum on each line
+# Format: MDTU,9xTr(X)^2
+dat = []
+sep = 1       # Redundant, retained to be explicit
+prev = start
+for line in open('data/scalarsquares.csv'):
+  if line.startswith('M'):
+    continue
+  temp = line.split(',')
+  MDTU = int(temp[0])
+
+  # Need to check separation and update prev before skipping to therm cut
+  if not MDTU - prev == sep:
+    print "Error: scalarsquares meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep)
+    sys.exit(1)
+  prev = MDTU
+
+  if MDTU <= cut:
+    continue
+  dat.append(float(temp[-1]))
+
+# Discard this mean and sigma -- we'll recompute it later
+tau, mean, sigma = acor.acor(np.array(dat))
+tau *= sep
+if tau > block_size:
+  print "Error: scalar square autocorrelation time %d" % tau,
+  print "is larger than block size %d" % block_size,
+  print "in %s" % path
+  sys.exit(1)
+
+# Record scalar square auto-correlation time for future reference
+# Include average and effective number of independent measurements
+eff_stat = np.floor(len(dat) * sep / tau)
+outfilename = 'results/scalarsquares.autocorr'
+outfile = open(outfilename, 'w')
+print >> outfile, "%d --> %.8g %.4g # %d" % (tau, mean, sigma, eff_stat)
+outfile.close()
+# ------------------------------------------------------------------
+
+
+
+
+# ------------------------------------------------------------------
 # For the Polyakov loop, bosonic action, fermion action,
 # energy and 'Myers' scalar trilinear term
-# we're interested in the first datum on each line
+# we're interested in the first datum on each line (following MDTU)
 # For the Polyakov loop, this is the (Nc-normalized) modulus
 for obs in ['poly_mod', 'SB', 'SF', 'energy', 'Myers']:
   skip = -1

@@ -238,14 +238,12 @@ for temp_tag in open('list.txt'):
         split = line.split()
         fermAct[0] = float(split[12]) / (16.0 * Nt * DIMF)
         bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
-        temp = float(split[8])
-        Myers[0] = temp / Nt
+        Myers[0] = float(split[8]) / Nt
       elif fermAct[1] < 0:
         split = line.split()
         fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
         bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
-        temp = float(split[8])
-        Myers[1] = temp / Nt
+        Myers[1] = float(split[8]) / Nt
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"

@@ -30,11 +30,12 @@ echo '</head>' >> $out
 echo '<body>' >> $out
 echo '<div id="main">' >> $out
 echo '  <p>Last update: '$date'</p>' >> $out
+echo '  <h1>PWMM/BMN time series plots</h1>' >> $out
 echo '  <h1><a name="phys"></a>Physical observables</h1>' >> $out
 echo '  <hr><br>' >> $out
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Scalar Squares ('$tag')</th><th>Normalized bosonic action ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Scalar Squares ('$tag')</th><th>Bosonic action per site per DIMF ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="plaq"></div>' >> $out
@@ -42,7 +43,7 @@ echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("plaq"),' >> $out # Where to put graph
 echo '                            "data/scalarsquares.csv",' >> $out        # URL for data series
 echo '                            { rollPeriod: 50,' >> $out                # Options
-echo '                              colors: ["black", "black", "black", "red", "orange", "magenta", "green", "blue", "brown"],' >> $out
+echo '                              colors: ["black", "black", "black", "red", "orange", "blue", "magenta", "green", "brown"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
@@ -83,7 +84,6 @@ echo '                            "data/poly.csv",' >> $out
 echo '                            { colors: ["blue"],' >> $out
 echo '                              drawPoints: true,' >> $out
 echo '                              strokeWidth: 0,' >> $out
-echo '                              valueRange: [-1.01, 1.01],' >> $out
 echo '                              showLabelsOnHighlight: false,' >> $out
 echo '                              xValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
@@ -119,7 +119,7 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Normalized scalar trilinear ('$tag')</th><th>Scalar eigenvalue widths ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Myers normalized by volume ('$tag')</th><th>Scalar eigenvalue widths ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="scalar_eig"></div>' >> $out
@@ -195,7 +195,7 @@ echo '          <div id="accP"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("accP"),' >> $out
 echo '                            "data/accP.csv",' >> $out
-echo '                            { rollPeriod: 50,' >> $out
+echo '                            { rollPeriod: 250,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              valueRange: [0, 1.01],' >> $out
@@ -252,7 +252,7 @@ echo '          <div id="abs_dS"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("abs_dS"),' >> $out
 echo '                            "data/abs_dS.csv",' >> $out
-echo '                            { rollPeriod: 5,' >> $out
+echo '                            { rollPeriod: 1,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              valueRange: [0, 5.01],' >> $out
