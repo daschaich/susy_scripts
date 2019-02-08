@@ -47,6 +47,8 @@ for dirname in dirnames:
     for line in open(filename):
       if line.startswith('nt '):
         nt = float((line.split())[1])
+      elif line.startswith('ny '):
+        ny = float((line.split())[1])
       # Format: LINES_POLAR_EIG x y z t dir {Nc x phase}
       elif line.startswith('LINES_POLAR_EIG '):
         temp = line.split()
@@ -59,9 +61,10 @@ for dirname in dirnames:
       sys.exit(1)
 
   # Check that we have all the data we should
-  if not len(dat[count]) == Nc * nt * len(files):
-    print "ERROR: Have %d data from %d SU(%d) measurements with L=%d" \
-          % (len(dat[count]), len(files), int(Nc), nt)
+  if not len(dat[count]) == Nc * nt * ny * len(files):
+    print "ERROR: Have %d data from %d SU(%d) %dx%d measurements" \
+          % (len(dat[count]), len(files), int(Nc)),
+    print "with nt x ny = %d x %d" % (nt, ny)
     sys.exit(1)
 
   # Check that all phases are within [-pi, pi),
