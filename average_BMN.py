@@ -62,11 +62,12 @@ if good == -1:
 # ------------------------------------------------------------------
 # Check that block size is larger
 # than poly_mod and 9th scalar square auto-correlation times
+# TODO: Look at smallest eigenvalue as well?
 # For poly_mod we want the first datum on each line (following MDTU)
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
 sep = 1
-prev = start
+prev = 0
 for line in open('data/poly_mod.csv'):
   if line.startswith('M'):
     continue
@@ -102,10 +103,10 @@ print >> outfile, "%d --> %.8g %.4g # %d" % (tau, mean, sigma, eff_stat)
 outfile.close()
 
 # Next, for the scalar square we want the last (tenth) datum on each line
-# Format: MDTU,9xTr(X)^2
+# Format: MDTU,Tr(X1)^2,...,Tr(X9)^2
 dat = []
 sep = 1       # Redundant, retained to be explicit
-prev = start
+prev = 0
 for line in open('data/scalarsquares.csv'):
   if line.startswith('M'):
     continue

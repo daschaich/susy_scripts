@@ -173,6 +173,7 @@ for temp_tag in open('list.txt'):
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
+  SCALAR_SQUARES_READY = -1     # To skip duplicate
   NEED_SCALAR_EIGS = 1
   scalar_eig_ave = ''
   scalar_eig_ext = ''
@@ -236,12 +237,12 @@ for temp_tag in open('list.txt'):
     elif line.startswith('action: so3 '):
       if fermAct[0] < 0:
         split = line.split()
-        fermAct[0] = float(split[12]) / (16.0 * Nt * DIMF)
+        fermAct[0] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
         bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         Myers[0] = float(split[8]) / Nt
       elif fermAct[1] < 0:
         split = line.split()
-        fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
+        fermAct[1] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
         bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         Myers[1] = float(split[8]) / Nt
       else:
@@ -249,6 +250,7 @@ for temp_tag in open('list.txt'):
         print >> ERRFILE, infile, "lists too many action computations"
 
     elif ' delta S = ' in line:
+      SCALAR_SQUARES_READY = 1
       traj += 1
       temp = MDTU + tlength
       MDTU = round(temp, 3)   # Round off digits in MDTU
@@ -315,7 +317,8 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Nine scalar squares
-    elif line.startswith('SCALAR SQUARES '):
+    # Skip duplicate measurement before first trajectory
+    elif line.startswith('SCALAR SQUARES ') and SCALAR_SQUARES_READY > 0:
       temp = line.split()
       X1 = float(temp[2])
       X2 = float(temp[3])
