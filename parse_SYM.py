@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import os
 import sys
 import glob
@@ -10,7 +10,7 @@ import math
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
-  print("ERROR: Out/ does not exist")
+  print "ERROR: Out/ does not exist"
   sys.exit(1)
 
 ERRFILE = open('ERRORS', 'w')
@@ -18,77 +18,77 @@ MISSINGFILES = open('MISSING', 'w')
 
 # Physical observables
 PLAQ = open('data/plaq.csv', 'w')
-print("MDTU,plaq_ss,plaq_st", file=PLAQ)
+print >> PLAQ, "MDTU,plaq_ss,plaq_st"
 SB = open('data/SB.csv', 'w')
-print("MDTU,S_B", file=SB)
+print >> SB, "MDTU,S_B"
 SF = open('data/SF.csv', 'w')
-print("MDTU,S_F", file=SF)
+print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
-print("ReTr(L),ImTr(L)", file=POLY)
+print >> POLY, "ReTr(L),ImTr(L)"
 POLY_POLAR = open('data/poly_polar.csv', 'w')
-print("ReTr(L),ImTr(L)", file=POLY_POLAR)
+print >> POLY_POLAR, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
-print("MDTU,|Tr(L)|,ReTr(L),ImTr(L)", file=POLY_MOD)
+print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 POLY_MOD_POLAR = open('data/poly_mod_polar.csv', 'w')
-print("MDTU,|Tr(L)|,ReTr(L),ImTr(L)", file=POLY_MOD_POLAR)
+print >> POLY_MOD_POLAR, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 LINES = open('data/lines.csv', 'w')
-print("ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)", file=LINES)
+print >> LINES, "ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)"
 LINES_POLAR = open('data/lines_polar.csv', 'w')
-print("ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)", file=LINES_POLAR)
+print >> LINES_POLAR, "ReTr(L*),ImTr(Lx),ImTr(Ly),ImTr(Lz),ImTr(L5)"
 LINES_MOD = open('data/lines_mod.csv', 'w')
-print("MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|", file=LINES_MOD)
+print >> LINES_MOD, "MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|"
 LINES_MOD_POLAR = open('data/lines_mod_polar.csv', 'w')
-print("MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|", file=LINES_MOD_POLAR)
+print >> LINES_MOD_POLAR, "MDTU,|Tr(Lx)|,|Tr(Ly)|,|Tr(Lz)|,|Tr(L5)|"
 FLINK = open('data/Flink.csv', 'w')
-print("MDTU,link", file=FLINK)
+print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
-print("MDTU,|det-1|^2,1-Re(det),Im(det)", file=DET)
+print >> DET, "MDTU,|det-1|^2,1-Re(det),Im(det)"
 WIDTHS = open('data/widths.csv', 'w')
-print("MDTU,plaq,Re(det),Im(det),link", file=WIDTHS)
+print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
-print("MDTU,min_ave,max_ave", file=SCALAR_EIG_AVE)
+print >> SCALAR_EIG_AVE, "MDTU,min_ave,max_ave"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
-print("MDTU,min_min,min_max,max_min,max_max5", file=SCALAR_EIG)
+print >> SCALAR_EIG, "MDTU,min_min,min_max,max_min,max_max5"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
-print("MDTU,min_width,max_width", file=SCALAR_EIG_WIDTHS)
+print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
 BILIN = open('data/bilin.csv', 'w')
-print("MDTU,susyTrans,Im(bilin)", file=BILIN)
+print >> BILIN, "MDTU,susyTrans,Im(bilin)"
 MONO = open('data/mono.csv', 'w')
-print("MDTU,rho_M", file=MONO)
+print >> MONO , "MDTU,rho_M"
 EIG = open('data/eig.csv', 'w')
-print("MDTU,0,2,4,6,8,10", file=EIG)
+print >> EIG, "MDTU,0,2,4,6,8,10"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
-print("t,accP", file=ACCP)
+print >> ACCP, "t,accP"
 EXP_DS = open('data/exp_dS.csv', 'w')
-print("t,e^(-dS)", file=EXP_DS)
+print >> EXP_DS, "t,e^(-dS)"
 DELTAS = open('data/deltaS.csv', 'w')
-print("t,deltaS", file=DELTAS)
+print >> DELTAS, "t,deltaS"
 ABS_DS = open('data/abs_dS.csv', 'w')
-print("t,|deltaS|", file=ABS_DS)
+print >> ABS_DS, "t,|deltaS|"
 FORCE = open('data/force.csv', 'w')
-print("t,G,F1,F2,F3", file=FORCE)
+print >> FORCE, "t,G,F1,F2,F3"
 CG_ITERS = open('data/cg_iters.csv', 'w')
-print("t,cg_iters", file=CG_ITERS)
+print >> CG_ITERS, "t,cg_iters"
 WALLTIME = open('data/walltime.csv', 'w')
-print("t,walltime", file=WALLTIME)
+print >> WALLTIME, "t,walltime"
 WALLTU = open('data/wallTU.csv', 'w')
-print("t,cost", file=WALLTU)
+print >> WALLTU, "t,cost"
 COND_NUM = open('data/cond_num.csv', 'w')
-print("t,cond_num", file=COND_NUM)
+print >> COND_NUM, "t,cond_num"
 
 # Run parameters
 NSTEP = open('data/Nstep.csv', 'w')
-print("t,N_f,N_g", file=NSTEP)
+print >> NSTEP, "t,N_f,N_g"
 STEPSIZE = open('data/stepsize.csv', 'w')
-print("t,eps_f,eps_g", file=STEPSIZE)
+print >> STEPSIZE, "t,eps_f,eps_g"
 TLENGTH = open('data/tlength.csv', 'w')
-print("t,L", file=TLENGTH)
+print >> TLENGTH, "t,L"
 KEY = open('data/key.csv', 'w')
-print("t,file", file=KEY)
+print >> KEY, "t,file"
 TU = open('data/TU.csv', 'w')
-print("t,MDTU", file=TU)
+print >> TU, "t,MDTU"
 
 # Status checks and running sums for the ensemble as a whole
 fermAct = [-1.0, -1.0]
@@ -107,8 +107,8 @@ for temp_tag in open('list.txt'):
   tag = temp_tag.rstrip()
   # Check to make sure that actual files are present
   if "Configs" in tag:
-    print("No Out/out.* files found")
-    print("No Out/out.* files found", file=ERRFILE)
+    print "No Out/out.* files found"
+    print >> ERRFILE, "No Out/out.* files found"
     sys.exit(1)
   load, cfg = tag.split('-')
 
@@ -123,8 +123,8 @@ for temp_tag in open('list.txt'):
   # but print error message so I know there is a problem
   infile = 'Out/out.' + tag
   if not os.path.isfile(infile):
-    print("Problem opening", infile)
-    print("Problem opening", infile, file=ERRFILE)
+    print "Problem opening", infile
+    print >> ERRFILE, "Problem opening", infile
     continue    # Skip to next file
 #  print infile  # Monitor running status
 
@@ -164,16 +164,16 @@ for temp_tag in open('list.txt'):
       break       # Don't go through whole file yet
 
   if traj_per_file < 0:
-    print(infile, "never defines number of trajectories")
-    print(infile, "never defines number of trajectories", file=ERRFILE)
+    print infile, "never defines number of trajectories"
+    print >> ERRFILE, infile, "never defines number of trajectories"
     continue    # Skip to next file
   elif vol < 0:
-    print(infile, "never defines lattice volume")
-    print(infile, "never defines lattice volume", file=ERRFILE)
+    print infile, "never defines lattice volume"
+    print >> ERRFILE, infile, "never defines lattice volume"
     continue    # Skip to next file
 
   if (traj == 0 and int(load) > 0) or (int(load) != oldcfg):
-    print(infile, "misses MDTU before", load)
+    print infile, "misses MDTU before", load
     traj = int(load)
     endtraj = traj + traj_per_file
   # ----------------------------------------------------------------
@@ -186,8 +186,8 @@ for temp_tag in open('list.txt'):
   for line in open(infile):
     # Check for premature termination (e.g., layout problem)
     if line.startswith('termination'):
-      print(infile, "reports premature termination")
-      print(infile, "reports premature termination", file=ERRFILE)
+      print infile, "reports premature termination"
+      print >> ERRFILE, infile, "reports premature termination"
       goodtogo = False
       break
 
@@ -229,7 +229,7 @@ for temp_tag in open('list.txt'):
     # Extract constant run parameters
     elif line.startswith('traj_length '):
       tlength = float((line.split())[1])
-      print("%d,%g" % (endtraj, tlength), file=TLENGTH)
+      print >> TLENGTH, "%d,%g" % (endtraj, tlength)
     elif line.startswith('nstep '):
       Nstep = int((line.split())[1])
       stepsize = tlength / float(Nstep)
@@ -237,8 +237,8 @@ for temp_tag in open('list.txt'):
       Nstep_gauge = int((line.split())[1])
       stepsize_gauge = stepsize / float(2.0 * Nstep_gauge)
       Nstep_gauge *= 2 * Nstep
-      print("%d,%d,%d" % (endtraj, Nstep, Nstep_gauge), file=NSTEP)
-      print("%d,%g,%g" % (endtraj, stepsize, stepsize_gauge), file=STEPSIZE)
+      print >> NSTEP, "%d,%d,%d" % (endtraj, Nstep, Nstep_gauge)
+      print >> STEPSIZE, "%d,%g,%g" % (endtraj, stepsize, stepsize_gauge)
 
     elif line.startswith('Machine '):
       cpus = int((line.split())[5])
@@ -248,9 +248,8 @@ for temp_tag in open('list.txt'):
       if stamp == "start":    # Loading configuration
         stamp = line.rstrip()
         if stamp != oldstamp and oldstamp != "start":
-          print(infile, "time stamp doesn't match final", oldstamp)
-          print(infile, "time stamp doesn't match final", oldstamp, \
-                file=ERRFILE)
+          print infile, "time stamp doesn't match final", oldstamp
+          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
       else:                   # Saving configuration
         oldstamp = line.rstrip()    # Prepare for next file
         stamp = "start"
@@ -269,34 +268,34 @@ for temp_tag in open('list.txt'):
       elif fermAct[1] < 0:
         fermAct[1] = float((line.split())[8]) / (16.0 * vol * DIMF)
       else:
-        print(infile, "lists too many action computations")
-        print(infile, "lists too many action computations", file=ERRFILE)
+        print infile, "lists too many action computations"
+        print >> ERRFILE, infile, "lists too many action computations"
 
     elif ' delta S = ' in line:
       traj += 1
       temp = MDTU + tlength
       MDTU = round(temp, 3)   # Round off digits in MDTU
-      print("%d,%g" % (traj, MDTU), file=TU)
-      print("%g,%s" % (traj, tag), file=KEY)
+      print >> TU, "%d,%g" % (traj, MDTU)
+      print >> KEY, "%g,%s" % (traj, tag)
 
       dS = (line.split())[4]
       # Strip nasty comma from dS, if necessary
       if ',' in dS:
         dS = (dS.split(','))[0]
-      print("%d,%g" % (traj, float(dS)), file=DELTAS)
-      print("%d,%g" % (traj, math.exp(-1.0 * float(dS))), file=EXP_DS)
+      print >> DELTAS, "%d,%g" % (traj, float(dS))
+      print >> EXP_DS, "%d,%g" % (traj, math.exp(-1.0 * float(dS)))
 
       # For RMS, don't have an easy way to average over many measurements
       # Instead just print out absolute value and consider its running average
-      print("%d,%g" % (traj, abs(float(dS))), file=ABS_DS)
+      print >> ABS_DS, "%d,%g" % (traj, abs(float(dS)))
 
       # Acceptance is smeared out by running averages
       if line.startswith('ACCEPT'):
-        print("%d,1" % traj, file=ACCP)
-        print("%d,%g" % (MDTU, fermAct[1]), file=SF)   # New action
+        print >> ACCP, "%d,1" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
       else:
-        print("%d,0" % traj, file=ACCP)
-        print("%d,%g" % (MDTU, fermAct[0]), file=SF)   # Original action
+        print >> ACCP, "%d,0" % traj
+        print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
       fermAct = [-1.0, -1.0]                        # Reset
 
     # Forces -- take maxima rather than average if possible
@@ -305,17 +304,16 @@ for temp_tag in open('list.txt'):
     elif line.startswith('MONITOR_FORCE_FERMION0 '):
       force_f = float((line.split())[-1])
       if Nroot == 1:
-        print("%d,%g,%g,null,null" % (traj, force_g, force_f), file=FORCE)
+        print >> FORCE, "%d,%g,%g,null,null" % (traj, force_g, force_f)
     elif line.startswith('MONITOR_FORCE_FERMION1 '):
       force_f2 = float((line.split())[-1])
       if Nroot == 2:
-        print("%d,%g,%g,%g,null" % (traj, force_g, force_f, force_f2), \
-              file=FORCE)
+        print >> FORCE, "%d,%g,%g,%g,null" % (traj, force_g, force_f, force_f2)
     elif line.startswith('MONITOR_FORCE_FERMION2 '):
       force_f3 = float((line.split())[-1])
       if Nroot == 3:
-        print("%d,%g,%g,%g,%g" \
-              % (traj, force_g, force_f, force_f2, force_f3), file=FORCE)
+        print >> FORCE, "%d,%g,%g,%g,%g" \
+                        % (traj, force_g, force_f, force_f2, force_f3)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -329,7 +327,7 @@ for temp_tag in open('list.txt'):
       else:
         temp = line.split()
         ave_link = float(temp[6])
-        print("%g,%g" % (MDTU, ave_link), file=FLINK)
+        print >> FLINK, "%g,%g" % (MDTU, ave_link)
         if len(temp) > 7:
           link_width = float(temp[7]) # To be printed with other widths
         else:
@@ -343,16 +341,16 @@ for temp_tag in open('list.txt'):
       temp = line.split()
       ss_plaq = float(temp[4]) / Nc
       st_plaq = float(temp[5]) / Nc
-      print("%g,%g,%g" % (MDTU, ss_plaq, st_plaq), file=PLAQ)
-      print("%g,%g" % (traj, float(temp[3])), file=CG_ITERS)
+      print >> PLAQ, "%g,%g,%g" % (MDTU, ss_plaq, st_plaq)
+      print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
-      print("%g,%g" % (MDTU, float(temp[6]) / (4.5 * DIMF)), file=SB)
+      print >> SB, "%g,%g" % (MDTU, float(temp[6]) / (4.5 * DIMF))
 
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc
-      print("%g,%g" % (poly_r, poly_i), file=POLY)
+      print >> POLY, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
-      print("%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i), file=POLY_MOD)
+      print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -368,26 +366,24 @@ for temp_tag in open('list.txt'):
       z_i = float(temp[6]) / Nc
       f_r = float(temp[9]) / Nc
       f_i = float(temp[10]) / Nc
-      print("%g,%g,null,null,null" % (x_r, x_i), file=LINES)
-      print("%g,null,%g,null,null" % (y_r, y_i), file=LINES)
-      print("%g,null,null,%g,null" % (z_r, z_i), file=LINES)
-      print("%g,null,null,null,%g" % (f_r, f_i), file=LINES)
+      print >> LINES, "%g,%g,null,null,null" % (x_r, x_i)
+      print >> LINES, "%g,null,%g,null,null" % (y_r, y_i)
+      print >> LINES, "%g,null,null,%g,null" % (z_r, z_i)
+      print >> LINES, "%g,null,null,null,%g" % (f_r, f_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
       y_mod = math.sqrt(y_r**2 + y_i**2)
       z_mod = math.sqrt(z_r**2 + z_i**2)
       f_mod = math.sqrt(f_r**2 + f_i**2)
-      print("%g,%g,%g,%g,%g" % (MDTU, x_mod, y_mod, z_mod, f_mod), \
-            file=LINES_MOD)
+      print >> LINES_MOD, "%g,%g,%g,%g,%g" % (MDTU, x_mod, y_mod, z_mod, f_mod)
 
     # Unitarized Polyakov loop and Wilson lines in other directions
     elif line.startswith('LINES_POLAR '):
       temp = line.split()
       poly_r = float(temp[7]) / Nc
       poly_i = float(temp[8]) / Nc
-      print("%g,%g" % (poly_r, poly_i), file=POLY_POLAR)
+      print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
-      print("%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i), \
-            file=POLY_MOD_POLAR)
+      print >> POLY_MOD_POLAR, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
 
       x_r = float(temp[1]) / Nc
       x_i = float(temp[2]) / Nc
@@ -397,16 +393,16 @@ for temp_tag in open('list.txt'):
       z_i = float(temp[6]) / Nc
       f_r = float(temp[9]) / Nc
       f_i = float(temp[10]) / Nc
-      print("%g,%g,null,null,null" % (x_r, x_i), file=LINES_POLAR)
-      print("%g,null,%g,null,null" % (y_r, y_i), file=LINES_POLAR)
-      print("%g,null,null,%g,null" % (z_r, z_i), file=LINES_POLAR)
-      print("%g,null,null,null,%g" % (f_r, f_i), file=LINES_POLAR)
+      print >> LINES_POLAR, "%g,%g,null,null,null" % (x_r, x_i)
+      print >> LINES_POLAR, "%g,null,%g,null,null" % (y_r, y_i)
+      print >> LINES_POLAR, "%g,null,null,%g,null" % (z_r, z_i)
+      print >> LINES_POLAR, "%g,null,null,null,%g" % (f_r, f_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
       y_mod = math.sqrt(y_r**2 + y_i**2)
       z_mod = math.sqrt(z_r**2 + z_i**2)
       f_mod = math.sqrt(f_r**2 + f_i**2)
-      print("%g,%g,%g,%g,%g" \
-            % (MDTU, x_mod, y_mod, z_mod, f_mod), file=LINES_MOD_POLAR)
+      print >> LINES_MOD_POLAR, "%g,%g,%g,%g,%g" \
+                                % (MDTU, x_mod, y_mod, z_mod, f_mod)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -423,7 +419,7 @@ for temp_tag in open('list.txt'):
         det = float(temp[5])
       else:
         det = (1.0 - det_r)**2 + det_i**2
-      print("%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i), file=DET)
+      print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
 
     elif line.startswith('WIDTHS '):
       NEED_WIDTHS = -1
@@ -431,8 +427,8 @@ for temp_tag in open('list.txt'):
       plaq_width = float(temp[1])
       re_width = float(temp[2])
       im_width = float(temp[3])
-      print("%g,%g,%g,%g,%g" \
-            % (MDTU, plaq_width, re_width, im_width, link_width), file=WIDTHS)
+      print >> WIDTHS, "%g,%g,%g,%g,%g" \
+                       % (MDTU, plaq_width, re_width, im_width, link_width)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -447,9 +443,9 @@ for temp_tag in open('list.txt'):
         scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
         scalar_eig_width += ',' + str(temp[3])
       if index == Nc - 1:
-        print("%g%s" % (MDTU, scalar_eig_ave), file=SCALAR_EIG_AVE)
-        print("%g%s" % (MDTU, scalar_eig_ext), file=SCALAR_EIG)
-        print("%g%s" % (MDTU, scalar_eig_width), file=SCALAR_EIG_WIDTHS)
+        print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
+        print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
+        print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
         scalar_eig_ave = ''
         scalar_eig_ext = ''
         scalar_eig_width = ''
@@ -469,12 +465,12 @@ for temp_tag in open('list.txt'):
   # ----------------------------------------------------------------
   # Check to see if run seems to have finished properly
   if CG == -1:
-    print(infile, "encountered CG non-convergence")
-    print(infile, "encountered CG non-convergence", file=ERRFILE)
+    print infile, "encountered CG non-convergence"
+    print >> ERRFILE, infile, "encountered CG non-convergence"
     CG = 1
   if walltime == -1:
-    print(infile, "didn't print final timing")
-    print(infile, "didn't print final timing", file=ERRFILE)
+    print infile, "didn't print final timing"
+    print >> ERRFILE, infile, "didn't print final timing"
   elif walltime == -2:
     # Placeholder file -- error has been addressed as well as possible,
     # but don't print nonsense wall clock time
@@ -482,9 +478,9 @@ for temp_tag in open('list.txt'):
     pass
   else:   # We are good to go
     ave_time = walltime / traj_per_file
-    print("%d,%g" % (traj, ave_time), file=WALLTIME)
+    print >> WALLTIME, "%d,%g" % (traj, ave_time)
     TUtime = walltime * float(cpus) / (60.0 * tlength * traj_per_file)
-    print("%d,%g" % (traj, TUtime), file=WALLTU)
+    print >> WALLTU, "%d,%g" % (traj, TUtime)
   # ----------------------------------------------------------------
 
 
@@ -495,7 +491,7 @@ for temp_tag in open('list.txt'):
   # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
   infile = 'Out/eig.' + cfg
   if not os.path.isfile(infile):
-    print(infile, file=MISSINGFILES)
+    print >> MISSINGFILES, infile
   else:
     check = -1    # Check whether file completed successfully
     temp = float('nan')
@@ -506,9 +502,8 @@ for temp_tag in open('list.txt'):
       if line.startswith('Time stamp '):
         stamp = line.rstrip()
         if stamp != oldstamp:
-          print(infile, "time stamp doesn't match final", oldstamp)
-          print(infile, "time stamp doesn't match final", oldstamp, \
-                file=ERRFILE)
+          print infile, "time stamp doesn't match final", oldstamp
+          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
       elif line.startswith('EIGENVALUE '):
         temp = line.split()
@@ -517,39 +512,37 @@ for temp_tag in open('list.txt'):
         if index < 11 and index % 2 == 0:
           eig[index / 2] = dat
         if index == 0 and dat < min_eig:        # Check spectral range
-          print(infile, "exceeds RHMC spectral range:", end=' ')
-          print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig))
-          print(infile, "exceeds RHMC spectral range:", end=' ', file=ERRFILE)
-          print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig), \
-                file=ERRFILE)
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
 
       elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
         dat = float((line.split())[2])
         if dat > max_eig:
-          print(infile, "exceeds RHMC spectral range:", end=' ')
-          print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig))
-          print(infile, "exceeds RHMC spectral range:", end=' ', file=ERRFILE)
-          print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig), \
-                file=ERRFILE)
+          print infile, "exceeds RHMC spectral range:",
+          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
 
         # Monitor (log of) condition number
         cond_num = math.log(dat / eig[0])
-        print("%d,%g" % (traj, cond_num), file=COND_NUM)
+        print >> COND_NUM, "%d,%g" % (traj, cond_num)
 
       elif 'WARNING' in line:
-        print(infile, "saturated eigenvalue iterations")
-        print(infile, "saturated eigenvalue iterations", file=ERRFILE)
+        print infile, "saturated eigenvalue iterations"
+        print >> ERRFILE, infile, "saturated eigenvalue iterations"
       elif line.startswith('RUNNING COMPLETED'):
         if check == 1:    # Check that we have one measurement per file
-          print(infile, "reports two measurements")
-          print(infile, "reports two measurements", file=ERRFILE)
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
         check = 1
     if check == -1:
-      print(infile, "did not complete")
-      print(infile, "did not complete", file=ERRFILE)
+      print infile, "did not complete"
+      print >> ERRFILE, infile, "did not complete"
 
-    print("%g,%g,%g,%g,%g,%g,%g" \
-          % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5]), file=EIG)
+    print >> EIG, "%g,%g,%g,%g,%g,%g,%g" \
+                  % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5])
   # ----------------------------------------------------------------
 
 
@@ -559,7 +552,7 @@ for temp_tag in open('list.txt'):
   # For now just care about fermion bilinears and related quantities
   infile = 'Out/corr.' + cfg
   if not os.path.isfile(infile):
-    print(infile, file=MISSINGFILES)
+    print >> MISSINGFILES, infile
   else:
     # Need to worry about C2 in gauge action
     # which wasn't always printed in output (though it is now)
@@ -576,9 +569,8 @@ for temp_tag in open('list.txt'):
       if line.startswith('Time stamp '):
         stamp = line.rstrip()
         if stamp != oldstamp:
-          print(infile, "time stamp doesn't match final", oldstamp)
-          print(infile, "time stamp doesn't match final", oldstamp, \
-                file=ERRFILE)
+          print infile, "time stamp doesn't match final", oldstamp
+          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
       elif line.startswith('FLINK '): # Will be printed with other widths
         temp = line.split()
@@ -602,17 +594,17 @@ for temp_tag in open('list.txt'):
         # The imaginary part of the bilinear should vanish on average,
         # but large fluctuations may signal pathology
         zero = float(temp[2])
-        print("%g,%g,%g" % (MDTU, susy, zero), file=BILIN)
+        print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
       # Monopole world line density
       elif 'WARNING' in line:
-        print(infile, "has total_mono mismatch")
-        print(infile, "has total_mono mismatch", file=ERRFILE)
+        print infile, "has total_mono mismatch"
+        print >> ERRFILE, infile, "has total_mono mismatch"
       elif line.startswith('MONOPOLE '):
         mono = float((line.split())[10])
-        print("%g,%g" % (MDTU, mono / (4.0 * vol)), file=MONO)
+        print >> MONO, "%g,%g" % (MDTU, mono / (4.0 * vol))
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
@@ -627,26 +619,26 @@ for temp_tag in open('list.txt'):
         z_i = float(temp[6]) / Nc
         f_r = float(temp[9]) / Nc
         f_i = float(temp[10]) / Nc
-        print("%g,%g,null,null,null" % (x_r, x_i), file=LINES)
-        print("%g,null,%g,null,null" % (y_r, y_i), file=LINES)
-        print("%g,null,null,%g,null" % (z_r, z_i), file=LINES)
-        print("%g,null,null,null,%g" % (f_r, f_i), file=LINES)
+        print >> LINES, "%g,%g,null,null,null" % (x_r, x_i)
+        print >> LINES, "%g,null,%g,null,null" % (y_r, y_i)
+        print >> LINES, "%g,null,null,%g,null" % (z_r, z_i)
+        print >> LINES, "%g,null,null,null,%g" % (f_r, f_i)
         x_mod = math.sqrt(x_r**2 + x_i**2)
         y_mod = math.sqrt(y_r**2 + y_i**2)
         z_mod = math.sqrt(z_r**2 + z_i**2)
         f_mod = math.sqrt(f_r**2 + f_i**2)
-        print("%g,%g,%g,%g,%g" \
-              % (MDTU, x_mod, y_mod, z_mod, f_mod), file=LINES_MOD)
+        print >> LINES_MOD, "%g,%g,%g,%g,%g" \
+                            % (MDTU, x_mod, y_mod, z_mod, f_mod)
 
       # Unitarized Polyakov loop and Wilson lines in other directions
       elif NEED_LINES > 0 and line.startswith('LINES_POLAR '):
         temp = line.split()
         poly_r = float(temp[7]) / Nc
         poly_i = float(temp[8]) / Nc
-        print("%g,%g" % (poly_r, poly_i), file=POLY_POLAR)
+        print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
         poly_mod = math.sqrt(poly_r**2 + poly_i**2)
-        print("%g,%g,%g,%g" \
-              % (MDTU, poly_mod, poly_r, poly_i), file=POLY_MOD_POLAR)
+        print >> POLY_MOD_POLAR, "%g,%g,%g,%g" \
+                                 % (MDTU, poly_mod, poly_r, poly_i)
 
         x_r = float(temp[1]) / Nc
         x_i = float(temp[2]) / Nc
@@ -656,16 +648,16 @@ for temp_tag in open('list.txt'):
         z_i = float(temp[6]) / Nc
         f_r = float(temp[9]) / Nc
         f_i = float(temp[10]) / Nc
-        print("%g,%g,null,null,null" % (x_r, x_i), file=LINES_POLAR)
-        print("%g,null,%g,null,null" % (y_r, y_i), file=LINES_POLAR)
-        print("%g,null,null,%g,null" % (z_r, z_i), file=LINES_POLAR)
-        print("%g,null,null,null,%g" % (f_r, f_i), file=LINES_POLAR)
+        print >> LINES_POLAR, "%g,%g,null,null,null" % (x_r, x_i)
+        print >> LINES_POLAR, "%g,null,%g,null,null" % (y_r, y_i)
+        print >> LINES_POLAR, "%g,null,null,%g,null" % (z_r, z_i)
+        print >> LINES_POLAR, "%g,null,null,null,%g" % (f_r, f_i)
         x_mod = math.sqrt(x_r**2 + x_i**2)
         y_mod = math.sqrt(y_r**2 + y_i**2)
         z_mod = math.sqrt(z_r**2 + z_i**2)
         f_mod = math.sqrt(f_r**2 + f_i**2)
-        print("%g,%g,%g,%g,%g" \
-              % (MDTU, x_mod, y_mod, z_mod, f_mod), file=LINES_MOD_POLAR)
+        print >> LINES_MOD_POLAR, "%g,%g,%g,%g,%g" \
+                                  % (MDTU, x_mod, y_mod, z_mod, f_mod)
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
@@ -680,16 +672,15 @@ for temp_tag in open('list.txt'):
           det = float(temp[5])
         else:
           det = (1.0 - det_r)**2 + det_i**2
-        print("%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i), file=DET)
+        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
 
       elif NEED_WIDTHS > 0 and line.startswith('WIDTHS '):
         temp = line.split()
         plaq_width = float(temp[1])
         re_width = float(temp[2])
         im_width = float(temp[3])
-        print("%g,%g,%g,%g,%g" \
-              % (MDTU, plaq_width, re_width, im_width, link_width), \
-              file=WIDTHS)
+        print >> WIDTHS, "%g,%g,%g,%g,%g" \
+                         % (MDTU, plaq_width, re_width, im_width, link_width)
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
@@ -703,9 +694,9 @@ for temp_tag in open('list.txt'):
           scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
           scalar_eig_width += ',' + str(temp[3])
         if index == Nc - 1:
-          print("%g%s" % (MDTU, scalar_eig_ave), file=SCALAR_EIG_AVE)
-          print("%g%s" % (MDTU, scalar_eig_ext), file=SCALAR_EIG)
-          print("%g%s" % (MDTU, scalar_eig_width), file=SCALAR_EIG_WIDTHS)
+          print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
+          print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
+          print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
           scalar_eig_ave = ''
           scalar_eig_ext = ''
           scalar_eig_width = ''
@@ -715,16 +706,16 @@ for temp_tag in open('list.txt'):
 
       elif line.startswith('RUNNING COMPLETED'):
         if check == 1:    # Check that we have one measurement per file
-          print(infile, "reports two measurements")
-          print(infile, "reports two measurements", file=ERRFILE)
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
         check = 1
     if CG == -1:
-      print(infile, "encountered CG non-convergence")
-      print(infile, "encountered CG non-convergence", file=ERRFILE)
+      print infile, "encountered CG non-convergence"
+      print >> ERRFILE, infile, "encountered CG non-convergence"
       CG = 1
     if check == -1:
-      print(infile, "did not complete")
-      print(infile, "did not complete", file=ERRFILE)
+      print infile, "did not complete"
+      print >> ERRFILE, infile, "did not complete"
 # ------------------------------------------------------------------
 
 
