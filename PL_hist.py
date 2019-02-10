@@ -5,9 +5,8 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 # ------------------------------------------------------------------
-# Plot histogram of Wilson line magnitudes
-# For now only consider unitarized (and not full) Wilson lines
-# Save resulting plot as ./WL_hist_$tag.pdf
+# Plot histogram of Polyakov loop magnitudes
+# Save resulting plot as ./PL_hist_$tag.pdf
 # Extract $tag from path rather than input argument
 
 # Parse argument: Thermalization cut
@@ -26,16 +25,16 @@ cwd = os.getcwd()
 tag = (cwd.split('/'))[-1]
 
 # Extract Nc-normalized modulus as third datum on each line of data file
-# Format: MDTU,|Lx|,|Ly|,|Lz|,|L5|
+# Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
-for line in open('data/lines_mod_polar.csv'):
+for line in open('data/poly_mod.csv'):
   if line.startswith('M'):
     continue
   temp = line.split(',')
   MDTU = float(temp[0])
   if MDTU <= cut:
     continue
-  dat.append(float(temp[3]))
+  dat.append(float(temp[1]))
 
 # Print number of measurements to allow offline checks
 print "%d measurements for %s" % (len(dat), tag)
@@ -49,11 +48,11 @@ plt.hist(dat, bins=np.arange(0.0, 1.0, 0.05),
 plt.xlim([0.0, 1.0])
 plt.grid(False)
 
-plt.xlabel('|WL|')
+plt.xlabel('|PL|')
 plt.ylabel('Count')
 plt.legend()
 
 # Save a pdf
-outfile = 'WL_hist_' + tag + '.pdf'
+outfile = 'PL_hist_' + tag + '.pdf'
 plt.savefig(outfile, bbox_inches='tight')   # Reduce surrounding whitespace
 # ------------------------------------------------------------------
