@@ -101,7 +101,7 @@ for obs in ['poly_mod']:
     sys.exit(1)
 
   # Now construct jackknife samples through single-block elimination
-  #   chi = <WL^2> - <WL>^2
+  #   chi = <PL^2> - <PL>^2
   dat = np.array(datList)
   tot = sum(dat)
   sq = np.array(sqList)

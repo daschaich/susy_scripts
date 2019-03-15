@@ -146,11 +146,11 @@ outfile.close()
 
 
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action, fermion action
-# and 'Myers' scalar trilinear term
+# For the Polyakov loop, bosonic action, fermion action,
+# 'Myers' scalar trilinear term and SO(6) / SO(3) action ratio
 # we're interested in the first datum on each line (following MDTU)
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-for obs in ['poly_mod', 'SB', 'SF', 'Myers']:
+for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
   skip = -1
   count = 0
   ave = 0.0         # Accumulate within each block

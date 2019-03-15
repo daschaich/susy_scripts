@@ -6,7 +6,7 @@ if [ $# != 0 ]; then
 fi
 
 temp=`pwd`
-dir=${temp##*BMN/}   # Strip everything up to and including "SYM/"
+dir=${temp##*BMN/}   # Strip everything up to and including "BMN/"
 path=/nfs/beowulf03/schaich/SYM/BMN/$dir      # Customized for CU
 # ------------------------------------------------------------------
 

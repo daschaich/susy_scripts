@@ -21,6 +21,8 @@ SB = open('data/SB.csv', 'w')
 print >> SB, "MDTU,S_B"
 MYERS = open('data/Myers.csv', 'w')
 print >> MYERS, "MDTU,Myers/Nt"
+RATIO = open('data/ratio.csv', 'w')
+print >> RATIO, "MDTU,Ratio(SO6/SO3)"
 SF = open('data/SF.csv', 'w')
 print >> SF, "MDTU,S_F"
 POLY = open('data/poly.csv', 'w')
@@ -74,6 +76,7 @@ print >> TU, "t,MDTU"
 fermAct = [-1.0, -1.0]
 bAct = [-1.0, -1.0]
 Myers = [-1.0, -1.0]
+ratio = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
 CG = 1
@@ -240,11 +243,13 @@ for temp_tag in open('list.txt'):
         fermAct[0] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
         bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         Myers[0] = float(split[8]) / Nt
+        ratio[0] = float(split[4]) / float(split[2])
       elif fermAct[1] < 0:
         split = line.split()
         fermAct[1] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
         bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
         Myers[1] = float(split[8]) / Nt
+        ratio[1] = float(split[4]) / float(split[2])
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -274,14 +279,17 @@ for temp_tag in open('list.txt'):
         print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
         print >> SB, "%g,%g" % (MDTU, bAct[1])
         print >> MYERS, "%g,%g" % (MDTU, Myers[1])
+        print >> RATIO, "%g,%g" % (MDTU, ratio[1])
       else:
         print >> ACCP, "%d,0" % traj
         print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
         print >> SB, "%g,%g" % (MDTU, bAct[0])
         print >> MYERS, "%g,%g" % (MDTU, Myers[0])
+        print >> RATIO, "%g,%g" % (MDTU, ratio[0])
       fermAct = [-1.0, -1.0]                        # Reset
       bAct = [-1.0, -1.0]
       Myers = [-1.0, -1.0]
+      ratio = [-1.0, -1.0]
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
@@ -455,6 +463,7 @@ ERRFILE.close()
 MISSINGFILES.close()
 SB.close()
 MYERS.close()
+RATIO.close()
 SF.close()
 POLY.close()
 POLY_MOD.close()
