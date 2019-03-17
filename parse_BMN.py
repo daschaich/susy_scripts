@@ -38,7 +38,7 @@ print >> SCALAR_EIG, "MDTU,min1,max1,min2,max2,min3,max3,min4,max4"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,width1,width2,width3,width4"
 EIG = open('data/eig.csv', 'w')
-print >> EIG, "MDTU,0,2,4,6,8,10"
+print >> EIG, "MDTU,min_eig"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -397,8 +397,8 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Now deal with the corresponding "eig" file, if it is present
-  # These are always paired (checked by check_eig_pairs.py)
-  # Focus on first six pairs, 0, 2, 4, 6, 8 and 10
+  # These seem to come in sets of 16 (which we don't check too carefully)
+  # For now only consider the smallest
   infile = 'Out/eig.' + cfg
   if not os.path.isfile(infile):
     print >> MISSINGFILES, infile
@@ -419,7 +419,7 @@ for temp_tag in open('list.txt'):
         temp = line.split()
         index = int(temp[1])
         dat = float(temp[2])
-        if index < 11 and index % 2 == 0:
+        if index < 1 and index % 2 == 0:
           eig[index / 2] = dat
         if index == 0 and dat < min_eig:        # Check spectral range
           print infile, "exceeds RHMC spectral range:",

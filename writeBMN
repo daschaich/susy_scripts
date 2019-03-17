@@ -116,7 +116,6 @@ echo '    </table>' >> $out
 echo '  </div>' >> $out
 echo '  <br><br>' >> $out
 
-
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
 echo '      <tr><th>Myers normalized by volume ('$tag')</th><th>Scalar eigenvalue widths ('$tag')</th></tr>' >> $out
@@ -159,15 +158,15 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Fermion bilinears ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
+echo '      <tr><th>Minimum fermion eigenvalue ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
-echo '          <div id="bilin"></div>' >> $out
+echo '          <div id="eig"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
-echo '            g = new Dygraph(document.getElementById("bilin"),' >> $out
-echo '                            "data/bilin.csv",' >> $out
+echo '            g = new Dygraph(document.getElementById("eig"),' >> $out
+echo '                            "data/eig.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
-echo '                              colors: ["red", "blue"],' >> $out
+echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out
