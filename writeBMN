@@ -8,10 +8,10 @@ fi
 tag=$1
 date=$2
 
-out="/nfs/beowulf03/schaich/SYM/BMN/$tag/index.html"    # Customized for CU
+out="/raid1/backup/schaich/SYM/BMN/$tag/index.html"    # Customized for Liverpool
 
 echo '<html><head>' > $out
-echo '<script type="text/javascript" src="http://www-hep.colorado.edu/~schaich/dygraph-combined.js"></script>' >> $out
+echo '<script type="text/javascript" src="http://www.maths.liv.ac.uk/TheorPhys/people/staff/schaich/dygraph-combined.js"></script>' >> $out
 echo '<style type="text/css">' >> $out
 echo '  #main{' >> $out
 echo '    margin-right:19em;' >> $out

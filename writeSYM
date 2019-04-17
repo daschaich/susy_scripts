@@ -8,11 +8,10 @@ fi
 tag=$1
 date=$2
 
-out="/nfs/beowulf03/schaich/SYM/$tag/index.html"    # Customized for CU
-#echo "Writing $out"
+out="/raid1/backup/schaich/SYM/$tag/index.html"    # Customized for Liverpool
 
 echo '<html><head>' > $out
-echo '<script type="text/javascript" src="http://www-hep.colorado.edu/~schaich/dygraph-combined.js"></script>' >> $out
+echo '<script type="text/javascript" src="http://www.maths.liv.ac.uk/TheorPhys/people/staff/schaich/dygraph-combined.js"></script>' >> $out
 echo '<style type="text/css">' >> $out
 echo '  #main{' >> $out
 echo '    margin-right:19em;' >> $out
@@ -463,7 +462,7 @@ echo '          <div id="accP"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("accP"),' >> $out
 echo '                            "data/accP.csv",' >> $out
-echo '                            { rollPeriod: 50,' >> $out
+echo '                            { rollPeriod: 250,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              valueRange: [0, 1.01],' >> $out
@@ -520,7 +519,7 @@ echo '          <div id="abs_dS"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
 echo '            g = new Dygraph(document.getElementById("abs_dS"),' >> $out
 echo '                            "data/abs_dS.csv",' >> $out
-echo '                            { rollPeriod: 5,' >> $out
+echo '                            { rollPeriod: 1,' >> $out
 echo '                              colors: ["red"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              valueRange: [0, 5.01],' >> $out

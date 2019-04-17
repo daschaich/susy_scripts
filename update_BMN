@@ -7,7 +7,8 @@ fi
 
 temp=`pwd`
 dir=${temp##*BMN/}   # Strip everything up to and including "BMN/"
-path=/nfs/beowulf03/schaich/SYM/BMN/$dir      # Customized for CU
+inpath=/raidc/users/schaich/SYM/BMN/$dir        # Customized for Liverpool
+outpath=/raid1/backup/schaich/SYM/BMN/$dir
 # ------------------------------------------------------------------
 
 
@@ -15,17 +16,17 @@ path=/nfs/beowulf03/schaich/SYM/BMN/$dir      # Customized for CU
 # ------------------------------------------------------------------
 # Construct list of files in given ensemble, for parse_BMN.py
 rm -f list.txt
-for i in $path/Out/out.* ; do
+for i in $inpath/Out/out.* ; do
   echo ${i##*.} >> temp    # Strip everything up to and including the last "."
 done
 sort temp -n | uniq > list.txt
 rm -f temp
 
 # Use list of files in given ensemble to extract time series data
-rm -f data/*.csv ERRORS
+rm -f $outpath/data/*.csv $outpath/ERRORS
 echo "python ~schaich/scripts/parse_BMN.py"
 python ~schaich/scripts/parse_BMN.py
-chmod 664 data/*.csv
+chmod 644 $outpath/data/*.csv
 rm -f list.txt            # Done with this
 
 # Not yet sure what structure BMN eigenvalues should have
@@ -33,12 +34,12 @@ rm -f list.txt            # Done with this
 
 # Replace Web page to update timestamp
 date=`date`
-rm -f index.html
+rm -f $outpath/index.html
 echo writeBMN $dir "$date"
 ~schaich/scripts/writeBMN $dir "$date"
-chmod 664 index.html
+chmod 644 $outpath/index.html
 
-# I like to monitor this
+# I like to monitor this (looks better without $outpath)
 #grep Apparent ERRORS
 wc -l M*
 wc -l E*
