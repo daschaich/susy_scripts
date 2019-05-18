@@ -1,0 +1,123 @@
+#!/bin/bash
+
+if [ $# -lt 5 ]; then
+  echo "Usage: $0 <first> <last> nsteps:{<fermion> <gauge>} <time> [dependency (optional)]"
+  exit 1
+fi
+
+# Input parameters
+first=$1
+last=$2
+fsteps=$3
+gsteps=$4
+time=$5
+
+# Adjustable parameters
+# Full N*40 cores needed to request N nodes
+full=40
+cpus=32
+L=8
+Nt=8
+lambda=2.5
+bmass=0.44
+fmass=0.0
+kappa=0.0
+G=0.05
+Ntraj=10
+traj_length=1
+skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
+
+# Common parameters for all jobs
+tag=l${lambda}_b${bmass}_G$G
+echo "#!/bin/sh" > temp
+echo "#SBATCH -D ./" >> temp
+echo "#SBATCH --export=ALL" >> temp
+echo "#SBATCH -p nodes -n $full" >> temp
+echo "#SBATCH -t $time" >> temp
+echo "#SBATCH -J HMC4_${L}nt${Nt}_$tag" >> temp
+echo "#SBATCH -o hmc.%j.out" >> temp
+echo "#SBATCH -e hmc.%j.out" >> temp
+echo "#SBATCH --mem-per-cpu=8000M" >> temp
+echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
+echo "#SBATCH --mail-type=ALL" >> temp
+if [ $# -gt 5 ]; then
+  echo "#SBATCH -d afterok:$6" >> temp
+fi
+
+# Should use dir due to SBATCH -D above, but let's make sure
+dir=/mnt/lustre/users/schaich/SYM/APBC/Nc4_${L}nt${Nt}/$tag
+bin=/mnt/lustre/users/schaich/SYM/code/4d_Q16/bins/susy_hmc-U4
+cd $dir
+echo "cd $dir" >> temp
+
+# Same modules as when compiling
+echo "module load compilers/gcc/5.5.0" >> temp
+echo "module load mpi/openmpi/1.10.7/gcc-5.5.0" >> temp
+echo "module load libs/blas/3.6.0/gcc-5.5.0" >> temp
+echo "module load libs/lapack/3.5.0/gcc-5.5.0" >> temp
+
+# Write all evolution tasks to run in a single job
+iter=0
+for(( i=$first ; $i<$last ; i+=$skip )); do
+  iter=$[$iter + 1]
+  next=$[$i + $skip]
+  out=$dir/Out/out.$i-$next
+  lat=$dir/Configs/gauge
+  if [ -f $out ]; then
+    echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+  echo "if [ ! -f $lat.$i ]; then" >> temp
+  echo "  echo \"ERROR: LATTICE $lat.$i NOT FOUND, SUBMISSION ABORTED\"" >> temp
+  echo "  exit 1" >> temp
+  echo "fi" >> temp
+  if [ -f $lat.$next ]; then
+    echo "ERROR: LATTICE $lat.$next EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+
+  echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
+  echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
+  echo "echo \"mpirun -np $cpus $bin\" >> $out" >> temp
+  echo "mpirun -np $cpus $bin << EOF >> $out" >> temp
+  echo "prompt 0" >> temp
+  echo "nx $L" >> temp
+  echo "ny $L" >> temp
+  echo "nz $L" >> temp
+  echo "nt $Nt" >> temp
+  echo "PBC -1" >> temp
+  echo "iseed ${last}${lambda/\./41}${L}$i" >> temp
+
+  echo "Nroot 3" >> temp
+  echo "Norder 19" >> temp
+
+  echo "warms 0" >> temp
+  echo "trajecs $Ntraj" >> temp
+  echo "traj_length $traj_length" >> temp
+  echo "nstep $fsteps" >> temp
+  echo "nstep_gauge $gsteps" >> temp
+  echo "traj_between_meas $Ntraj" >> temp
+
+  echo "lambda $lambda" >> temp
+  echo "kappa_u1 $kappa" >> temp
+  echo "bmass $bmass" >> temp
+  echo "fmass $fmass" >> temp
+  echo "G $G" >> temp
+
+  echo "max_cg_iterations 10000" >> temp
+  echo "error_per_site 1e-5" >> temp
+
+  echo "reload_serial $lat.$i" >> temp
+  echo "save_serial $lat.$next" >> temp
+  echo "EOF" >> temp
+
+  echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
+  echo "chmod 664 $out $lat.$i* $lat.$next*" >> temp
+  echo "" >> temp
+done
+
+sbatch temp
+echo "Requested $time to run $iter jobs"
+rm -f temp
