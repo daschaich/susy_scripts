@@ -680,6 +680,31 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
+echo '      <tr><th>RHMC Norder ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="Norder"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("Norder"),' >> $out
+echo '                            "data/Norder.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
 echo '      <tr><th>Trajectory length ('$tag')</th><th>MD time units ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
