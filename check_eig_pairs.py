@@ -12,6 +12,12 @@ if not os.path.isdir('Out'):
   print "ERROR: Out/ does not exist"
   sys.exit(1)
 
+# For BMN, should suffice to check only first pair
+BMN = -1
+cwd = os.getcwd()
+if 'BMN' in cwd:
+  BMN = 1
+
 # Cycle over eigenvalue files
 for filename in glob.glob('Out/eig.*'):
   check = -1
@@ -19,7 +25,10 @@ for filename in glob.glob('Out/eig.*'):
     # Format: EIGENVALUE # eig accuracy
     if line.startswith('EIGENVALUE ') or line.startswith('BIGEIGVAL '):
       temp = line.split()
-      evenodd = int(temp[1]) % 2
+      num = int(temp[1])
+      if BMN > 0 and num > 1:   # Consider only first pair
+        continue
+      evenodd = num % 2
       if evenodd == 0:
         even = float(temp[2])
       elif evenodd == 1:

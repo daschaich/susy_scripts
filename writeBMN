@@ -8,7 +8,7 @@ fi
 tag=$1
 date=$2
 
-out="/raid1/backup/schaich/SYM/BMN/$tag/index.html"    # Customized for Liverpool
+out="/raid1/backup/schaich/SYM/$tag/index.html"    # Customized for Liverpool
 
 echo '<html><head>' > $out
 echo '<script type="text/javascript" src="http://www.maths.liv.ac.uk/TheorPhys/people/staff/schaich/dygraph-combined.js"></script>' >> $out

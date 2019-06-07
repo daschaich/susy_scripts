@@ -6,9 +6,9 @@ if [ $# != 0 ]; then
 fi
 
 temp=`pwd`
-dir=${temp##*BMN/}   # Strip everything up to and including "BMN/"
-inpath=/raidc/users/schaich/SYM/BMN/$dir        # Customized for Liverpool
-outpath=/raid1/backup/schaich/SYM/BMN/$dir
+dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
+inpath=/raidc/users/schaich/SYM/$dir        # Customized for Liverpool
+outpath=/raid1/backup/schaich/SYM/$dir
 # ------------------------------------------------------------------
 
 
@@ -29,8 +29,9 @@ python ~schaich/scripts/parse_BMN.py
 chmod 644 $outpath/data/*.csv
 rm -f list.txt            # Done with this
 
-# Not yet sure what structure BMN eigenvalues should have
-#python ~schaich/scripts/check_eig_pairs.py >> ERRORS
+# It looks like the lowest BMN eigenvalues should be reliable
+# so long as they're at least doubled, which this script will check
+python ~schaich/scripts/check_eig_pairs.py >> ERRORS
 
 # Replace Web page to update timestamp
 date=`date`

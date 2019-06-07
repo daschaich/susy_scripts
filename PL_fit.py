@@ -6,7 +6,7 @@ from scipy.optimize import least_squares
 from scipy.special import gammainc
 # ------------------------------------------------------------------
 # Fit BMN Polyakov loop data to
-#   PL = D - A / (1 + exp[B * (T/mu - C)])
+#   PL = A - B / (1 + exp[C * (T/mu - D)])
 
 # Parse argument: the file to analyze (FORMAT: T/mu dat err)
 if len(sys.argv) < 2:
