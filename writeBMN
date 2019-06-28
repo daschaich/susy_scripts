@@ -30,7 +30,6 @@ echo '</head>' >> $out
 echo '<body>' >> $out
 echo '<div id="main">' >> $out
 echo '  <p>Last update: '$date'</p>' >> $out
-echo '  <h1>PWMM/BMN time series plots</h1>' >> $out
 echo '  <h1><a name="phys"></a>Physical observables</h1>' >> $out
 echo '  <hr><br>' >> $out
 echo '  <div style="width:880px; height:330px;">' >> $out
@@ -404,6 +403,31 @@ echo '                                return Math.round(x * shift) / shift' >> $
 echo '                              },' >> $out
 echo '                            });' >> $out
 echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '      </tr>' >> $out
+echo '    </table>' >> $out
+echo '  </div>' >> $out
+echo '  <br><br>' >> $out
+
+echo '  <div style="width:880px; height:330px;">' >> $out
+echo '    <table>' >> $out
+echo '      <tr><th>RHMC Norder ('$tag')</th><th>Intentionally left blank</th></tr>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
+echo '          <div id="Norder"></div>' >> $out
+echo '          <script type="text/javascript">' >> $out
+echo '            g = new Dygraph(document.getElementById("Norder"),' >> $out
+echo '                            "data/Norder.csv",' >> $out
+echo '                            { rollPeriod: 1,' >> $out
+echo '                              colors: ["red"],' >> $out
+echo '                              showRoller: true,' >> $out
+echo '                              yValueFormatter: function(x) {' >> $out
+echo '                                var shift = Math.pow(10, 1)' >> $out
+echo '                                return Math.round(x * shift) / shift' >> $out
+echo '                              },' >> $out
+echo '                            });' >> $out
+echo '          </script>' >> $out
+echo '        </td>' >> $out
+echo '        <td style="width:400px; height:300px;">' >> $out
 echo '        </td>' >> $out
 echo '      </tr>' >> $out
 echo '    </table>' >> $out

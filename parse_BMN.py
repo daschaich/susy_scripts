@@ -65,6 +65,8 @@ NSTEP = open('data/Nstep.csv', 'w')
 print >> NSTEP, "t,N_f,N_g"
 STEPSIZE = open('data/stepsize.csv', 'w')
 print >> STEPSIZE, "t,eps_f,eps_g"
+NORDER = open('data/Norder.csv', 'w')
+print >> NORDER, "t,Norder"
 TLENGTH = open('data/tlength.csv', 'w')
 print >> TLENGTH, "t,L"
 KEY = open('data/key.csv', 'w')
@@ -192,14 +194,17 @@ for temp_tag in open('list.txt'):
     elif line.startswith('RHMC Norder '):
       if 'spectral' in line:
         temp = line.rstrip()       # Kill newline
+        Norder = int(temp.split()[2])
         temp2 = temp.rstrip(']')   # Kill ]
         temp = (temp2.split('['))[-1]
         temp2 = temp.split(',')
         min_eig = float(temp2[0])
         max_eig = float(temp2[1])
+        print >> NORDER, "%d,%d" % (endtraj, Norder)
       else:         # Original 15-pole format didn't state spectral range
         min_eig = 1.0e-7
         max_eig = 1000.0
+        print >> NORDER, "%d,%d" % (endtraj, 15)
 
     # Extract constant run parameters
     elif line.startswith('traj_length '):
@@ -483,6 +488,7 @@ WALLTU.close()
 COND_NUM.close()
 NSTEP.close()
 STEPSIZE.close()
+NORDER.close()
 TLENGTH.close()
 KEY.close()
 TU.close()
