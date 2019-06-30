@@ -1,0 +1,83 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <first>"
+  exit 1
+fi
+
+# Input parameters
+first=$1
+if [ $# -gt 1 ]; then
+  last=$2
+else
+  last=$1
+fi
+
+# Parameters fixed by the path
+temp=`pwd`
+path=${temp##*BMN/Nc}   # Strip everything up to and including "BMN/Nc"
+Ncnt=${path%%/*}        # Strip everything after and including "/"
+Nt=${Ncnt##*nt}         # Strip everything up to and including "nt"
+Nc=${Ncnt%%_nt*}        # Strip everything after and including "_nt/"
+tag=${path##*/g}        # Strip everything up to and including "/g"
+g=${tag%%_f*}           # Strip everything after and including "_f"
+temp=${tag##*_f}        # Strip everything up to and including "_f"
+f=${temp%%_*}           # Strip everything after and including "_*"
+mu=`echo $f | awk -v nt="$Nt" '{print((1.0/($1*nt)))}'`
+lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
+
+# Adjustable parameters
+cpus=4
+Ntraj=10
+traj_length=1
+skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
+Nvec=12 
+
+bin=/home/schaich/lqcd/susy/1d_Q16/bins/susy_eig-N$Nc
+
+for(( i=$first ; $i<=$last ; i+=$skip )); do
+  echo $i
+  out=Out/eig.$i
+  lat=Configs/gauge
+  if [ -f $out ]; then
+    echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+  if [ ! -f $lat.$i ]; then
+    echo "ERROR: LATTICE $lat.$i NOT FOUND, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+
+  mpirun -np $cpus $bin << END >> $out
+  prompt 0
+  nt $Nt
+  PBC -1
+
+  iseed ${last}${lambda/\./41}${Nt}$i
+  Nroot 1
+  Norder 1
+
+  warms 0
+  trajecs $Ntraj
+  traj_length $traj_length
+  nstep 1
+  nstep_gauge 1
+  traj_between_meas $Ntraj
+
+  lambda $lambda
+  mu $mu
+
+  max_cg_iterations 5000
+  error_per_site 1e-5
+
+  Nvec $Nvec
+  eig_tol 1e-8
+  maxIter 10000
+
+  reload_serial $lat.$i
+  forget
+END
+  chmod 664 $out $lat.$i*
+done
