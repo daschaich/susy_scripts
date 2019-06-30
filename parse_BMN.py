@@ -409,8 +409,6 @@ for temp_tag in open('list.txt'):
     print >> MISSINGFILES, infile
   else:
     check = -1    # Check whether file completed successfully
-    temp = float('nan')
-    eig = [temp, temp, temp, temp, temp, temp]
 
     # Go
     for line in open(infile):
@@ -420,13 +418,9 @@ for temp_tag in open('list.txt'):
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
-      elif line.startswith('EIGENVALUE '):
-        temp = line.split()
-        index = int(temp[1])
-        dat = float(temp[2])
-        if index < 1 and index % 2 == 0:
-          eig[index / 2] = dat
-        if index == 0 and dat < min_eig:        # Check spectral range
+      elif line.startswith('EIGENVALUE 0 '):
+        eig = float((line.split())[2])
+        if eig < min_eig:        # Check spectral range
           print infile, "exceeds RHMC spectral range:",
           print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
@@ -441,7 +435,7 @@ for temp_tag in open('list.txt'):
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
 
         # Monitor (log of) condition number
-        cond_num = math.log(dat / eig[0])
+        cond_num = math.log(dat / eig)
         print >> COND_NUM, "%d,%g" % (traj, cond_num)
 
       elif 'WARNING' in line:
@@ -456,8 +450,7 @@ for temp_tag in open('list.txt'):
       print infile, "did not complete"
       print >> ERRFILE, infile, "did not complete"
 
-    print >> EIG, "%g,%g,%g,%g,%g,%g,%g" \
-                  % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5])
+    print >> EIG, "%g,%g" % (MDTU, eig)
 # ------------------------------------------------------------------
 
 
