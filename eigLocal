@@ -13,6 +13,13 @@ else
   last=$1
 fi
 
+# Adjustable parameters
+cpus=4
+Ntraj=10
+traj_length=1
+skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
+Nvec=12
+
 # Parameters fixed by the path
 temp=`pwd`
 path=${temp##*BMN/Nc}   # Strip everything up to and including "BMN/Nc"
@@ -25,13 +32,6 @@ temp=${tag##*_f}        # Strip everything up to and including "_f"
 f=${temp%%_*}           # Strip everything after and including "_*"
 mu=`echo $f | awk -v nt="$Nt" '{print((1.0/($1*nt)))}'`
 lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
-
-# Adjustable parameters
-cpus=4
-Ntraj=10
-traj_length=1
-skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
-Nvec=12 
 
 bin=/home/schaich/lqcd/susy/1d_Q16/bins/susy_eig-N$Nc
 

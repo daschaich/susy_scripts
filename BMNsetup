@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+  echo "Usage: $0 <config>"
+  exit 1
+fi
+
+cp -iv $1 Configs/gauge.0
+temp=`grep "^time_stamp" $1.info`
+temp2=${temp%%\"}     # Strip the final quotation mark
+stamp=${temp2##*\"}   # Strip everything up to and including the first quotation mark
+echo "Started from ${1##\.\.\/} (time stamp $stamp)" > Configs/gauge.0.info
+grep Start */*

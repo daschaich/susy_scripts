@@ -1,48 +1,62 @@
 #!/bin/bash
 
-if [ $# -lt 5 ]; then
-  echo "Usage: $0 <first> <last> nsteps:{<fermion> <gauge>} <time> [dependency (optional)]"
+if [ $# -lt 6 ]; then
+  echo "Usage: $0 <first> <end> <per_job> nsteps:{<fermion> <gauge>} <time>"
   exit 1
 fi
 
 # Input parameters
 first=$1
 last=$2
-fsteps=$3
-gsteps=$4
-time=$5
+batch=$3
+fsteps=$4
+gsteps=$5
+time=$6
+
+# Check whether we've correctly set $batch to evenly divide ($last-$first)
+iter=0
+count=$first
+for(( i=$first ; $i<$last ; i+=$batch )); do
+  iter=$[$iter + 1]
+  count=$[$count + $batch]
+done
+echo "Will submit $iter jobs and end up at $count MDTU"
 
 # Adjustable parameters
 cpus=8
-Nt=16
-g=0.01
-f=0.12
-mu=`echo | awk -v f="$f" -v nt="$Nt" '{print((1.0/(f*nt)))}'`
-lambda=`echo | awk -v g="$g" -v mu="$mu" '{print(g*(mu**3))}'`
 Ntraj=10
 traj_length=1
-skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
+skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
+
+# Parameters fixed by the path
+temp=`pwd`
+path=${temp##*BMN/Nc}   # Strip everything up to and including "BMN/Nc"
+Ncnt=${path%%/*}        # Strip everything after and including "/"
+Nt=${Ncnt##*nt}         # Strip everything up to and including "nt"
+Nc=${Ncnt%%_nt*}        # Strip everything after and including "_nt/"
+tag=${path##*/g}        # Strip everything up to and including "/g"
+g=${tag%%_f*}           # Strip everything after and including "_f"
+temp=${tag##*_f}        # Strip everything up to and including "_f"
+f=${temp%%_*}           # Strip everything after and including "_*"
+mu=`echo $f | awk -v nt="$Nt" '{print((1.0/($1*nt)))}'`
+lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
 
 # Common parameters for all jobs
-tag=g${g}_f${f}_high
 echo "#!/bin/sh" > temp
 echo "#SBATCH -D ./" >> temp
 echo "#SBATCH --export=ALL" >> temp
 echo "#SBATCH -p nodes -n $cpus" >> temp
 echo "#SBATCH -t $time" >> temp
-echo "#SBATCH -J HMC12_nt${Nt}_$tag" >> temp
+echo "#SBATCH -J HMC${Nc}_Nc${Ncnt}_g$tag" >> temp
 echo "#SBATCH -o hmc.%j.out" >> temp
 echo "#SBATCH -e hmc.%j.out" >> temp
 echo "#SBATCH --mem-per-cpu=1000M" >> temp
 echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
 echo "#SBATCH --mail-type=END,FAIL" >> temp
-if [ $# -gt 5 ]; then
-  echo "#SBATCH -d afterok:$6" >> temp
-fi
 
 # Should use dir due to SBATCH -D above, but let's make sure
-dir=/mnt/lustre/users/schaich/SYM/BMN/Nc12_nt${Nt}_high/$tag
-bin=/mnt/lustre/users/schaich/SYM/code/1d_Q16/bins/susy_hmc-N12
+dir=/mnt/lustre/users/schaich/SYM/BMN/Nc$Ncnt/g$tag
+bin=/mnt/lustre/users/schaich/SYM/code/1d_Q16/bins/susy_hmc-N$Nc
 cd $dir
 echo "cd $dir" >> temp
 
@@ -53,27 +67,38 @@ echo "module load mpi/openmpi/1.10.7/gcc-5.5.0" >> temp
 echo "module load libs/blas/3.6.0/gcc-5.5.0" >> temp
 echo "module load libs/lapack/3.5.0/gcc-5.5.0" >> temp
 
-# Write all evolution tasks to run in a single job
-iter=0
+# Check that we're not going to break anything,
+# either through this job or the subsequent jobs it will submit
+lat=$dir/Configs/gauge.$first
+if [ ! -f $lat ]; then
+  echo "ERROR: LATTICE $lat NOT FOUND, SUBMISSION ABORTED"
+  rm -f temp
+  exit 1
+fi
 for(( i=$first ; $i<$last ; i+=$skip )); do
-  iter=$[$iter + 1]
   next=$[$i + $skip]
   out=$dir/Out/out.$i-$next
-  lat=$dir/Configs/gauge
+  lat=$dir/Configs/gauge.$next
   if [ -f $out ]; then
     echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
     rm -f temp
     exit 1
   fi
-  echo "if [ ! -f $lat.$i ]; then" >> temp
-  echo "  echo \"ERROR: LATTICE $lat.$i NOT FOUND, SUBMISSION ABORTED\"" >> temp
-  echo "  exit 1" >> temp
-  echo "fi" >> temp
-  if [ -f $lat.$next ]; then
-    echo "ERROR: LATTICE $lat.$next EXISTS, SUBMISSION ABORTED"
+  if [ -f $lat ]; then
+    echo "ERROR: LATTICE $lat EXISTS, SUBMISSION ABORTED"
     rm -f temp
     exit 1
   fi
+done
+
+# Write this job's evolution tasks to run in a single job
+iter=0
+this_sub=$[$first + $batch]
+for(( i=$first ; $i<$this_sub ; i+=$skip )); do
+  iter=$[$iter + 1]
+  next=$[$i + $skip]
+  out=$dir/Out/out.$i-$next
+  lat=$dir/Configs/gauge
 
   echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
   echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
@@ -85,7 +110,7 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
   echo "iseed ${last}${lambda/\./1}${Nt}$i" >> temp
 
   echo "Nroot 2" >> temp
-  echo "Norder 15" >> temp
+  echo "Norder 8" >> temp
 
   echo "warms 0" >> temp
   echo "trajecs $Ntraj" >> temp
@@ -109,6 +134,13 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
   echo "" >> temp
 done
 
+# Submit next job, if applicable
+# Warned above about possibility of ending up between $last and $last+$batch
+if [ $this_sub -lt $last ] ; then
+  echo "echo \"./runLiv $this_sub $last $batch $fsteps $gsteps $time\"" >> temp
+  echo "./runLiv $this_sub $last $batch $fsteps $gsteps $time" >> temp
+fi
+
 sbatch temp
-echo "Requested $time to run $iter jobs"
 rm -f temp
+echo "Requested $time to save $iter configs ($first--$this_sub by $skip)"
