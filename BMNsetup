@@ -1,7 +1,12 @@
 #!/bin/bash
 
 if [ $# != 1 ]; then
-  echo "Usage: $0 <config>"
+  echo "Usage: $0 ../path/to/config"
+  exit 1
+fi
+
+if [ ! -d Configs ]; then
+  echo "Error: ./Configs directory must exist"
   exit 1
 fi
 

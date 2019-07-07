@@ -422,9 +422,9 @@ for temp_tag in open('list.txt'):
         eig = float((line.split())[2])
         if eig < min_eig:        # Check spectral range
           print infile, "exceeds RHMC spectral range:",
-          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print "%.4g not in [%.4g, %.4g]" % (eig, min_eig, max_eig)
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
-          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
+          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (eig, min_eig, max_eig)
 
       elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
         dat = float((line.split())[2])
