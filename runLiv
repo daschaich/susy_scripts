@@ -75,7 +75,7 @@ echo "module load libs/lapack/3.5.0/gcc-5.5.0" >> temp
 lat=$dir/Configs/gauge.$first
 if [ ! -f $lat ]; then
   echo "ERROR: LATTICE $lat NOT FOUND, SUBMISSION ABORTED"
-  rm -f $temp
+  rm -f temp
   exit 1
 fi
 for(( i=$first ; $i<$last ; i+=$skip )); do
@@ -84,12 +84,12 @@ for(( i=$first ; $i<$last ; i+=$skip )); do
   lat=$dir/Configs/gauge.$next
   if [ -f $out ]; then
     echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
-    rm -f $temp
+    rm -f temp
     exit 1
   fi
   if [ -f $lat ]; then
     echo "ERROR: LATTICE $lat EXISTS, SUBMISSION ABORTED"
-    rm -f $temp
+    rm -f temp
     exit 1
   fi
 done
@@ -146,8 +146,8 @@ done
 # Submit next job, if applicable
 # Warned above about possibility of ending up between $last and $last+$batch
 if [ $this_sub -lt $last ] ; then
-  echo "echo \"./runLiv $this_sub $last $batch $fsteps $gsteps $time\"" >> $temp
-  echo "./runLiv $this_sub $last $batch $fsteps $gsteps $time" >> $temp
+  echo "echo \"./runLiv $this_sub $last $batch $fsteps $gsteps $time\"" >> temp
+  echo "./runLiv $this_sub $last $batch $fsteps $gsteps $time" >> temp
 fi
 
 sbatch temp
