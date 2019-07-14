@@ -8,8 +8,8 @@ fi
 echo "Last update: `date`"
 
 cd ~/SYM/BMN
-#for dir in Nc8_nt16 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt8 Nc16_nt16 Nc16_nt24 ; do
-for dir in Nc4_nt8 Nc8_nt8 Nc8_nt16 Nc8_nt24 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt16 Nc16_nt24 Nc16_nt32 ; do    # For oldBMN
+for dir in Nc8_nt16 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt8 Nc16_nt16 Nc16_nt24 ; do
+#for dir in Nc4_nt8 Nc8_nt8 Nc8_nt16 Nc8_nt24 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt16 Nc16_nt24 Nc16_nt32 ; do    # For oldBMN
   echo # Blank line for easier reading
   echo $dir
   cd ~/SYM/BMN/$dir
@@ -24,7 +24,7 @@ for dir in Nc4_nt8 Nc8_nt8 Nc8_nt16 Nc8_nt24 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_n
     echo -ne "$i has "
     len=`tail -n 1 $data/TU.csv | awk -F, '{print $2}'`
     echo -ne "$len MDTU, "
-    therm=`grep $i therm.sh | awk '{print $3}'`
+    therm=`grep -w $i therm.sh | awk '{print $3}'`
     if [ $therm -gt 0 ] ; then
       echo -ne "therm cut $therm --> |PL|="
       cat $i/results/poly_mod.dat
