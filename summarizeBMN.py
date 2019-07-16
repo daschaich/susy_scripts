@@ -83,10 +83,17 @@ for i in ensembles:
     for line in open(PLfile):             # Format: dat err # blocks
       temp = line.split()
       blocks = int(temp[-1])
+      print '{:>{w}}'.format(blocks, w=widths[5]) + ' |',
+
       dat = float(temp[0])
       err = int(PLscale * float(temp[1]))
-      print '{:>{w}}'.format(blocks, w=widths[5]) + ' |',
-      print '{:>.{w}f}'.format(dat, w=PLwidth) + '(' + str(err) + ') |',
+      if err >= 1000:
+        toPrint = '(' + str(err) + ') |'
+      elif err >= 100:
+        toPrint = '(' + str(err) + ')  |'
+      else:
+        toPrint = '(' + str(err) + ')   |'
+      print '{:>.{w}f}'.format(dat, w=PLwidth) + toPrint,
 
   # Finally get susceptibility from results/poly_mod.suscept if it exists
   susFile = i + '/results/poly_mod.suscept'
@@ -99,7 +106,13 @@ for i in ensembles:
 
       dat = float(temp[0])
       err = int(susScale * float(temp[1]))
-      print '{:>.{w}f}'.format(dat, w=susWidth) + '(' + str(err) + ') |'
+      if err >= 1000:
+        toPrint = '(' + str(err) + ') |'
+      elif err >= 100:
+        toPrint = '(' + str(err) + ')  |'
+      else:
+        toPrint = '(' + str(err) + ')   |'
+      print '{:>.{w}f}'.format(dat, w=susWidth) + toPrint
 
 # Done
 print '|' + '{:->{w}}'.format('', w=tot_width) + '|'
