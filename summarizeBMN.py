@@ -13,22 +13,24 @@ if len(ensembles) < 1:
   print("No ensembles found")
   sys.exit(0)
 
-# Print header with the following hard-coded column widths
-# (not including surrounding '| ' + ' |'
-#   Ensemble tag: 20 char
-#   MDTU:          4 char
-#   Errors:        6 char
-#   Missing:       7 char
-#   Therm cut:     9 char
-#   Blocks:        6 char
-#   poly_mod:     21 char
-#   suscept:      23 char
-# Total including 2x8 spaces and 7 intermediate '|': 119 char
-print '|' + '{:->119}'.format('') + '|'
-print '| ' + '{:20}'.format('Ensemble') + ' | MDTU',
+# Print header with the following eight hard-coded column widths
+# for the ensemble tag, MDTU, errors, missing, therm cut,
+#         blocks, |PL| and susceptibility
+# Total includes 2x8 spaces and 7 intermediate '|': 109 char
+widths = [20, 4, 6, 7, 9, 6, 11, 12]
+tot_width = sum(widths) + 2 * 8 + 7
+print '|' + '{:->{w}}'.format('', w=tot_width) + '|'
+print '| ' + '{:{w}}'.format('Ensemble', w=widths[0]) + ' | MDTU',
 print '| Errors | Missing | Therm cut | Blocks |',
-print '{:^21}'.format('|PL|') + ' | {:^23}'.format('suscept') + ' |'
-print '|' + '{:->119}'.format('') + '|'
+print '{:^{w}}'.format('|PL|', w=widths[6]) + ' |',
+print '{:^{w}}'.format('suscept', w=widths[7]) + ' |'
+print '|' + '{:->{w}}'.format('', w=tot_width) + '|'
+
+# Convenience quantities for |PL| and susceptibility formatting
+PLwidth = 5
+PLscale = 1e5
+susWidth = 6
+susScale = 1e6
 
 # Cycle through and print each ensemble
 for i in ensembles:
@@ -44,7 +46,8 @@ for i in ensembles:
     continue
   else:                       # This ensemble is good to print
     MDTU = int(temp.split(',')[1])
-    print '| {:20}'.format(i) + ' | {:>4}'.format(MDTU) + ' |',
+    print '| {:{w}}'.format(i, w=widths[0]) + ' |',
+    print '{:>{w}}'.format(MDTU, w=widths[1]) + ' |',
 
   # Also inefficiently figure out numbers of errors and missing meas
   err = 0
@@ -55,7 +58,8 @@ for i in ensembles:
   missFile = i + '/MISSING'
   for line in open(missFile):
     miss += 1
-  print '{:>6}'.format(err) + ' | {:>7}'.format(miss) + ' |',
+  print '{:>{w}}'.format(err, w=widths[2]) + ' |',
+  print '{:>{w}}'.format(miss, w=widths[3]) + ' |',
 
   # Also inefficiently scan therm.sh to extract therm cut
   toFind = ' ' + i + ' '        # Force exact match
@@ -64,24 +68,25 @@ for i in ensembles:
       cut = int(line.split()[2])
       break
   if cut > 0:
-    print '{:>9}'.format(cut) + ' |',
+    print '{:>{w}}'.format(cut, w=widths[4]) + ' |',
   else:
-    print '{:>9}'.format('unset') + ' |',
+    print '{:>{w}}'.format('unset', w=widths[4]) + ' |',
 
   # Get blocks and |PL| from results/poly_mod.dat if it exists
   blocks = -1
   PLfile = i + '/results/poly_mod.dat'
   if not os.path.isfile(PLfile):   # We're done
-    print '{:^6}'.format('---') + ' | {:^21}'.format('---') + ' |',
-    print '{:^23}'.format('---') + ' |'
+    print '{:^{w}}'.format('---', w=widths[5]) + ' |',
+    print '{:^{w}}'.format('---', w=widths[6]) + ' |',
+    print '{:^{w}}'.format('---', w=widths[7]) + ' |'
   else:
     for line in open(PLfile):             # Format: dat err # blocks
       temp = line.split()
       blocks = int(temp[-1])
-      dat = temp[0]
-      err = temp[1]
-      print '{:>6}'.format(blocks) + ' |',
-      print dat + '(' + err + ') |',          # TODO: Fancify this...
+      dat = float(temp[0])
+      err = int(PLscale * float(temp[1]))
+      print '{:>{w}}'.format(blocks, w=widths[5]) + ' |',
+      print '{:>.{w}f}'.format(dat, w=PLwidth) + '(' + str(err) + ') |',
 
   # Finally get susceptibility from results/poly_mod.suscept if it exists
   susFile = i + '/results/poly_mod.suscept'
@@ -92,10 +97,10 @@ for i in ensembles:
         print "\nError: %d blocks for |PL| but %d for susceptibility" \
               % (blocks, int(temp[-1]))
 
-      dat = temp[0]
-      err = temp[1]
-      print dat + '(' + err + ') |'           # TODO: Fancify this...
+      dat = float(temp[0])
+      err = int(susScale * float(temp[1]))
+      print '{:>.{w}f}'.format(dat, w=susWidth) + '(' + str(err) + ') |'
 
 # Done
-print '|' + '{:->119}'.format('') + '|'
+print '|' + '{:->{w}}'.format('', w=tot_width) + '|'
 # ------------------------------------------------------------------
