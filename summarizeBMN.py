@@ -17,7 +17,7 @@ if len(ensembles) < 1:
 # for the ensemble tag, MDTU, errors, missing, therm cut,
 #         blocks, |PL| and susceptibility
 # Total includes 2x8 spaces and 7 intermediate '|': 109 char
-widths = [20, 4, 6, 7, 9, 6, 11, 12]
+widths = [20, 4, 6, 7, 9, 6, 11, 12]          # !!! Change for oldBMN
 tot_width = sum(widths) + 2 * 8 + 7
 print '|' + '{:->{w}}'.format('', w=tot_width) + '|'
 print '| ' + '{:{w}}'.format('Ensemble', w=widths[0]) + ' | MDTU',
@@ -31,6 +31,7 @@ PLwidth = 5
 PLscale = 1e5
 susWidth = 6
 susScale = 1e6
+padCut = 1                                    # !!! Change for oldBMN
 
 # Cycle through and print each ensemble
 for i in ensembles:
@@ -87,9 +88,9 @@ for i in ensembles:
 
       dat = float(temp[0])
       err = int(PLscale * float(temp[1]))
-      if err >= 1000:
+      if err >= 10 * padCut:
         toPrint = '(' + str(err) + ') |'
-      elif err >= 100:
+      elif err >= padCut:
         toPrint = '(' + str(err) + ')  |'
       else:
         toPrint = '(' + str(err) + ')   |'
@@ -106,9 +107,9 @@ for i in ensembles:
 
       dat = float(temp[0])
       err = int(susScale * float(temp[1]))
-      if err >= 1000:
+      if err >= 10 * padCut:
         toPrint = '(' + str(err) + ') |'
-      elif err >= 100:
+      elif err >= padCut:
         toPrint = '(' + str(err) + ')  |'
       else:
         toPrint = '(' + str(err) + ')   |'
