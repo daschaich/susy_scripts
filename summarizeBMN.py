@@ -2,8 +2,6 @@
 import os
 import sys
 import glob
-import math
-import subprocess
 # ------------------------------------------------------------------
 # Print out summary of all ensembles in current directory
 
