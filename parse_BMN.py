@@ -127,11 +127,11 @@ for temp_tag in open('list.txt'):
       walltime = -2
 
     # Extract Nc for bosonic action and Polyakov loop normalizations
-    # Define DIMF = Nc**2
+    # Define DIMF = Nc**2 - 1
     elif line.startswith('BMN, '):
       temp = line.split(',')
       Nc = float(((temp[1]).split())[2])
-      DIMF = Nc**2
+      DIMF = Nc**2 - 1.0
 
     # Extract Nt
     elif line.startswith('nt '):
@@ -242,17 +242,18 @@ for temp_tag in open('list.txt'):
     # This is always measured twice (before and after the trajectory)
     # and which value we want depends on the accept/reject step...
     # Normalize using Nt and Nc extracted above
+    # Recall DIMF = Nc**2 - 1 for SU(N)
     elif line.startswith('action: so3 '):
       if fermAct[0] < 0:
         split = line.split()
-        fermAct[0] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
-        bAct[0] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
+        fermAct[0] = float(split[12]) / (16.0 * Nt * DIMF)
+        bAct[0] = float(split[10]) / (DIMF * Nt)
         Myers[0] = float(split[8]) / Nt
         ratio[0] = float(split[4]) / float(split[2])
       elif fermAct[1] < 0:
         split = line.split()
-        fermAct[1] = float(split[12]) / (16.0 * Nt * (DIMF - 1.0))
-        bAct[1] = float(split[10]) / ((DIMF - 1.0) * Nt)   # SU(N)
+        fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
+        bAct[1] = float(split[10]) / (DIMF * Nt)
         Myers[1] = float(split[8]) / Nt
         ratio[1] = float(split[4]) / float(split[2])
       else:

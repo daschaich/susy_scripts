@@ -26,27 +26,11 @@ if not os.path.isdir('data'):
   print "ERROR: data/ does not exist"
   sys.exit(1)
 
-# Check that we actually have data to average
-# and convert thermalization cut from MDTU to trajectory number
-MDTUfile = 'data/TU.csv'
-sav = 0
-good = -1
-for line in open(MDTUfile):
-  if line.startswith('t'):
-    continue
-  temp = line.split(',')
-  if float(temp[1]) > cut:
-    good = 1
-    t_cut = sav
-    break
-  sav = float(temp[0])
-
-# Guess whether we should also convert the block size
-# from MDTU to trajectory number
-# They differ when tau=2 trajectories are used...
-t_block = block_size
-if t_cut < float(cut) / 1.5:
-  t_block /= 2
+# Extract Nc from path -- it's after 'Nc' then before '_'
+cwd = os.getcwd()
+temp = (cwd.split('Nc'))[1]
+Nc = int((temp.split('_'))[0])
+norm = Nc * Nc
 
 final_MDTU = float(temp[1])
 if good == -1:
@@ -68,7 +52,12 @@ for obs in ['poly_mod']:
   datList = []
   sqList = []
   begin = cut       # Where each block begins, to be incremented
+
   obsfile = 'data/' + obs + '.csv'
+  if not os.path.isfile(obsfile):
+    print "ERROR: " + obsfile + " does not exist"
+    sys.exit(1)
+
   for line in open(obsfile):
     if line.startswith('M'):
       continue
@@ -101,7 +90,7 @@ for obs in ['poly_mod']:
     sys.exit(1)
 
   # Now construct jackknife samples through single-block elimination
-  #   chi = <PL^2> - <PL>^2
+  #   chi = N^2 * [<PL^2> - <PL>^2]
   dat = np.array(datList)
   tot = sum(dat)
   sq = np.array(sqList)
@@ -117,7 +106,7 @@ for obs in ['poly_mod']:
   var = (N - 1.0) * np.sum((chi - ave)**2) / float(N)
   outfilename = 'results/' + obs + '.suscept'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (ave, np.sqrt(var), N)
+  print >> outfile, "%.8g %.4g # %d" % (norm * ave, norm * np.sqrt(var), N)
   outfile.close()
 # ------------------------------------------------------------------
 
