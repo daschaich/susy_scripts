@@ -30,7 +30,7 @@ print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 SCALAR_SQUARES = open('data/scalarsquares.csv', 'w')
-print >> SCALAR_SQUARES, "MDTU,Tr(X1)^2,Tr(X2)^2,Tr(X3)^2,Tr(X4)^2,Tr(X5)^2,Tr(X6)^2,Tr(X7)^2,Tr(X8)^2,Tr(X9)^2"
+print >> SCALAR_SQUARES, "MDTU,Tr(X1^2),Tr(X2^2),Tr(X3^2),Tr(X4^2),Tr(X5^2),Tr(X6^2),Tr(X7^2),Tr(X8^2),Tr(X9^2)"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
 print >> SCALAR_EIG_AVE, "MDTU,ave1,ave2,ave3,ave4"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
