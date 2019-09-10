@@ -31,12 +31,6 @@ cwd = os.getcwd()
 temp = (cwd.split('Nc'))[1]
 Nc = int((temp.split('_'))[0])
 norm = Nc * Nc
-
-final_MDTU = float(temp[1])
-if good == -1:
-  print "Error: no data to analyze",
-  print "since cut=%d but we only have %d MDTU" % (cut, final_MDTU)
-  sys.exit(1)
 # ------------------------------------------------------------------
 
 
