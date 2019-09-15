@@ -55,7 +55,7 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   nt $Nt
   PBC -1
 
-  iseed ${last}${lambda/\./41}${Nt}$i
+  iseed ${last}${g/\./41}${Nt}$i
   Nroot 1
   Norder 1
 

@@ -107,7 +107,7 @@ for(( i=$first ; $i<$this_sub ; i+=$skip )); do
   echo "prompt 0" >> temp
   echo "nt $Nt" >> temp
   echo "PBC -1" >> temp
-  echo "iseed ${last}${lambda/\./1}${Nt}$i" >> temp
+  echo "iseed ${last}${g/\./1}${Nt}$i" >> temp
 
   echo "Nroot 2" >> temp
   echo "Norder 8" >> temp
