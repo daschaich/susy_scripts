@@ -26,7 +26,7 @@ rm -f temp
 rm -f $outpath/data/*.csv $outpath/ERRORS
 echo "python ~schaich/scripts/parse_SYM.py"
 python ~schaich/scripts/parse_SYM.py
-chmod 644 $outpath/data/*.csv
+chmod 664 $outpath/data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
@@ -37,7 +37,7 @@ date=`date`
 rm -f $outpath/index.html
 echo writeSYM $dir "$date"
 ~schaich/scripts/writeSYM $dir "$date"
-chmod 644 $outpath/index.html
+chmod 664 $outpath/index.html
 
 # I like to monitor this (looks better without $outpath)
 grep Apparent ERRORS

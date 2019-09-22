@@ -144,16 +144,14 @@ outfile.close()
 
 
 
-
 # ------------------------------------------------------------------
 # For the Polyakov loop, bosonic action, fermion action,
 # 'Myers' scalar trilinear term and SO(6) / SO(3) action ratio
 # we're interested in the first datum on each line (following MDTU)
 # For the Polyakov loop, this is the (Nc-normalized) modulus
 for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
-  skip = -1
-  count = 0
   ave = 0.0         # Accumulate within each block
+  count = 0
   datList = []
   begin = cut       # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
@@ -164,29 +162,32 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
     MDTU = float(temp[0])
     if MDTU <= cut:
       continue
-    elif MDTU > begin and MDTU < (begin + block_size):
+
+    # Accumulate within each block
+    elif MDTU > begin and MDTU <= (begin + block_size):
       ave += float(temp[1])
       count += 1
-    elif MDTU >= (begin + block_size):  # Move on to next block
-      if count == 0:
-        print "WARNING: no %s data to average at %d MDTU" % (obs, int(MDTU))
-        skip = 1
-        break
-      datList.append(ave / count)
-      begin += block_size
-      count = 1                         # Next block begins here
-      ave = float(temp[1])
 
-  if len(datList) == 0:
-    skip = 1
-  if skip > 0:
-    continue
+      # If that "<=" is really "==" then we are done with this block
+      # Record it and re-initialize for the next block
+      if MDTU == (begin + block_size):
+        datList.append(ave / float(count))
+
+        begin += block_size
+        ave = 0.0
+        count = 0
+
+    # This doesn't happen for ensembles I generate
+    # May need to be revisited for more general applicability
+    elif MDTU > (begin + block_size):
+      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
-  dat = np.array(datList)
+  dat = np.array(datList, dtype = np.float64)
   N = np.size(dat)
-  ave = np.mean(dat, dtype = np.float64)
-  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+  ave = np.mean(dat)
+  err = np.std(dat) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
   print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
@@ -200,9 +201,8 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
 # we're again interested in the first datum on each line
 # but have to work in terms of trajectories rather than MDTU
 for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
-  skip = -1
-  count = 0
   ave = 0.0         # Accumulate within each block
+  count = 0
   datList = []
   begin = t_cut     # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
@@ -213,34 +213,38 @@ for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
     traj = float(temp[0])
     if traj <= t_cut:
       continue
-    elif traj > begin and traj < (begin + t_block):
+
+    # Accumulate within each block
+    elif traj > begin and traj <= (begin + t_block):
       ave += float(temp[1])
       count += 1
-    elif traj >= (begin + t_block):     # Move on to next block
-      if count == 0:
-        print "WARNING: no %s data to average at %d traj" % (obs, int(traj))
-        skip = 1
-        break
-      datList.append(ave / count)
-      begin += t_block
-      count = 1                         # Next block begins here
-      ave = float(temp[1])
 
-  if len(datList) == 0:
-    skip = 1
-  if skip > 0:
-    continue
+      # If that "<=" is really "==" then we are done with this block
+      # Record it and re-initialize for the next block
+      if traj == (begin + t_block):
+        datList.append(ave / float(count))
+
+        begin += t_block
+        ave = 0.0
+        count = 0
+
+    # This doesn't happen for ensembles I generate
+    # May need to be revisited for more general applicability
+    elif traj > (begin + block_size):
+      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
-  dat = np.array(datList)
+  dat = np.array(datList, dtype = np.float64)
   N = np.size(dat)
-  ave = np.mean(dat, dtype = np.float64)
-  err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+  ave = np.mean(dat)
+  err = np.std(dat) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
   print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
   outfile.close()
 # ------------------------------------------------------------------
+
 
 
 # ------------------------------------------------------------------
@@ -261,13 +265,12 @@ for obs in ['scalar_eig_ave']:
     continue
 
   ave = []      # Accumulate within each block
+  count = 0
   datList = []
   for i in range(Nc):
     ave.append(0.0)
     datList.append([])
 
-  skip = -1
-  count = 0
   begin = cut       # Where each block begins, to be incremented
   for line in open(obsfile):
     if line.startswith('M'):
@@ -276,34 +279,38 @@ for obs in ['scalar_eig_ave']:
     MDTU = float(temp[0])
     if MDTU <= cut:
       continue
-    elif MDTU > begin and MDTU < (begin + block_size):
+
+    # Accumulate within each block
+    elif MDTU > begin and MDTU <= (begin + block_size):
       for i in range(Nc):
         ave[i] += float(temp[i + 1])
       count += 1
-    elif MDTU >= (begin + block_size):  # Move on to next block
-      if count == 0:
-        print "WARNING: no %s data to average at %d MDTU" % (obs, int(MDTU))
-        skip = 1
-        break
-      for i in range(len(ave)):
-        datList[i].append(ave[i] / count)
-        ave[i] = float(temp[i + 1])     # Next block begins here
-      begin += block_size
-      count = 1
 
-  if len(datList[0]) == 0:
-    skip = 1
-  if skip > 0:
-    continue
+      # If that "<=" is really "==" then we are done with this block
+      # Record it and re-initialize for the next block
+      if MDTU == (begin + block_size):
+        for i in range(len(ave)):
+          datList[i].append(ave[i] / float(count))
+
+        begin += block_size
+        for i in range(len(ave)):
+          ave[i] = 0.0
+        count = 0
+
+    # This doesn't happen for ensembles I generate
+    # May need to be revisited for more general applicability
+    elif MDTU > (begin + block_size):
+      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
   for i in range(Nc):
-    dat = np.array(datList[i])
+    dat = np.array(datList[i], dtype = np.float64)
     N = np.size(dat)
-    ave[i] = np.mean(dat, dtype = np.float64)
-    err = np.std(dat, dtype = np.float64) / np.sqrt(N - 1.0)
+    ave[i] = np.mean(dat)
+    err = np.std(dat) / np.sqrt(N - 1.0)
     print >> outfile, "%.8g %.4g" % (ave[i], err),
   print >> outfile, "# %d" % N
   outfile.close()
