@@ -316,3 +316,62 @@ for obs in ['scalar_eig_ave']:
   outfile.close()
 # ------------------------------------------------------------------
 
+
+
+# ------------------------------------------------------------------
+# For the scalar squares we're interested in 9 data on each line
+for obs in ['scalarsquares']:
+  ave = []          # Accumulate within each block
+  count = 0
+  datList = []
+  Nscalar = 9
+  for i in range(Nscalar):
+    ave.append(0.0)
+    datList.append([])
+
+  begin = cut       # Where each block begins, to be incremented
+  obsfile = 'data/' + obs + '.csv'
+  for line in open(obsfile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    MDTU = float(temp[0])
+    if MDTU <= cut:
+      continue
+
+    # Accumulate within each block
+    elif MDTU > begin and MDTU <= (begin + block_size):
+      for i in range(Nscalar):
+        ave[i] += float(temp[i + 1])
+      count += 1
+
+      # If that "<=" is really "==" then we are done with this block
+      # Record it and re-initialize for the next block
+      if MDTU == (begin + block_size):
+        for i in range(len(ave)):
+          datList[i].append(ave[i] / float(count))
+
+        begin += block_size
+        for i in range(len(ave)):
+          ave[i] = 0.0
+        count = 0
+
+    # This doesn't happen for ensembles I generate
+    # May need to be revisited for more general applicability
+    elif MDTU > (begin + block_size):
+      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      sys.exit(1)
+
+  # Now print mean and standard error, assuming N>1
+  outfilename = 'results/' + obs + '.dat'
+  outfile = open(outfilename, 'w')
+  for i in range(Nscalar):
+    dat = np.array(datList[i], dtype = np.float64)
+    N = np.size(dat)
+    ave[i] = np.mean(dat)
+    err = np.std(dat) / np.sqrt(N - 1.0)
+    print >> outfile, "%.8g %.4g" % (ave[i], err),
+  print >> outfile, "# %d" % N
+  outfile.close()
+# ------------------------------------------------------------------
+
