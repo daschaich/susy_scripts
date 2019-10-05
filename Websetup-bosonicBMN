@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ ! -d /raid1/backup/schaich/SYM/bosonicBMN ] ; then
+  echo "Error: /raid1 doesn't seem to be mounted"
+  exit 1
+fi
+
+cd ~/SYM/bosonicBMN
+for i in N*/g* ; do
+  if [ -d /raid1/backup/schaich/SYM/bosonicBMN/$i/data ] ; then
+    echo "$i already done"
+    continue
+  fi
+
+  echo "Doing $i"
+  mkdir /raid1/backup/schaich/SYM/bosonicBMN/$i
+  mkdir /raid1/backup/schaich/SYM/bosonicBMN/$i/data
+  touch /raid1/backup/schaich/SYM/bosonicBMN/$i/ERRORS
+  touch /raid1/backup/schaich/SYM/bosonicBMN/$i/MISSING
+
+  cd $i
+  rm ERRORS MISSING
+  rm -f data ERRORS MISSING
+  ln -s /raid1/backup/schaich/SYM/bosonicBMN/$i/data
+  ln -s /raid1/backup/schaich/SYM/bosonicBMN/$i/ERRORS
+  ln -s /raid1/backup/schaich/SYM/bosonicBMN/$i/MISSING
+  ls -l
+  cd ../..
+done
