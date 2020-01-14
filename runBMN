@@ -1,7 +1,8 @@
 #!/bin/bash
 
+# Keep resubmitting from start to end in sets of per_job
 if [ $# -lt 6 ]; then
-  echo "Usage: $0 <first> <end> <per_job> nsteps:{<fermion> <gauge>} <time>"
+  echo "Usage: $0 <start> <end> <per_job> nsteps:{<fermion> <gauge>} <time>"
   exit 1
 fi
 
@@ -23,6 +24,7 @@ done
 echo "Will submit $iter jobs and end up at $count MDTU"
 
 # Adjustable parameters
+node=1
 cpus=8
 Ntraj=10
 traj_length=1
@@ -45,6 +47,7 @@ lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
 echo "#!/bin/sh" > temp
 echo "#SBATCH -D ./" >> temp
 echo "#SBATCH --export=ALL" >> temp
+echo "#SBATCH --nodes=$node" >> temp
 echo "#SBATCH -p nodes -n $cpus" >> temp
 echo "#SBATCH -t $time" >> temp
 echo "#SBATCH -J HMC${Nc}_Nc${Ncnt}_g$tag" >> temp

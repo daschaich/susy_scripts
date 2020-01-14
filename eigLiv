@@ -99,7 +99,7 @@ for(( i=$first ; $i<=$last; i+=$skip )); do
   echo "error_per_site 1e-5" >> temp
 
   echo "Nvec $Nvec" >> temp
-  echo "eig_tol 1e-10" >> temp
+  echo "eig_tol 1e-8" >> temp
   echo "maxIter 5000" >> temp
 
   echo "reload_serial $lat" >> temp

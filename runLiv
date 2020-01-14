@@ -24,6 +24,7 @@ done
 echo "Will submit $iter jobs and end up at $count MDTU"
 
 # Adjustable parameters
+node=1
 cpus=32
 Ntraj=10
 traj_length=1
@@ -47,13 +48,13 @@ G=${tag##*_G}           # Strip everything up to and including "_G"
 echo "#!/bin/sh" > temp
 echo "#SBATCH -D ./" >> temp
 echo "#SBATCH --export=ALL" >> temp
+echo "#SBATCH --nodes=$node" >> temp
 echo "#SBATCH -p nodes -n $cpus" >> temp
 echo "#SBATCH --exclusive" >> temp
 echo "#SBATCH -t $time" >> temp
 echo "#SBATCH -J HMC${Nc}_${vol}_l$tag" >> temp
 echo "#SBATCH -o hmc.%j.out" >> temp
 echo "#SBATCH -e hmc.%j.out" >> temp
-echo "#SBATCH --mem-per-cpu=8000M" >> temp
 echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
 echo "#SBATCH --mail-type=END,FAIL" >> temp
 
@@ -105,8 +106,8 @@ for(( i=$first ; $i<$this_sub ; i+=$skip )); do
 
   echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
   echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
-  echo "echo \"mpirun -np $cpus $bin\" >> $out" >> temp
-  echo "mpirun -np $cpus $bin << EOF >> $out" >> temp
+  echo "echo \"mpirun -quiet -np $cpus $bin\" >> $out" >> temp
+  echo "mpirun -quiet -np $cpus $bin << EOF >> $out" >> temp
   echo "prompt 0" >> temp
   echo "nx $L" >> temp
   echo "ny $L" >> temp

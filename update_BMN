@@ -31,7 +31,7 @@ rm -f list.txt            # Done with this
 
 # It looks like the lowest BMN eigenvalues should be reliable
 # so long as they're at least doubled, which this script will check
-python ~schaich/scripts/check_eig_pairs.py >> ERRORS
+python ~schaich/scripts/check_eig_pairs.py >> $outpath/ERRORS
 
 # Replace Web page to update timestamp
 date=`date`
