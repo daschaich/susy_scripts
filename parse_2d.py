@@ -31,14 +31,14 @@ POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
 POLY_MOD_POLAR = open('data/poly_mod_polar.csv', 'w')
 print >> POLY_MOD_POLAR, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
-LINE = open('data/line.csv', 'w')
-print >> LINE, "ReTr(Lx),ImTr(Lx)"
-LINE_POLAR = open('data/line_polar.csv', 'w')
-print >> LINE_POLAR, "ReTr(Lx),ImTr(Lx)"
-LINE_MOD = open('data/line_mod.csv', 'w')
-print >> LINE_MOD, "MDTU,|Tr(Lx)|"
-LINE_MOD_POLAR = open('data/line_mod_polar.csv', 'w')
-print >> LINE_MOD_POLAR, "MDTU,|Tr(Lx)|"
+LINES = open('data/lines.csv', 'w')
+print >> LINES, "ReTr(Lx),ImTr(Lx)"
+LINES_POLAR = open('data/lines_polar.csv', 'w')
+print >> LINES_POLAR, "ReTr(Lx),ImTr(Lx)"
+LINES_MOD = open('data/lines_mod.csv', 'w')
+print >> LINES_MOD, "MDTU,|Tr(Lx)|"
+LINES_MOD_POLAR = open('data/lines_mod_polar.csv', 'w')
+print >> LINES_MOD_POLAR, "MDTU,|Tr(Lx)|"
 FLINK = open('data/Flink.csv', 'w')
 print >> FLINK, "MDTU,link"
 DET = open('data/det.csv', 'w')
@@ -83,6 +83,8 @@ NSTEP = open('data/Nstep.csv', 'w')
 print >> NSTEP, "t,N_f,N_g"
 STEPSIZE = open('data/stepsize.csv', 'w')
 print >> STEPSIZE, "t,eps_f,eps_g"
+NORDER = open('data/Norder.csv', 'w')
+print >> NORDER, "t,Norder"
 TLENGTH = open('data/tlength.csv', 'w')
 print >> TLENGTH, "t,L"
 KEY = open('data/key.csv', 'w')
@@ -140,7 +142,7 @@ for temp_tag in open('list.txt'):
       walltime = -2
 
     # Extract Nc for bosonic action and Polyakov loop normalizations
-    elif line.startswith('N=(2, 2) SYM, '):
+    elif line.startswith('N=(2,'):
       temp = line.split(',')
       Nc = float(((temp[2]).split())[2])
       DIMF = Nc**2
@@ -191,7 +193,7 @@ for temp_tag in open('list.txt'):
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
-  NEED_LINE = 1    # May not need to check measurement file
+  NEED_LINES = 1    # May not need to check measurement file
   NEED_DET = 1      # for these if they're in the main output file
   NEED_WIDTHS = 1
   NEED_SCALAR_EIGS = 1
@@ -209,14 +211,17 @@ for temp_tag in open('list.txt'):
     elif line.startswith('RHMC Norder '):
       if 'spectral' in line:
         temp = line.rstrip()       # Kill newline
+        Norder = int(temp.split()[2])
         temp2 = temp.rstrip(']')   # Kill ]
         temp = (temp2.split('['))[-1]
         temp2 = temp.split(',')
         min_eig = float(temp2[0])
         max_eig = float(temp2[1])
+        print >> NORDER, "%d,%d" % (endtraj, Norder)
       else:         # Original 15-pole format didn't state spectral range
         min_eig = 1.0e-7
         max_eig = 1000.0
+        print >> NORDER, "%d,%d" % (endtraj, 15)
 
     # Extract constant run parameters
     elif line.startswith('traj_length '):
@@ -346,13 +351,13 @@ for temp_tag in open('list.txt'):
     # ------------------------------------------------------------
     # Wilson line in spatial direction
     elif line.startswith('LINES '):
-      NEED_LINE = -1
+      NEED_LINES = -1
       temp = line.split()
       x_r = float(temp[1]) / Nc
       x_i = float(temp[2]) / Nc
-      print >> LINE, "%g,%g" % (x_r, x_i)
+      print >> LINES, "%g,%g" % (x_r, x_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
-      print >> LINE_MOD, "%g,%g" % (MDTU, x_mod)
+      print >> LINES_MOD, "%g,%g" % (MDTU, x_mod)
 
     # Unitarized Polyakov loop and spatial Wilson line
     elif line.startswith('LINES_POLAR '):
@@ -365,9 +370,9 @@ for temp_tag in open('list.txt'):
 
       x_r = float(temp[1]) / Nc
       x_i = float(temp[2]) / Nc
-      print >> LINE_POLAR, "%g,%g" % (x_r, x_i)
+      print >> LINES_POLAR, "%g,%g" % (x_r, x_i)
       x_mod = math.sqrt(x_r**2 + x_i**2)
-      print >> LINE_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
+      print >> LINES_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -574,16 +579,16 @@ for temp_tag in open('list.txt'):
 
       # ----------------------------------------------------------
       # Wilson lines in other directions
-      elif NEED_LINE > 0 and line.startswith('LINES '):
+      elif NEED_LINES > 0 and line.startswith('LINES '):
         temp = line.split()
         x_r = float(temp[1]) / Nc
         x_i = float(temp[2]) / Nc
-        print >> LINE, "%g,%g" % (x_r, x_i)
+        print >> LINES, "%g,%g" % (x_r, x_i)
         x_mod = math.sqrt(x_r**2 + x_i**2)
-        print >> LINE_MOD, "%g,%g" % (MDTU, x_mod)
+        print >> LINES_MOD, "%g,%g" % (MDTU, x_mod)
 
       # Unitarized Polyakov loop and Wilson lines in other directions
-      elif NEED_LINE > 0 and line.startswith('LINES_POLAR '):
+      elif NEED_LINES > 0 and line.startswith('LINES_POLAR '):
         temp = line.split()
         poly_r = float(temp[3]) / Nc
         poly_i = float(temp[4]) / Nc
@@ -594,9 +599,9 @@ for temp_tag in open('list.txt'):
 
         x_r = float(temp[1]) / Nc
         x_i = float(temp[2]) / Nc
-        print >> LINE_POLAR, "%g,%g" % (x_r, x_i)
+        print >> LINES_POLAR, "%g,%g" % (x_r, x_i)
         x_mod = math.sqrt(x_r**2 + x_i**2)
-        print >> LINE_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
+        print >> LINES_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
@@ -670,10 +675,10 @@ POLY.close()
 POLY_POLAR.close()
 POLY_MOD.close()
 POLY_MOD_POLAR.close()
-LINE.close()
-LINE_POLAR.close()
-LINE_MOD.close()
-LINE_MOD_POLAR.close()
+LINES.close()
+LINES_POLAR.close()
+LINES_MOD.close()
+LINES_MOD_POLAR.close()
 FLINK.close()
 DET.close()
 BILIN.close()
@@ -694,6 +699,7 @@ WALLTU.close()
 COND_NUM.close()
 NSTEP.close()
 STEPSIZE.close()
+NORDER.close()
 TLENGTH.close()
 KEY.close()
 TU.close()
