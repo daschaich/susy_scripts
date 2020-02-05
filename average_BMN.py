@@ -90,8 +90,7 @@ tau, mean, sigma = acor.acor(np.array(dat))
 tau *= sep
 if tau > block_size:
   print "Error: poly_mod autocorrelation time %d" % tau,
-  print "is larger than block size %d" % block_size,
-  print "in %s" % path
+  print "is larger than block size %d" % block_size
   sys.exit(1)
 
 # Record poly_mod auto-correlation time for future reference
@@ -129,8 +128,7 @@ tau, mean, sigma = acor.acor(np.array(dat))
 tau *= sep
 if tau > block_size:
   print "Error: scalar square autocorrelation time %d" % tau,
-  print "is larger than block size %d" % block_size,
-  print "in %s" % path
+  print "is larger than block size %d" % block_size
   sys.exit(1)
 
 # Record scalar square auto-correlation time for future reference
@@ -320,10 +318,18 @@ for obs in ['scalar_eig_ave']:
 
 # ------------------------------------------------------------------
 # For the scalar squares we're interested in 9 data on each line
+# Also monitor 6-->4+2 splitting due to discretization artifacts
 for obs in ['scalarsquares']:
   ave = []          # Accumulate within each block
   count = 0
   datList = []
+
+  # For splitting
+  high = 0.0
+  low  = 0.0
+  mid  = 0.0
+  split = 0.0
+  splitList = []
   Nscalar = 9
   for i in range(Nscalar):
     ave.append(0.0)
@@ -341,17 +347,23 @@ for obs in ['scalarsquares']:
 
     # Accumulate within each block
     elif MDTU > begin and MDTU <= (begin + block_size):
+      high = float(temp[8]) + float(temp[9])
+      low  = float(temp[4]) + float(temp[5]) + float(temp[6]) + float(temp[7])
+      mid  = (high + low) / 6.0
       for i in range(Nscalar):
         ave[i] += float(temp[i + 1])
+      split += (0.5 * high - 0.25 * low) / mid
       count += 1
 
       # If that "<=" is really "==" then we are done with this block
       # Record it and re-initialize for the next block
       if MDTU == (begin + block_size):
+        splitList.append(split / float(count))
         for i in range(len(ave)):
           datList[i].append(ave[i] / float(count))
 
         begin += block_size
+        split = 0.0
         for i in range(len(ave)):
           ave[i] = 0.0
         count = 0
@@ -372,6 +384,16 @@ for obs in ['scalarsquares']:
     err = np.std(dat) / np.sqrt(N - 1.0)
     print >> outfile, "%.8g %.4g" % (ave[i], err),
   print >> outfile, "# %d" % N
+  outfile.close()
+
+  # Print splitting separately
+  dat = np.array(splitList, dtype = np.float64)
+  N = np.size(dat)
+  ave = np.mean(dat)
+  err = np.std(dat) / np.sqrt(N - 1.0)
+  outfilename = 'results/splitting.dat'
+  outfile = open(outfilename, 'w')
+  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
   outfile.close()
 # ------------------------------------------------------------------
 
