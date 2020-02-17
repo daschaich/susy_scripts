@@ -82,7 +82,7 @@ if all_out.success < 0 or all_out.success > 4:
 
 # Error propagation for low-temperature limit
 loT = p_out[0] * (1.0 - p_out[1])
-derivs = np.array([-p_out[1], -p_out[0], 0.0, 0.0])
+derivs = np.array([1.0 - p_out[1], -p_out[0], 0.0, 0.0])
 loTerr = np.sqrt(np.dot(derivs, np.dot(cov, derivs)))
 
 print("  Critical T/mu: %.6g %.4g" % (p_out[3], np.sqrt(cov[3][3])))

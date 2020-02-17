@@ -19,7 +19,7 @@ if 'BMN' in cwd:
   BMN = 1
 
 # Cycle over eigenvalue files
-for filename in glob.glob('Out/eig.*'):
+for filename in glob.glob('Out/*eig.*'):
   check = -1
   for line in open(filename):
     # Format: EIGENVALUE # eig accuracy
