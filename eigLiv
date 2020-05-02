@@ -12,7 +12,7 @@ time=$3
 
 # Adjustable parameters
 node=1
-cpus=3
+cpus=12
 Ntraj=10
 traj_length=1
 skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
@@ -42,8 +42,8 @@ echo "#SBATCH -J eig${Nc}_nt${Nt}_g$tag" >> temp
 echo "#SBATCH -o eig.%j.out" >> temp
 echo "#SBATCH -e eig.%j.out" >> temp
 echo "#SBATCH --mem-per-cpu=1000M" >> temp
-#echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
-#echo "#SBATCH --mail-type=FAIL" >> temp
+echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
+echo "#SBATCH --mail-type=FAIL" >> temp
 
 # Should use dir due to SBATCH -D above, but let's make sure
 dir=/mnt/lustre/users/schaich/SYM/BMN/Nc$Ncnt/g$tag
@@ -52,6 +52,8 @@ cd $dir
 echo "cd $dir" >> temp
 
 # Same modules as when compiling
+echo "newgrp theophys" >> temp
+echo "module purge" >> temp
 echo "module load compilers/gcc/5.5.0" >> temp
 echo "module load libs/gcc/5.5.0" >> temp
 echo "module load mpi/openmpi/1.10.7/gcc-5.5.0" >> temp
@@ -100,13 +102,14 @@ for(( i=$first ; $i<=$last; i+=$skip )); do
 
   echo "Nvec $Nvec" >> temp
   echo "eig_tol 1e-8" >> temp
-  echo "maxIter 5000" >> temp
+  echo "maxIter 10000" >> temp
 
   echo "reload_serial $lat" >> temp
   echo "forget" >> temp
   echo "EOF" >> temp
 
   echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
+  echo "chgrp theophys $out $lat.$i* $lat.$next*" >> temp
   echo "chmod 664 $out $lat*" >> temp
   echo "" >> temp
 done
