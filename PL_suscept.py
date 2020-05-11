@@ -66,7 +66,6 @@ for obs in ['poly_mod']:
       if MDTU >= (begin + block_size):
         datList.append(ave / count)
         sqList.append(aveSq / count)
-
         begin += block_size
         ave = 0.0
         aveSq = 0.0
@@ -80,12 +79,12 @@ for obs in ['poly_mod']:
 
   # Now construct jackknife samples through single-block elimination
   #   chi = N^2 * [<PL^2> - <PL>^2]
-  dat = np.array(datList, dtype = np.float)
+  dat = np.array(datList, dtype = np.float64)
   N = np.size(dat)
   tot = sum(dat)
-  sq = np.array(sqList, dtype = np.float)
+  sq = np.array(sqList, dtype = np.float64)
   totSq = sum(sq)
-  chi = np.zeros(N)
+  chi = np.zeros_like(dat)
   for i in range(N):    # Jackknife samples
     vev = (tot - dat[i]) / (N - 1.0)
     sq_vev = (totSq - sq[i]) / (N - 1.0)
