@@ -1,20 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import glob
 import numpy as np
-import acor         # Uses "the Kubo formula" to compute autocorrelation time
+import emcee.autocorr as acor
 # ------------------------------------------------------------------
 # Parse dygraph data files to construct averages and standard errors
-# given a thermalization cut and block size
-# Assume one ensemble per directory
-# Assume Polyakov loop data are properly normalized by Nc
+# with given thermalization cut and block size
 
-# Parse arguments: first is thermalization cut,
-# second is block size (should be larger than autocorrelation time)
+# Assume one ensemble per directory (overwrite results files)
+# Assume Polyakov loop data are already normalized by Nc
+
+# Parse arguments: first is thermalization cut, second is block size
+# Will check block size is larger than poly_mod, 9th scalar square
+# and lowest eigenvalue auto-correlation times
 # We discard any partial blocks at the end
 if len(sys.argv) < 3:
-  print "Usage:", str(sys.argv[0]), "<cut> <block>"
+  print("Usage:", str(sys.argv[0]), "<cut> <block>")
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -25,7 +27,7 @@ block_size = int(sys.argv[2])
 # ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isdir('data'):
-  print "ERROR: data/ does not exist"
+  print("ERROR: data/ does not exist")
   sys.exit(1)
 
 # Check that we actually have data to average
@@ -47,22 +49,24 @@ for line in open(MDTUfile):
 # from MDTU to trajectory number
 # They differ when tau=2 trajectories are used...
 t_block = block_size
-if t_cut < float(cut) / 1.5:
+if t_cut < (0.7 * float(cut)):
   t_block /= 2
 
 final_MDTU = float(temp[1])
 if good == -1:
-  print "Error: no data to analyze",
-  print "since cut=%d but we only have %d MDTU" % (cut, final_MDTU)
+  print("Error: no data to analyze ", end='')
+  print("since cut=%d but we only have %d MDTU" % (cut, final_MDTU))
   sys.exit(1)
+
+# We are good to go.  Save the path, which may be useful to flag errors
+path = os.getcwd()
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# Check that block size is larger
-# than poly_mod and 9th scalar square auto-correlation times
-# TODO: Look at smallest eigenvalue as well?
+# Check that block size is larger than poly_mod, 9th scalar square
+# and lowest eigenvalue auto-correlation times
 # For poly_mod we want the first datum on each line (following MDTU)
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
@@ -76,8 +80,8 @@ for line in open('data/poly_mod.csv'):
 
   # Need to check separation and update prev before skipping to therm cut
   if not MDTU - prev == sep:
-    print "Error: poly_mod meas at %d and %d not separated by %d" \
-          % (prev, MDTU, sep)
+    print("Error: poly_mod meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep))
     sys.exit(1)
   prev = MDTU
 
@@ -85,12 +89,18 @@ for line in open('data/poly_mod.csv'):
     continue
   dat.append(float(temp[1]))
 
-# Discard this mean and sigma -- we'll recompute it later
-tau, mean, sigma = acor.acor(np.array(dat))
+# Arguments explained in emcee.readthedocs.io/en/stable/user/autocorr/
+#                    and emcee.readthedocs.io/en/stable/tutorials/autocorr/
+# 'c' is step size for window search (default 5)
+#     Larger c should reduce noise, but can add bias...
+# 'tol' is min ratio between data and tau (default 50)
+# 'Quiet' prints warning rather than shutting down if tol not satisfied
+tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print "Error: poly_mod autocorrelation time %d" % tau,
-  print "is larger than block size %d" % block_size
+  print("Error: poly_mod autocorrelation time %d " % tau, end='')
+  print("is larger than block size %d " % block_size, end='')
+  print("in %s" % path)
   sys.exit(1)
 
 # Record poly_mod auto-correlation time for future reference
@@ -98,7 +108,7 @@ if tau > block_size:
 eff_stat = np.floor(len(dat) * sep / tau)
 outfilename = 'results/poly_mod.autocorr'
 outfile = open(outfilename, 'w')
-print >> outfile, "%d --> %.8g %.4g # %d" % (tau, mean, sigma, eff_stat)
+print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
 # Next, for the scalar square we want the last (tenth) datum on each line
@@ -114,8 +124,8 @@ for line in open('data/scalarsquares.csv'):
 
   # Need to check separation and update prev before skipping to therm cut
   if not MDTU - prev == sep:
-    print "Error: scalarsquares meas at %d and %d not separated by %d" \
-          % (prev, MDTU, sep)
+    print("Error: scalarsquares meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep))
     sys.exit(1)
   prev = MDTU
 
@@ -123,20 +133,60 @@ for line in open('data/scalarsquares.csv'):
     continue
   dat.append(float(temp[-1]))
 
-# Discard this mean and sigma -- we'll recompute it later
-tau, mean, sigma = acor.acor(np.array(dat))
+# Arguments discussed above
+tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print "Error: scalar square autocorrelation time %d" % tau,
-  print "is larger than block size %d" % block_size
+  print("Error: scalar square autocorrelation time %d " % tau, end='')
+  print("is larger than block size %d " % block_size, end='')
+  print("in %s" % path)
   sys.exit(1)
 
 # Record scalar square auto-correlation time for future reference
-# Include average and effective number of independent measurements
+# Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
 outfilename = 'results/scalarsquares.autocorr'
 outfile = open(outfilename, 'w')
-print >> outfile, "%d --> %.8g %.4g # %d" % (tau, mean, sigma, eff_stat)
+print("%d # %d" % (tau, eff_stat), file=outfile)
+outfile.close()
+
+# Finally, for the lowest eigenvalue we have only one datum per line
+# Format: MDTU,min_eig
+dat = []
+sep = 10      # !!!Now non-trivial
+prev = 0
+for line in open('data/eig.csv'):
+  if line.startswith('M'):
+    continue
+  temp = line.split(',')
+  MDTU = int(temp[0])
+
+  # Need to check separation and update prev before skipping to therm cut
+  if not MDTU - prev == sep:
+    print("Error: min_eig meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep))
+    sys.exit(1)
+  prev = MDTU
+
+  if MDTU <= cut:
+    continue
+  dat.append(float(temp[-1]))
+
+# Arguments discussed above
+tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
+tau *= sep
+if tau > block_size:
+  print("Error: lowest eigenvalue autocorrelation time %d " % tau, end='')
+  print("is larger than block size %d " % block_size, end='')
+  print("in %s" % path)
+  sys.exit(1)
+
+# Record lowest eigenvalue auto-correlation time for future reference
+# Include effective number of independent measurements
+eff_stat = np.floor(len(dat) * sep / tau)
+outfilename = 'results/eig.autocorr'
+outfile = open(outfilename, 'w')
+print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 # ------------------------------------------------------------------
 
@@ -161,7 +211,7 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
     if MDTU <= cut:
       continue
 
-    # Accumulate within each block
+    # Accumulate within block
     elif MDTU > begin and MDTU <= (begin + block_size):
       ave += float(temp[1])
       count += 1
@@ -170,7 +220,6 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
       # Record it and re-initialize for the next block
       if MDTU == (begin + block_size):
         datList.append(ave / float(count))
-
         begin += block_size
         ave = 0.0
         count = 0
@@ -178,7 +227,7 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
     # This doesn't happen for ensembles I generate
     # May need to be revisited for more general applicability
     elif MDTU > (begin + block_size):
-      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      print("ERROR: Unexpected behavior in %s, aborting" % obsfile)
       sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
@@ -188,7 +237,7 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
   err = np.std(dat) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  print("%.8g %.4g # %d" % (ave, err, N), file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
 
@@ -196,8 +245,8 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
 
 # ------------------------------------------------------------------
 # For algorithmic/cost quantities
-# we're again interested in the first datum on each line
-# but have to work in terms of trajectories rather than MDTU
+# we're interested in the first datum on each line
+# Need to work in terms of trajectories rather than MDTU
 for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
   ave = 0.0         # Accumulate within each block
   count = 0
@@ -212,7 +261,7 @@ for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
     if traj <= t_cut:
       continue
 
-    # Accumulate within each block
+    # Accumulate within block
     elif traj > begin and traj <= (begin + t_block):
       ave += float(temp[1])
       count += 1
@@ -221,15 +270,14 @@ for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
       # Record it and re-initialize for the next block
       if traj == (begin + t_block):
         datList.append(ave / float(count))
-
         begin += t_block
         ave = 0.0
         count = 0
 
     # This doesn't happen for ensembles I generate
     # May need to be revisited for more general applicability
-    elif traj > (begin + block_size):
-      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+    elif traj > (begin + t_block):
+      print("ERROR: Unexpected behavior in %s, aborting" % obsfile)
       sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
@@ -239,7 +287,7 @@ for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
   err = np.std(dat) / np.sqrt(N - 1.0)
   outfilename = 'results/' + obs + '.dat'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  print("%.8g %.4g # %d" % (ave, err, N), file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
 
@@ -259,7 +307,7 @@ for obs in ['scalar_eig_ave']:
     break
 
   if Nc < 0:
-    print "WARNING: No scalar eigenvalue data"
+    print("WARNING: No scalar eigenvalue data")
     continue
 
   ave = []      # Accumulate within each block
@@ -289,16 +337,14 @@ for obs in ['scalar_eig_ave']:
       if MDTU == (begin + block_size):
         for i in range(len(ave)):
           datList[i].append(ave[i] / float(count))
-
-        begin += block_size
-        for i in range(len(ave)):
           ave[i] = 0.0
+        begin += block_size
         count = 0
 
     # This doesn't happen for ensembles I generate
     # May need to be revisited for more general applicability
     elif MDTU > (begin + block_size):
-      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      print("ERROR: Unexpected behavior in %s, aborting" % obsfile)
       sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
@@ -309,8 +355,8 @@ for obs in ['scalar_eig_ave']:
     N = np.size(dat)
     ave[i] = np.mean(dat)
     err = np.std(dat) / np.sqrt(N - 1.0)
-    print >> outfile, "%.8g %.4g" % (ave[i], err),
-  print >> outfile, "# %d" % N
+    print("%.8g %.4g " % (ave[i], err), end='', file=outfile)
+  print("# %d" % N, file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
 
@@ -359,19 +405,17 @@ for obs in ['scalarsquares']:
       # Record it and re-initialize for the next block
       if MDTU == (begin + block_size):
         splitList.append(split / float(count))
-        for i in range(len(ave)):
-          datList[i].append(ave[i] / float(count))
-
-        begin += block_size
         split = 0.0
         for i in range(len(ave)):
+          datList[i].append(ave[i] / float(count))
           ave[i] = 0.0
+        begin += block_size
         count = 0
 
     # This doesn't happen for ensembles I generate
     # May need to be revisited for more general applicability
     elif MDTU > (begin + block_size):
-      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      print("ERROR: Unexpected behavior in %s, aborting" % obsfile)
       sys.exit(1)
 
   # Now print mean and standard error, assuming N>1
@@ -382,8 +426,8 @@ for obs in ['scalarsquares']:
     N = np.size(dat)
     ave[i] = np.mean(dat)
     err = np.std(dat) / np.sqrt(N - 1.0)
-    print >> outfile, "%.8g %.4g" % (ave[i], err),
-  print >> outfile, "# %d" % N
+    print("%.8g %.4g " % (ave[i], err), end='', file=outfile)
+  print("# %d" % N, file=outfile)
   outfile.close()
 
   # Print splitting separately
@@ -393,7 +437,6 @@ for obs in ['scalarsquares']:
   err = np.std(dat) / np.sqrt(N - 1.0)
   outfilename = 'results/splitting.dat'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (ave, err, N)
+  print("%.8g %.4g # %d" % (ave, err, N), file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
-
