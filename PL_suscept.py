@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import glob
@@ -12,7 +12,7 @@ import numpy as np
 # second is block size (should be larger than autocorrelation time)
 # We discard any partial blocks at the end
 if len(sys.argv) < 3:
-  print "Usage:", str(sys.argv[0]), "<cut> <block>"
+  print("Usage:", str(sys.argv[0]), "<cut> <block>")
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -23,7 +23,7 @@ block_size = int(sys.argv[2])
 # ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isdir('data'):
-  print "ERROR: data/ does not exist"
+  print("ERROR: data/ does not exist")
   sys.exit(1)
 
 # Extract Nc from path -- it's after 'Nc' then before '_'
@@ -75,7 +75,7 @@ for obs in ['poly_mod']:
     # This doesn't happen for ensembles I generate
     # May need to be revisited for more general applicability
     elif traj > (begin + block_size):
-      print "ERROR: Unexpected behavior in %s, aborting" % obsfile
+      print("ERROR: Unexpected behavior in %s, aborting" % obsfile)
       sys.exit(1)
 
   # Now construct jackknife samples through single-block elimination
@@ -96,7 +96,7 @@ for obs in ['poly_mod']:
   var = (N - 1.0) * np.sum((chi - ave)**2) / float(N)
   outfilename = 'results/' + obs + '.suscept'
   outfile = open(outfilename, 'w')
-  print >> outfile, "%.8g %.4g # %d" % (norm * ave, norm * np.sqrt(var), N)
+  print("%.8g %.4g # %d" % (norm * ave, norm * np.sqrt(var), N), file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
 
