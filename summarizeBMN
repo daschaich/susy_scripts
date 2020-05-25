@@ -1,17 +1,16 @@
 #!/bin/bash
 
-if [ ! -d /raid1/backup/schaich/SYM/BMN ] ; then
-  echo "Error: /raid1 doesn't seem to be mounted"
+if [ ! -d /mnt/lustre/users/schaich/SYM/BMN ] ; then
+  echo "Error: Run on Barkla for python3..."
   exit 1
 fi
 
 echo "Last update: `date`"
 
 cd ~/SYM/BMN
-for dir in Nc8_nt16 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt8 Nc16_nt16 Nc16_nt24 ; do
-#for dir in Nc4_nt8 Nc8_nt8 Nc8_nt16 Nc8_nt24 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt16 Nc16_nt24 Nc16_nt32 ; do    # For oldBMN
+for dir in Nc4_nt8 Nc4_nt12 Nc4_nt16 Nc4_nt24 Nc4_nt32 Nc4_nt48 Nc4_nt64 Nc4_nt96 Nc4_nt128 Nc8_nt24 Nc12_nt8 Nc12_nt16 Nc12_nt24 Nc16_nt8 Nc16_nt16 Nc16_nt24 ; do
   echo # Blank line for easier reading
   echo $dir
   cd ~/SYM/BMN/$dir
-  python ~/scripts/summarizeBMN.py
+  python3 ~/scripts/summarizeBMN.py
 done

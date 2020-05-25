@@ -104,7 +104,7 @@ if tau > block_size:
   sys.exit(1)
 
 # Record poly_mod auto-correlation time for future reference
-# Include average and effective number of independent measurements
+# Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
 outfilename = 'results/poly_mod.autocorr'
 outfile = open(outfilename, 'w')

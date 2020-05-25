@@ -69,7 +69,7 @@ if dof < 1:
 # Extract and save fit parameters
 # and covariance matrix (J^T J)^{-1} where J is jacobian matrix
 # Levenberg--Marquardt (method='lm') can't handle bounds
-all_out = least_squares(errfunc, p_in, bounds=[lower, upper],
+all_out = least_squares(errfunc, p_in, #bounds=[lower, upper],
                         jac=jac, method='trf', args=(T, dat, err))
 p_out = all_out.x
 tj = all_out.jac
