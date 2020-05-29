@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dir in ~/SYM/BMN/Nc*/g* ; do
+for dir in ~/SYM/APBC/Nc4_8nt8/l2.5*05 ; do
   echo $dir
   cd $dir
   for i in Configs/g*[0-9] ; do
@@ -12,7 +12,7 @@ for dir in ~/SYM/BMN/Nc*/g* ; do
     num=${i##*gauge.}     # Strip everything up to and including "gauge."
     if [ $num != 0 ] ; then
       if [ ! -f Out/eig.$num ] ; then
-        eigLocal $num
+        eigLocal-SYM $num
       fi
     fi
   done

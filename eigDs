@@ -28,7 +28,7 @@ G=0.05
 B=0.0
 Ntraj=10
 traj_length=1
-skip=10   # !!! Should be a way to figure out skip=Ntraj*traj_length
+skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
 Nvec=12
 
 # Common parameters for all jobs
@@ -91,7 +91,6 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo "bmass $bmass" >> temp
   echo "fmass $fmass" >> temp
   echo "G $G" >> temp
-  echo "B $B" >> temp
 
   echo "max_cg_iterations 5000" >> temp
   echo "error_per_site 1e-5" >> temp

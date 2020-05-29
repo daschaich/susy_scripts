@@ -1,0 +1,19 @@
+#!/bin/bash
+
+for dir in ~/SYM/BMN/Nc*/g* ; do
+  echo $dir
+  cd $dir
+  for i in Configs/g*[0-9] ; do
+    if [ ! -f $i ] ; then
+      continue
+    fi
+
+    # Extract config number
+    num=${i##*gauge.}     # Strip everything up to and including "gauge."
+    if [ $num != 0 ] ; then
+      if [ ! -f Out/eig.$num ] ; then
+        eigLocal-BMN $num
+      fi
+    fi
+  done
+done
