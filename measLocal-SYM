@@ -35,11 +35,11 @@ lambda=2.5
 bmass=0.44
 G=0.05
 
-bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_eig-U$Nc
+bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_meas-U$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo $i
-  out=Out/eig.$i
+  out=Out/corr.$i
   lat=Configs/gauge
   if [ -f $out ]; then
     echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
@@ -77,12 +77,15 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   fmass 0.0
   G $G
 
+  APE_smear
+  Nsmear 0
+  alpha 0.1
+
   max_cg_iterations 5000
   error_per_site 1e-5
 
-  Nvec $Nvec
-  eig_tol 1e-12
-  maxIter 999999
+  nsrc 3
+  coulomb_gauge_fix
 
   reload_serial $lat.$i
   forget
