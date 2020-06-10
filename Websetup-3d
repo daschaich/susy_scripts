@@ -6,7 +6,8 @@ if [ ! -d /raid1/backup/schaich/SYM/3d ] ; then
 fi
 
 cd ~/SYM/3d
-for i in N*/rt* ; do
+#for i in N*/rt* ; do
+for i in N*/l* ; do
   if [ -d /raid1/backup/schaich/SYM/3d/$i/data ] ; then
     echo "$i already done"
     continue

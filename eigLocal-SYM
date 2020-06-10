@@ -25,7 +25,7 @@ temp=`pwd`
 path=${temp##*APBC/Nc}  # Strip everything up to and including "APBC/Nc"
 Ncvol=${path%%/*}       # Strip everything after and including "/"
 Nt=${Ncvol##*nt}        # Strip everything up to and including "nt"
-Nc=${Ncvol%%_*}         # Strip everything after and including "_nt/"
+Nc=${Ncvol%%_*}         # Strip everything after and including "_"
 tag=${path##*/l}        # Strip everything up to and including "/g"
 #lambda=TODO...
 
@@ -34,7 +34,16 @@ L=8
 lambda=2.5
 bmass=0.44
 G=0.05
+#echo "Hard-coding for Nc4_16nt32/l1.0_b0.28_G0.05..."
+#L=16
+#lambda=1.0
+#bmass=0.28
+#echo "Hard-coding for Nc3_16nt32/l1.5_b0.34_G0.05..."
+#lambda=1.5
+#bmass=0.34
 
+# This will help check that things are set correctly
+cd /home/schaich/SYM/APBC/Nc${Nc}_${L}nt$Nt/l${lambda}_b${bmass}_G$G
 bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_eig-U$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
