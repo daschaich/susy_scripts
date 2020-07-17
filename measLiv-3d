@@ -39,7 +39,7 @@ echo "#SBATCH --export=ALL" >> temp
 echo "#SBATCH --nodes=$node" >> temp
 echo "#SBATCH -p schaich,nodes -n $cpus" >> temp
 echo "#SBATCH -t $time" >> temp
-echo "#SBATCH -J meas${Nc}_${L}nt${Nt}_g$tag" >> temp
+echo "#SBATCH -J meas${Nc}_L${L}_$tag" >> temp
 echo "#SBATCH -o meas.%j.out" >> temp
 echo "#SBATCH -e meas.%j.out" >> temp
 echo "#SBATCH --mem-per-cpu=1000M" >> temp
