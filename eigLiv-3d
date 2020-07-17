@@ -82,6 +82,9 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo "echo \"mpirun -quiet -np $cpus $bin\" >> $out" >> temp
   echo "mpirun -quiet -np $cpus $bin << EOF >> $out" >> temp
   echo "prompt 0" >> temp
+  echo "nx 1" >> temp
+  echo "ny $L" >> temp
+  echo "nz $L" >> temp
   echo "nt $Nt" >> temp
   echo "PBC -1" >> temp
 
