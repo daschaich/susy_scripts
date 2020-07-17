@@ -127,4 +127,4 @@ done
 
 sbatch temp
 rm -f temp
-echo "Requested $time to run $iter eigenvalue measurements ($first--$last by $skip)"
+echo "Requested $time to run $iter measurements ($first--$last by $skip)"
