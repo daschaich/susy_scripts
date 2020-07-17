@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 1 ]; then
-  echo "Usage: $0 <first>"
+  echo "Usage: $0 <first> [last (optional)]"
   exit 1
 fi
 
@@ -14,45 +14,35 @@ else
 fi
 
 # Adjustable parameters
-cpus=1
-Ntraj=5
-traj_length=2
+cpus=4
+Nc=8
+L=8
+Nt=8
+rt=6.5
+ga=0.10
+lambda=`echo $rt | awk -v nt="$Nt" '{print($1/nt)}'`
+bmass=`echo $lambda | awk -v g="$ga" '{print($1 * g)}'`
+cWline=`echo $lambda | awk -v g="$ga" '{print($1 * g)}'`
+Ntraj=10
+traj_length=1
 skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
 Nvec=12
 
-# Parameters fixed by the path
-temp=`pwd`
-path=${temp##*3d/Nc}    # Strip everything up to and including "3d/Nc"
-Ncvol=${path%%/*}       # Strip everything after and including "/"
-Nt=${Ncvol##*nt}        # Strip everything up to and including "nt"
-Nc=${Ncvol%%_*}         # Strip everything after and including "_"
-tag=${path##*/l}        # Strip everything up to and including "/g"
-#lambda=TODO...
-
-#echo "Hard-coding for Nc4_2nt2/l1.35_b0.4..."
-L=2
-lambda=1.35
-bmass=0.4
-#echo "Hard-coding for Nc4_2nt2/l1.35_b0.27..."
-bmass=0.27
-echo "Hard-coding for Nc4_2nt2/l1.35_b0.13..."
-bmass=0.13
-
 # This will help check that things are set correctly
-cd /home/schaich/SYM/3d/Nc${Nc}_${L}nt$Nt/l${lambda}_b$bmass
+cd /home/schaich/SYM/3d/Nc${Nc}_${L}nt$Nt/rt${rt}_g$ga
 bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_eig_dimred-U$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo $i
   out=Out/eig.$i
-  lat=Configs/gauge
+  lat=Configs/gauge.$i
   if [ -f $out ]; then
     echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
     rm -f temp
     exit 1
   fi
-  if [ ! -f $lat.$i ]; then
-    echo "ERROR: LATTICE $lat.$i NOT FOUND, SUBMISSION ABORTED"
+  if [ ! -f $lat ]; then
+    echo "ERROR: LATTICE $lat NOT FOUND, SUBMISSION ABORTED"
     rm -f temp
     exit 1
   fi
@@ -65,10 +55,9 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   nt $Nt
   PBC -1
 
-  iseed ${last}${g/\./41}${Nt}$i
+  iseed ${last}${lambda/\./41}${L}$i
   Nroot 1
   Norder 1
-
   warms 0
   trajecs $Ntraj
   traj_length $traj_length
@@ -81,17 +70,17 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   bmass $bmass
   fmass 0.0
   G 0.0
-  cWline $bmass
+  cWline $cWline
 
   max_cg_iterations 5000
   error_per_site 1e-5
 
   Nvec $Nvec
-  eig_tol 1e-12
-  maxIter 999999
+  eig_tol 1e-10
+  maxIter 99999
 
-  reload_serial $lat.$i
+  reload_serial $lat
   forget
 END
-  chmod 664 $out $lat.$i*
+  chmod 664 $out $lat*
 done

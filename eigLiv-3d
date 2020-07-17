@@ -117,7 +117,7 @@ for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo "EOF" >> temp
 
   echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
-  echo "chgrp theophys $out $lat.$i* $lat.$next*" >> temp
+  echo "chgrp theophys $out $lat*" >> temp
   echo "chmod 664 $out $lat*" >> temp
   echo "" >> temp
 done
