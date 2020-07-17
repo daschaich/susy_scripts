@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import glob
@@ -12,7 +12,7 @@ import numpy as np
 # We discard any partial blocks at the end
 # Third argument tells us whether to analyze "corr" or "stout" files
 if len(sys.argv) < 4:
-  print "Usage:", str(sys.argv[0]), "<cut> <block> <tag>"
+  print("Usage:", str(sys.argv[0]), "<cut> <block> <tag>")
   sys.exit(1)
 cut = int(sys.argv[1])
 block_size = int(sys.argv[2])
@@ -24,7 +24,7 @@ tag = str(sys.argv[3])
 # ------------------------------------------------------------------
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
-  print "ERROR: Out/ does not exist"
+  print("ERROR: Out/ does not exist")
   sys.exit(1)
 
 # Try to set C2 from path
@@ -43,7 +43,7 @@ for filename in glob.glob(files):
 cfgs.sort()
 
 if len(cfgs) == 0:
-  print "ERROR: no files", files, "found"
+  print("ERROR: no files", files, "found")
   sys.exit(1)
 
 # If we're missing some initial measurements,
@@ -97,8 +97,8 @@ for MDTU in cfgs:
   filename = 'Out/' + tag + '.' + str(MDTU)
   toOpen = glob.glob(filename)
   if len(toOpen) > 1:
-    print "ERROR: multiple files named %s:" % filename,
-    print toOpen
+    print("ERROR: multiple files named %s:" % filename, end='', file=outfile)
+    print(toOpen)
   check = -1
   for line in open(toOpen[0]):
     # Format: SUSY f_dat imag g_dat diff [with C2=1]
@@ -116,7 +116,7 @@ for MDTU in cfgs:
     elif line.startswith('RUNNING COMPLETED'):
       check = 1
   if check == -1:
-    print toOpen[0], "did not complete"
+    print(toOpen[0], "did not complete")
     sys.exit(1)
 
 # Check special case that last block is full
@@ -139,25 +139,26 @@ Nblocks = len(Fdat)
 # ------------------------------------------------------------------
 # Now print mean and standard error, requiring N>1
 if Nblocks == 1:
-  print "ERROR: need multiple blocks to take average"
+  print("ERROR: need multiple blocks to take average")
   sys.exit(1)
 
-print "Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
+print("Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size))
 outfile = open('results/bilin.dat', 'w')
-print >> outfile, "# Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size)
-print >> outfile, "# diff err rel err gauge err bilin err"
+print("# Averaging with %d blocks of length %d MDTU" \
+      % (Nblocks, block_size), file=outfile)
+print("# diff err rel err gauge err bilin err", file=outfile)
 
 for obs in [Ddat, Ndat, Gdat, Fdat]:
   dat = np.array(obs)
   ave = np.mean(dat, dtype = np.float64)
   err = np.std(dat, dtype = np.float64) / np.sqrt(Nblocks - 1.0)
-  print >> outfile, "%.6g %.4g" % (ave, err),
-print >> outfile, "# %d" % Nblocks
+  print("%.6g %.4g " % (ave, err), end='', file=outfile)
+print("# %d" % Nblocks, file=outfile)
 
 # More detailed block information
 #for i in range(Nblocks):
-#  print >> outfile, \
-#        "# Block %2d has %d measurements from MDTU in [%d, %d)" \
-#        % (i + 1, block_data[0][i], block_data[1][i], block_data[2][i])
+#  print("# Block %2d has %d measurements from MDTU in [%d, %d)" \
+#        % (i + 1, block_data[0][i], block_data[1][i], block_data[2][i]), \
+#        file=outfile)
 outfile.close()
 # ------------------------------------------------------------------
