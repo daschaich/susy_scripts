@@ -1,0 +1,119 @@
+#!/bin/bash
+
+if [ $# -lt 3 ]; then
+  echo "Usage: $0 <first> <last> <time>"
+  exit 1
+fi
+
+# Input parameters
+first=$1
+last=$2
+time=$3
+
+# Adjustable parameters
+node=1
+cpus=12
+Ntraj=10
+traj_length=1
+skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
+Nvec=12
+
+# Parameters fixed by the path
+temp=`pwd`
+path=${temp##*BMN/Nc}   # Strip everything up to and including "BMN/Nc"
+Ncnt=${path%%/*}        # Strip everything after and including "/"
+Nt=${Ncnt##*nt}         # Strip everything up to and including "nt"
+Nc=${Ncnt%%_nt*}        # Strip everything after and including "_nt/"
+tag=${path##*/g}        # Strip everything up to and including "/g"
+g=${tag%%_f*}           # Strip everything after and including "_f"
+temp=${tag##*_f}        # Strip everything up to and including "_f"
+f=${temp%%_*}           # Strip everything after and including "_*"
+mu=`echo $f | awk -v nt="$Nt" '{print((1.0/($1*nt)))}'`
+lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
+
+# Common parameters for all jobs
+echo "#!/bin/sh" > temp
+echo "#SBATCH -D ./" >> temp
+echo "#SBATCH --export=ALL" >> temp
+echo "#SBATCH --nodes=$node" >> temp
+echo "#SBATCH -p schaich,nodes -n $cpus" >> temp
+echo "#SBATCH -t $time" >> temp
+echo "#SBATCH -J eig${Nc}_nt${Nt}_g$tag" >> temp
+echo "#SBATCH -o eig.%j.out" >> temp
+echo "#SBATCH -e eig.%j.out" >> temp
+echo "#SBATCH --mem-per-cpu=1000M" >> temp
+echo "#SBATCH --mail-user=david.schaich@liverpool.ac.uk" >> temp
+echo "#SBATCH --mail-type=FAIL" >> temp
+
+# Should use dir due to SBATCH -D above, but let's make sure
+dir=/mnt/lustre/users/schaich/SYM/BMN/Nc$Ncnt/g$tag
+bin=/mnt/lustre/users/schaich/SYM/code/1d_Q16/bins/susy_eig-N$Nc
+cd $dir
+echo "cd $dir" >> temp
+
+# Same modules as when compiling
+echo "newgrp theophys" >> temp
+echo "module purge" >> temp
+echo "module load compilers/gcc/5.5.0" >> temp
+echo "module load libs/gcc/5.5.0" >> temp
+echo "module load mpi/openmpi/1.10.7/gcc-5.5.0" >> temp
+echo "module load libs/blas/3.6.0/gcc-5.5.0" >> temp
+echo "module load libs/lapack/3.5.0/gcc-5.5.0" >> temp
+
+iter=0
+for(( i=$first ; $i<=$last; i+=$skip )); do
+  iter=$[$iter + 1]
+  out=$dir/Out/eig.$i
+  lat=$dir/Configs/gauge.$i
+  if [ -f $out ]; then
+    echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+  if [ ! -f $lat ]; then
+    echo "ERROR: LATTICE $lat NOT FOUND, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+
+  echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
+  echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
+  echo "echo \"mpirun -quiet -np $cpus $bin\" >> $out" >> temp
+  echo "mpirun -quiet -np $cpus $bin << EOF >> $out" >> temp
+  echo "prompt 0" >> temp
+  echo "nt $Nt" >> temp
+  echo "PBC -1" >> temp
+  echo "iseed ${last}${g/\./1}${Nt}$i" >> temp
+
+  echo "Nroot 1" >> temp
+  echo "Norder 1" >> temp
+  echo "warms 0" >> temp
+  echo "trajecs $Ntraj" >> temp
+  echo "traj_length $traj_length" >> temp
+  echo "nstep 1" >> temp
+  echo "nstep_gauge 1" >> temp
+  echo "traj_between_meas $Ntraj" >> temp
+
+  echo "lambda $lambda" >> temp
+  echo "mu $mu" >> temp
+
+  echo "max_cg_iterations 5000" >> temp
+  echo "error_per_site 1e-5" >> temp
+
+  echo "Nvec $Nvec" >> temp
+  echo "eig_tol 1e-8" >> temp
+  echo "maxIter 10000" >> temp
+
+  echo "reload_serial $lat" >> temp
+  echo "forget" >> temp
+  echo "EOF" >> temp
+
+  echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
+  echo "chgrp theophys $out $lat.$i* $lat.$next*" >> temp
+  echo "chmod 664 $out $lat*" >> temp
+  echo "" >> temp
+done
+
+sbatch temp
+rm -f temp
+echo "Requested $time to run $iter eigenvalue measurements ($first--$last by $skip)"
