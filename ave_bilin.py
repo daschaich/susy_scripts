@@ -142,7 +142,7 @@ if Nblocks == 1:
   print("ERROR: need multiple blocks to take average")
   sys.exit(1)
 
-print("Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size))
+#print("Averaging with %d blocks of length %d MDTU" % (Nblocks, block_size))
 outfile = open('results/bilin.dat', 'w')
 print("# Averaging with %d blocks of length %d MDTU" \
       % (Nblocks, block_size), file=outfile)

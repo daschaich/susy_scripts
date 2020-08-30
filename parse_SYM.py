@@ -58,6 +58,12 @@ print >> MONO , "MDTU,rho_M"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 
+# Only create Wilson line eigenvalue data files if Out/WLeig* files present
+do_WLeig = len(glob.glob('Out/WLeig.*'))
+if do_WLeig > 0:
+  WL_EIG = open('data/WLeig.csv', 'w')
+  print >> WL_EIG, "MDTU,eig0,eig1,eig2,eig3,eig4,eig5,eig6,eig7"
+
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
 print >> ACCP, "t,accP"
@@ -721,6 +727,48 @@ for temp_tag in open('list.txt'):
     if check == -1:
       print infile, "did not complete"
       print >> ERRFILE, infile, "did not complete"
+  # ----------------------------------------------------------------
+
+
+
+  # ----------------------------------------------------------------
+  # Now deal with the corresponding "WLeig" file, if it is present
+  # Only running on thermalized configurations, so don't report any missing
+  infile = 'Out/WLeig.' + cfg
+  if os.path.isfile(infile):
+    # We have a file, so let's cycle over its lines
+    check = -1
+    for line in open(infile):
+      if line.startswith('Time stamp '):
+        stamp = line.rstrip()
+        if stamp != oldstamp:
+          print infile, "time stamp doesn't match final", oldstamp
+          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
+
+      # Format: LINES_POLAR_EIG x y z t dir {Nc x phase}
+      # Check that all phases are within [-pi, pi),
+      # accounting for rounding in output files
+      # Can be commented out to speed up analysis
+      elif line.startswith('LINES_POLAR_EIG '):
+        WL_EIG.write("%g," % (MDTU))
+        temp = line.split()
+        for i in range(int(Nc - 1)):
+          phase = float(temp[6 + i])
+          if phase > 3.142 or phase < -3.142:
+            print infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+            print >> ERRFILE, infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+          WL_EIG.write("%g," % (phase))
+        index = int(5 + Nc)
+        print >> WL_EIG, "%g" % (float(temp[index]))
+
+      elif line.startswith('RUNNING COMPLETED'):
+        if check == 1:    # Check that we have one measurement per file
+          print infile, "reports two measurements"
+          print >> ERRFILE, infile, "reports two measurements"
+        check = 1
+    if check == -1:
+      print infile, "did not complete"
+      print >> ERRFILE, infile, "did not complete"
 # ------------------------------------------------------------------
 
 
@@ -749,6 +797,9 @@ SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
 EIG.close()
+if do_WLeig > 0:
+ WL_EIG.close()
+
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()

@@ -5,21 +5,22 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 # ------------------------------------------------------------------
-# Plot histogram of Wilson line eigenvalues from output files 'WLeig'
-# Superimpose multiple ensembles specified by input arguments
+# Plot histogram of Wilson line eigenvalues
+# Use data/WLeig.csv file for time-series plots
+# Superimpose Ndirs=3 ensembles specified by input arguments
 # For now only consider unitarized (and not full) Wilson lines in z-dir
-# Assume only thermalized measurements have been run
+# !!! Assume only thermalized measurements have been run
 # Save resulting plot as ./WLeig_hist.pdf
 
-# Parse arguments: L=8 and 12 ensembles,
+# Parse arguments: L=8, 12 and 16 ensembles,
 # the upper bound for the y-axis,
 # and finally a tag for the title for the plot
-if len(sys.argv) < 5:
-  print "Usage:", str(sys.argv[0]), "<L=8 dir> <L=12 dir>",
+if len(sys.argv) < 6:
+  print "Usage:", str(sys.argv[0]), "<L=8 dir> <L=12 dir> <L=16 dir>",
   print "<y-axis upper bound> <plot title tag>",
   sys.exit(1)
 
-Ndirs = 2
+Ndirs = 3
 dirnames = []
 for i in range(Ndirs):
   dirnames.append(str(sys.argv[i + 1]))
@@ -31,49 +32,24 @@ count = 0
 dat = [[] for x in range(Ndirs)]
 for dirname in dirnames:
   # Check that we have output files to analyze
-  tocheck = dirname + '/Out/WLeig.*'
-  files = glob.glob(tocheck)
-  if len(files) == 0:
-    print "ERROR: no files", tocheck
+  infile = dirname + '/data/WLeig.csv'
+  if not os.path.isfile(infile):
+    print "Problem opening", infile
+    continue    # Skip to next file
     sys.exit(1)
 
   # Extract Nc from dirname -- it's after 'Nc' then before '_'
   temp = (dirname.split('Nc'))[1]
   Nc = int((temp.split('_'))[0])
 
-  # Cycle through output files to load data
-  for filename in files:
-    check = -1
-    for line in open(filename):
-      if line.startswith('nt '):
-        nt = float((line.split())[1])
-      elif line.startswith('ny '):
-        ny = float((line.split())[1])
-      # Format: LINES_POLAR_EIG x y z t dir {Nc x phase}
-      elif line.startswith('LINES_POLAR_EIG '):
-        temp = line.split()
-        for i in range(Nc):
-          dat[count].append(float(temp[-1 - i]))
-      elif line.startswith('RUNNING COMPLETED'):
-        check = 1
-    if check == -1:
-      print filename, "did not complete"
-      sys.exit(1)
-
-  # Check that we have all the data we should
-  if not len(dat[count]) == Nc * nt * ny * len(files):
-    print "ERROR: Have %d data from %d SU(%d) %dx%d measurements" \
-          % (len(dat[count]), len(files), int(Nc)),
-    print "with nt x ny = %d x %d" % (nt, ny)
-    sys.exit(1)
-
-  # Check that all phases are within [-pi, pi),
-  # accounting for rounding in output files
-  # Can be commented out to speed up analysis
-  if max(dat[count]) > 3.142 or min(dat[count]) < -3.142:
-    print "ERROR: %s phases exceed [-pi, pi): %.4g %.4g" \
-          % (dirname, max(dat[count]), min(dat[count]))
-    sys.exit(1)
+  # Go through time-series data files to load data
+  # Nc phases on each line --- parse_SYM.py checks all within [-pi, pi)
+  for line in open(infile):
+    if line.startswith('M'):
+      continue
+    temp = line.split(',')
+    for i in range(Nc):
+      dat[count].append(float(temp[1 + i]))
   count += 1
 
 # Create histogram
@@ -83,6 +59,8 @@ plt.hist(dat[0], nbins, log=False, normed=True, align='mid',
          edgecolor='blue', label='L=8', histtype='step', hatch='//')
 plt.hist(dat[1], nbins, log=False, normed=True, align='mid',
          edgecolor='green', label='L=12', histtype='step', hatch='\\\\')
+plt.hist(dat[2], nbins, log=False, normed=True, align='mid',
+         edgecolor='red', label='L=16', histtype='step', hatch='||')
 
 plt.axis([-np.pi, np.pi, 0.0, ymax])
 plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
