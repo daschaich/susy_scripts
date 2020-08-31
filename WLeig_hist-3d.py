@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 import os
 import sys
 import glob
@@ -16,8 +16,9 @@ import matplotlib.pyplot as plt
 # the upper bound for the y-axis,
 # and finally a tag for the title for the plot
 if len(sys.argv) < 6:
-  print "Usage:", str(sys.argv[0]), "<L=8 dir> <L=12 dir> <L=16 dir>",
-  print "<y-axis upper bound> <plot title tag>",
+  print("Usage:", str(sys.argv[0]), end='')
+  print("<L=8 dir> <L=12 dir> <L=16 dir>", end='')
+  print("<y-axis upper bound> <plot title tag>")
   sys.exit(1)
 
 Ndirs = 3
@@ -34,7 +35,7 @@ for dirname in dirnames:
   # Check that we have output files to analyze
   infile = dirname + '/data/WLeig.csv'
   if not os.path.isfile(infile):
-    print "Problem opening", infile
+    print("Problem opening", infile)
     continue    # Skip to next file
     sys.exit(1)
 
@@ -55,11 +56,11 @@ for dirname in dirnames:
 # Create histogram
 nbins = 10
 plt.figure(figsize=(6.40, 3.84))    # Gnuplot default
-plt.hist(dat[0], nbins, log=False, normed=True, align='mid',
+plt.hist(dat[0], nbins, log=False, density=True, align='mid',
          edgecolor='blue', label='L=8', histtype='step', hatch='//')
-plt.hist(dat[1], nbins, log=False, normed=True, align='mid',
+plt.hist(dat[1], nbins, log=False, density=True, align='mid',
          edgecolor='green', label='L=12', histtype='step', hatch='\\\\')
-plt.hist(dat[2], nbins, log=False, normed=True, align='mid',
+plt.hist(dat[2], nbins, log=False, density=True, align='mid',
          edgecolor='red', label='L=16', histtype='step', hatch='||')
 
 plt.axis([-np.pi, np.pi, 0.0, ymax])
