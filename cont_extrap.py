@@ -76,8 +76,8 @@ if all_out.success < 0 or all_out.success > 4:
   print(errmsg)
   sys.exit(1)
 
-print("Intercept: %.6g %.4g" % (p_out[0], np.sqrt(cov[0][0])))
-print("    Slope: %.6g %.4g" % (p_out[1], np.sqrt(cov[1][1])))
+print("Intercept: %.8g %.4g" % (p_out[0], np.sqrt(cov[0][0])))
+print("    Slope: %.8g %.4g" % (p_out[1], np.sqrt(cov[1][1])))
 
 # Compute chiSq and confidence level of fit
 chiSq = ((errfunc(p_out, a, dat, err))**2).sum()

@@ -57,6 +57,8 @@ MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
+BIGEIG = open('data/bigeig.csv', 'w')
+print >> BIGEIG, "MDTU,0,2,4,6,8,10"
 
 # Only create Wilson line eigenvalue data files if Out/WLeig* files present
 do_WLeig = len(glob.glob('Out/WLeig.*'))
@@ -507,6 +509,7 @@ for temp_tag in open('list.txt'):
     check = -1    # Check whether file completed successfully
     temp = float('nan')
     eig = [temp, temp, temp, temp, temp, temp]
+    big = [temp, temp, temp, temp, temp, temp]
 
     # Go
     for line in open(infile):
@@ -528,17 +531,17 @@ for temp_tag in open('list.txt'):
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
 
-      elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
-        dat = float((line.split())[2])
-        if dat > max_eig:
+      elif line.startswith('BIGEIGVAL  '):
+        temp = line.split()
+        index = int(temp[1])
+        dat = float(temp[2])
+        if index < 11 and index % 2 == 0:
+          big[index / 2] = dat
+        if index == 0 and dat > max_eig:        # Check spectral range
           print infile, "exceeds RHMC spectral range:",
           print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
-
-        # Monitor (log of) condition number
-        cond_num = math.log(dat / eig[0])
-        print >> COND_NUM, "%d,%g" % (traj, cond_num)
 
       elif 'WARNING' in line:
         print infile, "saturated eigenvalue iterations"
@@ -554,6 +557,12 @@ for temp_tag in open('list.txt'):
 
     print >> EIG, "%g,%g,%g,%g,%g,%g,%g" \
                   % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5])
+    print >> BIGEIG, "%g,%g,%g,%g,%g,%g,%g" \
+                     % (MDTU, big[0], big[1], big[2], big[3], big[4], big[5])
+
+    # Monitor (log of) condition number
+    cond_num = math.log(big[0] / eig[0])
+    print >> COND_NUM, "%d,%g" % (traj, cond_num)
   # ----------------------------------------------------------------
 
 
@@ -797,6 +806,7 @@ SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
 EIG.close()
+BIGEIG.close()
 if do_WLeig > 0:
  WL_EIG.close()
 
