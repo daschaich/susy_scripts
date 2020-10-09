@@ -6,6 +6,7 @@ from scipy.optimize import least_squares
 from scipy.special import gammainc
 # ------------------------------------------------------------------
 # Linear extrapolation of data to L^2 --> infinity limit
+# Impose bound that continuum limit must be non-negative
 # Compute and print out error band for gnuplotting
 
 # Parse argument: the file to analyze (FORMAT: L dat err)
@@ -19,21 +20,15 @@ if not os.path.isfile(filename):
   sys.exit(1)
 
 # errfunc will be minimized via least-squares optimization
-# p_in are order-of-magnitude initial guesses
-# This is overkill for a linear extrapolation,
-# but as of November 2018 np.polyfit has a covariance issue
-# github.com/numpy/numpy/issues/11196
-expfunc = lambda p, x: p[0] + p[1] * x
-errfunc = lambda p, x, y, err: (expfunc(p, x) - y) / err
-p_in = np.array([0.01, 1.0])
+func = lambda p, x: p[0] + p[1] * x
+errfunc = lambda p, x, y, err: (func(p, x) - y) / err
+p_in = np.array([0.1, 1.0])
 
 # Define corresponding Jacobian matrix
 def jac(p, x, y, err):
   J = np.empty((x.size, p.size), dtype = np.float)
-  J[:, 0] = 1.0
-  J[:, 1] = x
-  for i in range(p.size):
-    J[:, i] /= err
+  J[:, 0] = 1.0 / err
+  J[:, 1] = x / err
   return J
 # ------------------------------------------------------------------
 
@@ -64,9 +59,9 @@ if dof < 1:
 
 # Extract and save fit parameters
 # and covariance matrix (J^T J)^{-1} where J is jacobian matrix
-# method='lm' is Levenberg--Marquardt (can't handle bounds)
-all_out = least_squares(errfunc, p_in, jac=jac, method='lm',
-                        args=(a, dat, err))
+# method='trf' is Trust Region Reflective (can handle bounds)
+all_out = least_squares(errfunc, p_in, bounds=([0.0, -np.inf], [1.0, np.inf]),
+                        jac=jac, method='trf', args=(a, dat, err))
 p_out = all_out.x
 tj = all_out.jac
 cov = np.linalg.inv(np.dot(np.transpose(tj), tj))
