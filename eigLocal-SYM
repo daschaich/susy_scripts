@@ -44,7 +44,7 @@ G=0.05
 
 # This will help check that things are set correctly
 cd /home/schaich/SYM/APBC/Nc${Nc}_${L}nt$Nt/l${lambda}_b${bmass}_G$G
-bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_eig-U$Nc
+bin=/home/schaich/dev/susy/4d_Q16/bins/susy_eig-U$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo $i

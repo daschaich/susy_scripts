@@ -33,7 +33,7 @@ f=${temp%%_*}           # Strip everything after and including "_*"
 mu=`echo $f | awk -v nt="$Nt" '{print((1.0/($1*nt)))}'`
 lambda=`echo $g | awk -v mu="$mu" '{print($1*(mu**3))}'`
 
-bin=/home/schaich/lqcd/susy/1d_Q16/bins/susy_eig-N$Nc
+bin=/home/schaich/dev/susy/1d_Q16/bins/susy_eig-N$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo $i

@@ -30,7 +30,7 @@ Nvec=12
 
 # This will help check that things are set correctly
 cd /home/schaich/SYM/3d/Nc${Nc}_${L}nt$Nt/rt${rt}_g$ga
-bin=/home/schaich/lqcd/susy/4d_Q16/bins/susy_eig_dimred-U$Nc
+bin=/home/schaich/dev/susy/4d_Q16/bins/susy_eig_dimred-U$Nc
 
 for(( i=$first ; $i<=$last ; i+=$skip )); do
   echo $i

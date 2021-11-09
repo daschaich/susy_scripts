@@ -1,13 +1,13 @@
 #!/bin/bash
 
 if [ ! -d /raid1/backup/schaich/SYM/3d ] ; then
-  echo "Error: /raid1 doesn't seem to be mounted"
-  exit 1
+  echo "Need to mount /raid1..."
+  sudo mount rafa.amtp:/raid1 /raid1
 fi
 
 cd ~/SYM/3d
-for i in N*/rt* ; do
-#for i in N*/l* ; do
+#for i in N*/rt* ; do
+for i in N*/l* ; do
   if [ -d /raid1/backup/schaich/SYM/3d/$i/data ] ; then
     echo "$i already done"
     continue
