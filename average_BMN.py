@@ -95,13 +95,14 @@ for line in open('data/poly_mod.csv'):
 #     Larger c should reduce noise, but can add bias...
 # 'tol' is min ratio between data and tau (default 50)
 # 'Quiet' prints warning rather than shutting down if tol not satisfied
+autocorr_check = 1
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
   print("Error: poly_mod autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
   print("in %s" % path)
-  sys.exit(1)
+  autocorr_check = -1
 
 # Record poly_mod auto-correlation time for future reference
 # Include effective number of independent measurements
@@ -140,7 +141,7 @@ if tau > block_size:
   print("Error: scalar square autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
   print("in %s" % path)
-  sys.exit(1)
+  autocorr_check = -1
 
 # Record scalar square auto-correlation time for future reference
 # Include effective number of independent measurements
@@ -179,7 +180,7 @@ if tau > block_size:
   print("Error: lowest eigenvalue autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
   print("in %s" % path)
-  sys.exit(1)
+  autocorr_check = -1
 
 # Record lowest eigenvalue auto-correlation time for future reference
 # Include effective number of independent measurements
@@ -188,6 +189,9 @@ outfilename = 'results/eig.autocorr'
 outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
+
+if autocorr_check < 0:
+  sys.exit(1)
 # ------------------------------------------------------------------
 
 
