@@ -166,6 +166,17 @@ for temp_tag in open('list.txt'):
       goodtogo = False
       break
 
+    # Check for unitarity and anti-hermiticity problems
+    # Report for info, but don't skip if found
+    if line.startswith('Unitarity problem'):
+      print infile, "reports unitarity problem"
+      print >> ERRFILE, infile, "reports unitarity problem"
+      break
+    if line.startswith('Anti-hermiticity problem'):
+      print infile, "reports anti-hermiticity problem"
+      print >> ERRFILE, infile, "reports anti-hermiticity problem"
+      break
+
   if not goodtogo:
     continue        # Skip this file, which appears malformed
 
