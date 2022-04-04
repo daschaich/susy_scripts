@@ -463,7 +463,7 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
-    # Some hacky backspaces for output formatting...
+    # Only look at largest and smallest (most negative) to keep this manageable
     elif line.startswith('POLAR_EIG '):
       NEED_SCALAR_EIGS = -1
       temp = line.split()
@@ -722,7 +722,7 @@ for temp_tag in open('list.txt'):
 
       # ----------------------------------------------------------
       # Scalar eigenvalues
-      # Some hacky backspaces for output formatting...
+      # Only look at largest and smallest (most negative) to keep this manageable
       elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
         temp = line.split()
         index = int(temp[1])

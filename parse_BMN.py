@@ -179,7 +179,6 @@ for temp_tag in open('list.txt'):
   min_eig = 1
   max_eig = -1
   SCALAR_SQUARES_READY = -1     # To skip duplicate
-  NEED_SCALAR_EIGS = 1
   scalar_eig_ave = ''
   scalar_eig_ext = ''
   scalar_eig_width = ''
@@ -349,9 +348,8 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
-    # Some hacky backspaces for output formatting...
+    # Only look at largest and smallest (most negative) to keep this manageable
     elif line.startswith('SCALAR_EIG '):
-      NEED_SCALAR_EIGS = -1
       temp = line.split()
       index = int(temp[1])
       if index == 0 or index == Nc - 1:

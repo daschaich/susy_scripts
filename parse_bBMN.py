@@ -292,7 +292,7 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
-    # Some hacky backspaces for output formatting...
+    # Only look at largest and smallest (most negative) to keep this manageable
     elif line.startswith('SCALAR_EIG '):
       temp = line.split()
       index = int(temp[1])
