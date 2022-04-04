@@ -178,7 +178,7 @@ for line in open('data/eig.csv'):
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print("Warning: lowest eigenvalue autocorrelation time %d " % tau, end='')
+  print("Error: lowest eigenvalue autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
   print("in %s" % path)
   autocorr_check = -1

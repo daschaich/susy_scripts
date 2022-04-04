@@ -27,6 +27,7 @@ POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
+PL_EIG = open('data/PLeig.csv', 'w')
 SCALAR_SQUARES = open('data/scalarsquares.csv', 'w')
 print >> SCALAR_SQUARES, "MDTU,Tr(X1^2),Tr(X2^2),Tr(X3^2),Tr(X4^2),Tr(X5^2),Tr(X6^2),Tr(X7^2),Tr(X8^2),Tr(X9^2)"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
@@ -120,6 +121,13 @@ for temp_tag in open('list.txt'):
       temp = line.split(',')
       Nc = float(((temp[1]).split())[2])
       DIMF = Nc**2 - 1.0
+
+      # Set up PL_EIG header if this is the first file
+      if traj == 0:
+        toprint = ''
+        for i in range(int(Nc)):
+          toprint += ',eig' + str(i)
+        print >> PL_EIG, "MDTU%s" % (toprint)
 
     # Extract Nt
     elif line.startswith('nt '):
@@ -261,7 +269,7 @@ for temp_tag in open('list.txt'):
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # Polyakov loop
+    # Polyakov loop and PL eigenvalues
     # First normalized using Nc extracted above
     elif line.startswith('GMES '):
       temp = line.split()
@@ -270,6 +278,21 @@ for temp_tag in open('list.txt'):
       print >> POLY, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
+
+    # Format: LINES_EIG {Nc x phase}
+    # Check that all phases are within [-pi, pi),
+    # accounting for rounding in output files
+    # Can be commented out to speed up analysis
+    elif line.startswith('LINES_EIG '):
+      PL_EIG.write("%g," % (MDTU))
+      temp = line.split()
+      for i in range(int(Nc - 1)):
+        phase = float(temp[1 + i])
+        if phase > 3.142 or phase < -3.142:
+          print infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+          print >> ERRFILE, infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+        PL_EIG.write("%g," % (phase))
+      print >> PL_EIG, "%g" % (float(temp[-1]))
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -345,6 +368,7 @@ MYERS.close()
 RATIO.close()
 POLY.close()
 POLY_MOD.close()
+PL_EIG.close()
 SCALAR_SQUARES.close()
 SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
