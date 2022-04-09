@@ -48,7 +48,7 @@ for Nc_mu in glob.glob('Nc*'):
     os.chdir(path + Nc_mu + '/' + ens)
     toCheck = 'results/poly_mod.autocorr'
     if not os.path.isfile(toCheck):     # Skip unfinished ensembles
-      print("Skipping %s" % Nf + '/' + vol + '/' + ens)
+      print("Skipping %s" % Nc_mu + '/' + ens)
       continue
 
     this_ens = this_Nc_mu + '/' + ens
