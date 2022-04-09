@@ -8,7 +8,7 @@ import h5py
 # Package bosonic BMN data and results/attributes into HDF5 file
 
 # Cycle over ensembles and write to ~/SYM/bosonicBMN/bBMN_data.h5
-# A total of 397 ensembles, all with Nt=24
+# A total of 384 ensembles, all with Nt=24
 # Group paths will specify Nc, mu = mu_lat / lambda_lat^(1/3)
 #   and t = 1 / (Nt * lambda_lat^(1/3))
 # Attributes for each ensemble:
@@ -16,7 +16,7 @@ import h5py
 #   block size, number of blocks, acceptance rate,
 #   autocorrelation times for |PL| and one Tr[X^2]
 # Datasets for each ensemble, most with ave and err as attributes:
-#   bosonic action, exp(-Delta S), scalar squares Tr[X^2],
+#   bosonic action, exp(-Delta S), Myers term, scalar squares Tr[X^2],
 #   real, imag and magnitude of Polyakov loop (PL),
 #   phases of PL eigenvalues, lists of analyzed configurations
 # PL magnitude susceptibility also included as dataset attribute
@@ -34,6 +34,7 @@ if not os.path.isdir(path):
 os.chdir(path)
 
 # Top- and second-level groups for each Nc and mu
+Nt = 24.0
 for Nc_mu in glob.glob('Nc*'):
   temp = Nc_mu.split('_24_')
   Nc = temp[0]
@@ -43,21 +44,24 @@ for Nc_mu in glob.glob('Nc*'):
 
   # Third-level group for each ensemble specified by t
   os.chdir(path + Nc_mu)
-  for ens in glob.glob('t*'):
+  for ens in glob.glob('t[0-9]*'):
     os.chdir(path + Nc_mu + '/' + ens)
     toCheck = 'results/poly_mod.autocorr'
     if not os.path.isfile(toCheck):     # Skip unfinished ensembles
       print("Skipping %s" % Nf + '/' + vol + '/' + ens)
       continue
 
-    temp = ens.split('_')
-    g = temp[0]
-    f = temp[1]
-    this_str = this_Nc_mu + '/' + g + '/' + f
-    this_grp = f.create_group(this_str)
+    this_ens = this_Nc_mu + '/' + ens
+    this_grp = f.create_group(this_ens)
+
+    # Record lambda_lat and mu_lat based on Nt, t and mu
+    t_float = float(ens.split('t')[1])
+    mu_float = float(mu.split('mu')[1])
+    cube_root = 1.0 / (Nt * t_float)            # lambda_lat^{1/3}
+    this_grp.attrs['lambda_lat'] = np.power(cube_root, 3)
+    this_grp.attrs['mu_lat'] = mu_float * cube_root
 
     # Record thermalization cut and block size
-    # TODO: Check Out/analysis.sh Out/observables.sh ...
     check = -1
     therm = path + Nc_mu + '/therm.sh'
     for line in open(therm):
@@ -68,9 +72,10 @@ for Nc_mu in glob.glob('Nc*'):
         check = int(temp[2])
         break
     if check < 0:
-      print("ERROR: Thermalization cut not found for %s: " % this_str)
+      print("ERROR: Thermalization cut not found for %s: " % this_ens)
       sys.exit(1)
 
+    # ------------------------------------------------------------
     # Record acceptance, auto-correlation and Nblocks for ensemble
     for line in open('results/accP.dat'):
       temp = line.split()
@@ -81,55 +86,187 @@ for Nc_mu in glob.glob('Nc*'):
       temp = line.split()
       this_grp.attrs['autocorrelation time'] = float(temp[0])
     for line in open('results/scalarsquares.autocorr'):
-      if not line.startswith('W'):      # Ignore warning message
-        temp = line.split()
-        this_grp.attrs['autocorrelation time (Tr[x^2])'] = float(temp[0])
+      temp = line.split()
+      this_grp.attrs['autocorrelation time (Tr[x^2])'] = float(temp[0])
 
-# TODO...
-      # Now set up data and attributes/results for this ensemble
-      # First do simple observables measured every trajectory=MDTU
-      # All these have a single datum per line
-      # Skipping wall_time
-      for obs in ['poly_mod', 'poly_arg', 'poly_r', 'exp_dS']:
-        obsfile = 'data/' + obs + '.csv'
-        dset = this_grp.create_dataset(obs, (Ntraj,), dtype='f')
+    # Now set up datasets and result-attributes for this ensemble
+    # First do bosonic action to set Ntraj
+    SB_arr = []
+    for line in open('data/SB.csv'):
+      if line.startswith('M'):
+        continue
+      temp = line.split(',')
+      SB_arr.append(float(temp[1]))
+    Ntraj = len(SB_arr)
+    this_grp.attrs['Ntraj'] = Ntraj
 
-        traj = 0
-        for line in open(obsfile):
-          temp = line.split(',')
-          if line.startswith('M') or line.startswith('t'):
+    SB = np.array(SB_arr)
+    dset = this_grp.create_dataset('SB', data=SB)
+
+    # Record ensemble average as an attribute of the dataset
+    for line in open('results/SB.dat'):
+      temp = line.split()
+      dset.attrs['ave'] = float(temp[0])
+      dset.attrs['err'] = float(temp[1])
+      if not int(temp[-1]) == Nblocks:
+        print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
+        print("%s vs %d in SB.dat" % (temp[-1], Nblocks))
+        sys.exit(1)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Simple observables measured every trajectory=MDTU
+    # Myers term, exp(-Delta S)
+    # Only want one datum per line from each of these
+    for obs in ['ratio', 'Myers', 'exp_dS']:
+      obsfile = 'data/' + obs + '.csv'
+      dset = this_grp.create_dataset(obs, (Ntraj,), dtype='f')
+
+      traj = 0
+      for line in open(obsfile):
+        temp = line.split(',')
+        if line.startswith('M') or line.startswith('t'):
+          continue
+        dset[traj] = float(temp[1])
+        traj += 1
+
+      if traj != Ntraj:
+        print("ERROR: Ntraj mismatch in %s, " % this_ens, end='')
+        print("%d vs %d in %s" % (traj, Ntraj, obsfile))
+        sys.exit(1)
+
+      # Results as attributes, checking Nblocks
+      resfile = 'results/' + obs + '.dat'
+      if os.path.isfile(resfile):
+        for line in open(resfile):
+          if line.startswith('#'):
             continue
-          dset[traj] = float(temp[1])
-          traj += 1
+          temp = line.split()
+          dset.attrs['ave'] = float(temp[0])
+          dset.attrs['err'] = float(temp[1])
+          if not int(temp[-1]) == Nblocks:
+            print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+            print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
+            sys.exit(1)
+    # ------------------------------------------------------------
 
-        if traj != Ntraj:
-          print("ERROR: Ntraj mismatch in %s, " % this_str, end='')
-          print("%d vs %d in %s" % (traj, Ntraj, obsfile))
+    # ------------------------------------------------------------
+    # Polyakov loop also measured every trajectory=MDTU
+    # Want three data per line from each of these (real, imag, magnitude)
+    # Only magnitude is averaged
+    for obs in ['poly_mod']:
+      obsfile = 'data/' + obs + '.csv'
+      name = 'Polyakov_loop'
+
+      dset = this_grp.create_dataset(name, (Ntraj,3,), dtype='f')
+      dset.attrs['columns'] = ['real', 'imag', 'magnitude']
+      traj = 0
+      for line in open(obsfile):
+        temp = line.split(',')
+        if line.startswith('M') or line.startswith('t'):
+          continue
+        dset[traj] = [float(temp[2]), float(temp[3]), float(temp[1])]
+        traj += 1
+
+      if traj != Ntraj:
+        print("ERROR: Ntraj mismatch in %s, " % this_ens, end='')
+        print("%d vs %d in %s" % (traj, Ntraj, obsfile))
+        sys.exit(1)
+
+      # Results as attributes, checking Nblocks
+      resfile = 'results/' + obs + '.dat'
+      for line in open(resfile):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['magnitude ave'] = float(temp[0])
+        dset.attrs['magnitude err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+          print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
           sys.exit(1)
+      suscfile = 'results/' + obs + '.suscept'
+      for line in open(suscfile):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['magnitude suscept'] = float(temp[0])
+        dset.attrs['magnitude suscept_err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
+          print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
+          sys.exit(1)
+    # ------------------------------------------------------------
 
-        # Results as attributes, checking Nblocks
-        resfile = 'results/' + obs + '.dat'
-        if os.path.isfile(resfile):           # No ave for poly_arg
-          for line in open(resfile):
-            if line.startswith('#'):
-              continue
-            temp = line.split()
-            dset.attrs['ave'] = float(temp[0])
-            dset.attrs['err'] = float(temp[1])
-            if not int(temp[-1]) == Nblocks:
-              print("ERROR: Nblocks mismatch in %s, " % this_str, end='')
-              print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
-              sys.exit(1)
+    # ------------------------------------------------------------
+    # Scalar squares Tr[X^2] also measured every trajectory=MDTU
+    # Want nine data per line, all averaged
+    # Here it is more convenient to collect the phases in a numpy array
+    Nscalar = 9
+    TrXSq = np.empty((Ntraj, Nscalar), dtype = np.float)
 
-        # Same for susceptibility, skewness, kurtosis if present
-        suscfile = 'results/' + obs + '.suscept'
-        if os.path.isfile(suscfile):        # No suscept for some obs
-          for line in open(suscfile):
-            temp = line.split()
-            dset.attrs[temp[0]] = float(temp[1])
-            dset.attrs[temp[0] + '_err'] = float(temp[2])
-            if not int(temp[-1]) == Nblocks:
-              print("ERROR: Nblocks mismatch in %s: " % this_str, end='')
-              print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
-              sys.exit(1)
+    TrXSq_tot = 0
+    for line in open('data/scalarsquares.csv'):
+      if line.startswith('M'):
+        continue
+      temp = line.split(',')
+      index = int(temp[0]) - 1
+      for j in range(Nscalar):
+        TrXSq[index][j] = float(temp[j + 1])
+        TrXSq_tot += 1
+
+    # Too many measurements will cause errors above
+    # Also check to make sure no measurements are missing
+    expect = Ntraj * Nscalar
+    if TrXSq_tot != expect:
+      print("ERROR: TrXSq mismatch in %s: " % this_ens, end='')
+      print("%d vs %d expected" % (TrXSq_tot, expect))
+      sys.exit(1)
+
+    dset = this_grp.create_dataset('Scalar_squares', data=TrXSq)
+
+    # Results as attributes, checking Nblocks
+    resfile = 'results/scalarsquares.dat'
+    for line in open(resfile):
+      TrXSq_ave = np.empty((Nscalar), dtype = np.float)
+      TrXSq_err = np.empty_like(TrXSq_ave)
+      temp = line.split()
+      for j in range(Nscalar):
+        TrXSq_ave[j] = float(temp[2 * j])
+        TrXSq_err[j] = float(temp[2 * j + 1])
+
+      dset.attrs['magnitude ave'] = TrXSq_ave
+      dset.attrs['magnitude err'] = TrXSq_err
+      if not int(temp[-1]) == Nblocks:
+        print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+        print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
+        sys.exit(1)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Finally, Polyakov loop eigenvalue phases
+    # Nc phases measured every trajectory=MDTU, not averaged
+    # Here it is more convenient to collect the phases in a numpy array
+    Nc_int = int(Nc.split('Nc')[1])
+    PLeig = np.empty((Ntraj, Nc_int), dtype = np.float)
+
+    PLeig_tot = 0
+    for line in open('data/PLeig.csv'):
+      if line.startswith('M'):
+        continue
+      temp = line.split(',')
+      index = int(temp[0]) - 1
+      for j in range(Nc_int):
+        PLeig[index][j] = float(temp[j + 1])
+        PLeig_tot += 1
+
+    # Too many measurements will cause errors above
+    # Also check to make sure no measurements are missing
+    expect = Ntraj * Nc_int
+    if PLeig_tot != expect:
+      print("ERROR: PLeig mismatch in %s: " % this_ens, end='')
+      print("%d vs %d expected" % (PLeig_tot, expect))
+      sys.exit(1)
+
+    dset = this_grp.create_dataset('PLeig_phases', data=PLeig)
 # ------------------------------------------------------------------

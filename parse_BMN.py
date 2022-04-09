@@ -6,7 +6,7 @@ import math
 # ------------------------------------------------------------------
 # Parse BMN output files for a single ensemble,
 # shuffling the extracted data into dedicated files for plotting
-# Normalize the Polyakov loop data by Nc and the bosonic action by Nc^2
+# Normalize the Polyakov loop data by Nc and the bosonic action by Nc^2-1
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
@@ -251,8 +251,7 @@ for temp_tag in open('list.txt'):
     # The exception is the fermion action
     # This is always measured twice (before and after the trajectory)
     # and which value we want depends on the accept/reject step...
-    # Normalize using Nt and Nc extracted above
-    # Recall DIMF = Nc**2 - 1 for SU(N)
+    # Normalize using Nt and DIMF = Nc**2 - 1
     elif line.startswith('action: so3 '):
       if fermAct[0] < 0:
         split = line.split()

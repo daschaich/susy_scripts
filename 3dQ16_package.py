@@ -198,7 +198,7 @@ for Nc in ['Nc4', 'Nc6', 'Nc8']:
 
       # ------------------------------------------------------------
       # Simple observables measured every trajectory=MDTU
-      # Bosonic action, link trce, exp(-Delta S)
+      # Bosonic action, link trace, exp(-Delta S)
       # Only want one datum per line from each of these
       # Skipping cg_iters, wall_time
       for obs in ['SB', 'Flink', 'exp_dS']:
