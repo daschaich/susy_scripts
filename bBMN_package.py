@@ -83,11 +83,13 @@ for Nc_mu in glob.glob('Nc*'):
       this_grp.attrs['Nblocks'] = Nblocks
       this_grp.attrs['acceptance'] = float(temp[0])
     for line in open('results/poly_mod.autocorr'):
-      temp = line.split()
-      this_grp.attrs['autocorrelation time'] = float(temp[0])
+      if not line.startswith('W'):      # Ignore warning message
+        temp = line.split()
+        this_grp.attrs['autocorrelation time'] = float(temp[0])
     for line in open('results/scalarsquares.autocorr'):
-      temp = line.split()
-      this_grp.attrs['autocorrelation time (Tr[x^2])'] = float(temp[0])
+      if not line.startswith('W'):      # Ignore warning message
+        temp = line.split()
+        this_grp.attrs['autocorrelation time (Tr[x^2])'] = float(temp[0])
 
     # Now set up datasets and result-attributes for this ensemble
     # First do bosonic action to set Ntraj

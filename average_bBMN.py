@@ -96,19 +96,20 @@ for line in open('data/poly_mod.csv'):
 # 'tol' is min ratio between data and tau (default 50)
 # 'Quiet' prints warning rather than shutting down if tol not satisfied
 autocorr_check = 1
+outfilename = 'results/poly_mod.autocorr'
+outfile = open(outfilename, 'w')
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print("Error: poly_mod autocorrelation time %d " % tau, end='')
-  print("is larger than block size %d " % block_size, end='')
-  print("in %s" % path)
+  print("Warning: " % tau, end='', file=outfile)
+  print("poly_mod autocorrelation time %d " % tau, end='', file=outfile)
+  print("is larger than block size %d " % block_size, end='', file=outfile)
+  print("in %s" % path, file=outfile)
   autocorr_check = -1
 
 # Record poly_mod auto-correlation time for future reference
 # Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
-outfilename = 'results/poly_mod.autocorr'
-outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
@@ -135,24 +136,25 @@ for line in open('data/scalarsquares.csv'):
   dat.append(float(temp[-1]))
 
 # Arguments discussed above
+outfilename = 'results/scalarsquares.autocorr'
+outfile = open(outfilename, 'w')
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print("Error: scalar square autocorrelation time %d " % tau, end='')
-  print("is larger than block size %d " % block_size, end='')
-  print("in %s" % path)
+  print("Warning: " % tau, end='', file=outfile)
+  print("scalar square autocorrelation time %d " % tau, end='', file=outfile)
+  print("is larger than block size %d " % block_size, end='', file=outfile)
+  print("in %s" % path, file=outfile)
   autocorr_check = -1
 
 # Record scalar square auto-correlation time for future reference
 # Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
-outfilename = 'results/scalarsquares.autocorr'
-outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
 if autocorr_check < 0:
-  sys.exit(1)
+#  sys.exit(1)      # For now, continue with warning...
 # ------------------------------------------------------------------
 
 
