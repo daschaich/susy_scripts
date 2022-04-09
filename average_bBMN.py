@@ -153,8 +153,9 @@ eff_stat = np.floor(len(dat) * sep / tau)
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
-if autocorr_check < 0:
-#  sys.exit(1)      # For now, continue with warning...
+# For now, continue with warning...
+#if autocorr_check < 0:
+#  sys.exit(1)
 # ------------------------------------------------------------------
 
 
