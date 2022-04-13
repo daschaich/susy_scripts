@@ -23,6 +23,10 @@ MYERS = open('data/Myers.csv', 'w')
 print >> MYERS, "MDTU,Myers/Nt"
 RATIO = open('data/ratio.csv', 'w')
 print >> RATIO, "MDTU,Ratio(SO6/SO3)"
+EXTENT = open('data/extent.csv', 'w')
+print >> EXTENT, "MDTU,Extent"
+ENERGY = open('data/energy.csv', 'w')
+print >> ENERGY, "MDTU,E/N^2,E_prime"
 POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
@@ -69,6 +73,8 @@ print >> TU, "t,MDTU"
 bAct = [-1.0, -1.0]
 Myers = [-1.0, -1.0]
 ratio = [-1.0, -1.0]
+energy = [-1.0, -1.0]
+prime = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
 traj = 0
@@ -129,13 +135,24 @@ for temp_tag in open('list.txt'):
           toprint += ',eig' + str(i)
         print >> PL_EIG, "MDTU%s" % (toprint)
 
-    # Extract Nt
+    # Extract Nt, lambda_lat and mu_lat for other normalizations
     elif line.startswith('nt '):
       Nt = float((line.split())[1])
 
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
+
+    elif line.startswith('lambda '):
+      lambda_lat = float((line.split())[1])
+      cube_root = lambda_lat**(1.0 / 3.0)
+      norm_extent = 0.5 / (cube_root * cube_root)
+      norm_energy = 1.0 / (Nt * Nc * Nc * cube_root)
+      norm_prime = 1.0 / (Nt * Nt * cube_root * cube_root)
+
+    elif line.startswith('mu '):
+      mu_lat = float((line.split())[1])
+      norm_Myers = 1.0 / (mu_lat * Nc * Nc)
       break       # Don't go through whole file yet
 
   if traj_per_file < 0:
@@ -227,13 +244,21 @@ for temp_tag in open('list.txt'):
       if bAct[0] < 0:
         split = line.split()
         bAct[0] = float(split[10]) / (DIMF * Nt)
-        Myers[0] = float(split[8]) / Nt
-        ratio[0] = float(split[4]) / float(split[2])
+        td = [float(split[2]), float(split[4]), \
+              float(split[6]), float(split[8])]
+        Myers[0] = td[3] / Nt
+        ratio[0] = td[1] / td[0]
+        energy[0] = 3.0 * td[2] + 2.0 * (td[0] + td[1]) + 2.5 * td[3]
+        prime[0] = 6.0 * td[2] + 2.0 * (td[0] + td[1]) + 3.75 * td[3]
       elif bAct[1] < 0:
         split = line.split()
         bAct[1] = float(split[10]) / (DIMF * Nt)
-        Myers[1] = float(split[8]) / Nt
-        ratio[1] = float(split[4]) / float(split[2])
+        td = [float(split[2]), float(split[4]), \
+              float(split[6]), float(split[8])]
+        Myers[1] = td[3] / Nt
+        ratio[1] = td[1] / td[0]
+        energy[1] = 3.0 * td[2] + 2.0 * (td[0] + td[1]) + 2.5 * td[3]
+        prime[1] = 6.0 * td[2] + 2.0 * (td[0] + td[1]) + 3.75 * td[3]
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -261,16 +286,26 @@ for temp_tag in open('list.txt'):
       if line.startswith('ACCEPT'):
         print >> ACCP, "%d,1" % traj
         print >> SB, "%g,%g" % (MDTU, bAct[1])
+        Myers[1] *= norm_Myers
         print >> MYERS, "%g,%g" % (MDTU, Myers[1])
         print >> RATIO, "%g,%g" % (MDTU, ratio[1])
+        energy[1] *= norm_energy
+        prime[1] *= norm_prime
+        print >> ENERGY, "%g,%g,%g" % (MDTU, energy[1], prime[1])
       else:
         print >> ACCP, "%d,0" % traj
         print >> SB, "%g,%g" % (MDTU, bAct[0])
-        print >> MYERS, "%g,%g" % (MDTU, Myers[0])
+        Myers[0] *= norm_Myers
+        print >> MYERS, "%g,%g" % (MDTU, norm_Myers * Myers[0])
         print >> RATIO, "%g,%g" % (MDTU, ratio[0])
+        energy[0] *= norm_energy
+        prime[0] *= norm_prime
+        print >> ENERGY, "%g,%g,%g" % (MDTU, energy[0], prime[0])
       bAct = [-1.0, -1.0]                          # Reset
       Myers = [-1.0, -1.0]
       ratio = [-1.0, -1.0]
+      energy = [-1.0, -1.0]
+      prime = [-1.0, -1.0]
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
@@ -321,6 +356,8 @@ for temp_tag in open('list.txt'):
       X9 = float(temp[10])
       print >> SCALAR_SQUARES, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g" \
                                % (MDTU, X1, X2, X3, X4, X5, X6, X7, X8, X9)
+      extent = norm_extent * (X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9)
+      print >> EXTENT, "%g,%g" % (MDTU, extent)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -376,6 +413,8 @@ MISSINGFILES.close()
 SB.close()
 MYERS.close()
 RATIO.close()
+EXTENT.close()
+ENERGY.close()
 POLY.close()
 POLY_MOD.close()
 PL_EIG.close()

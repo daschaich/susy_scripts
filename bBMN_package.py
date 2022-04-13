@@ -118,9 +118,10 @@ for Nc_mu in glob.glob('Nc*'):
 
     # ------------------------------------------------------------
     # Simple observables measured every trajectory=MDTU
-    # Myers term, exp(-Delta S)
+    # SO(6)/SO(3) ratio, Myers term, extent of space, exp(-Delta S)
     # Only want one datum per line from each of these
-    for obs in ['ratio', 'Myers', 'exp_dS']:
+    # Myers and extent of space normalized while parsing
+    for obs in ['ratio', 'Myers', 'extent', 'exp_dS']:
       obsfile = 'data/' + obs + '.csv'
       dset = this_grp.create_dataset(obs, (Ntraj,), dtype='f')
 
@@ -153,6 +154,54 @@ for Nc_mu in glob.glob('Nc*'):
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
+    # Internal energy also measured every trajectory=MDTU
+    # Want two data per line: E/N^2 and E_prime (normalized while parsing)
+    # Only internal energy is averaged
+    for obs in ['poly_mod']:
+      obsfile = 'data/' + obs + '.csv'
+      name = 'Polyakov_loop'
+
+      dset = this_grp.create_dataset(name, (Ntraj,2,), dtype='f')
+      dset.attrs['columns'] = ['E/N^2', 'E_prime']
+      traj = 0
+      for line in open(obsfile):
+        temp = line.split(',')
+        if line.startswith('M') or line.startswith('t'):
+          continue
+        dset[traj] = [float(temp[1]), float(temp[2])]
+        traj += 1
+
+      if traj != Ntraj:
+        print("ERROR: Ntraj mismatch in %s, " % this_ens, end='')
+        print("%d vs %d in %s" % (traj, Ntraj, obsfile))
+        sys.exit(1)
+
+      # Results (including specific heat) as attributes, checking Nblocks
+      resfile = 'results/' + obs + '.dat'
+      for line in open(resfile):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['energy ave'] = float(temp[0])
+        dset.attrs['energy err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+          print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
+          sys.exit(1)
+      specfile = 'results/' + obs + '.specheat'
+      for line in open(specfile):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['specific heat'] = float(temp[0])
+        dset.attrs['specific heat_err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
+          print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
+          sys.exit(1)
+    # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
     # Polyakov loop also measured every trajectory=MDTU
     # Want three data per line from each of these (real, imag, magnitude)
     # Only magnitude is averaged
@@ -175,7 +224,7 @@ for Nc_mu in glob.glob('Nc*'):
         print("%d vs %d in %s" % (traj, Ntraj, obsfile))
         sys.exit(1)
 
-      # Results as attributes, checking Nblocks
+      # Results (including susceptibility) as attributes, checking Nblocks
       resfile = 'results/' + obs + '.dat'
       for line in open(resfile):
         if line.startswith('#'):
@@ -271,4 +320,5 @@ for Nc_mu in glob.glob('Nc*'):
       sys.exit(1)
 
     dset = this_grp.create_dataset('PLeig_phases', data=PLeig)
+    sys.exit(0)
 # ------------------------------------------------------------------

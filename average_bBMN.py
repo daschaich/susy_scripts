@@ -10,6 +10,7 @@ import emcee.autocorr as acor
 
 # Assume one ensemble per directory (overwrite results files)
 # Assume Polyakov loop data are already normalized by Nc
+# Myers, extent of space and E/N^2 also normalized while parsing
 
 # Parse arguments: first is thermalization cut, second is block size
 # Will check block size is larger than poly_mod, 9th scalar square
@@ -161,11 +162,12 @@ outfile.close()
 
 
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action,
+# For the Polyakov loop, bosonic action, internal energy, extent of space,
 # 'Myers' scalar trilinear term and SO(6) / SO(3) action ratio
 # we're interested in the first datum on each line (following MDTU)
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-for obs in ['poly_mod', 'SB', 'Myers', 'ratio']:
+# For the internal energy, this is E/N^2, ignoring E_prime
+for obs in ['poly_mod', 'SB', 'energy', 'extent', 'Myers', 'ratio']:
   ave = 0.0         # Accumulate within each block
   count = 0
   datList = []
