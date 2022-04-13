@@ -89,7 +89,7 @@ for Nc_mu in glob.glob('Nc*'):
     for line in open('results/scalarsquares.autocorr'):
       if not line.startswith('W'):      # Ignore warning message
         temp = line.split()
-        this_grp.attrs['autocorrelation time (Tr[x^2])'] = float(temp[0])
+        this_grp.attrs['autocorrelation time (Tr[X^2])'] = float(temp[0])
 
     # Now set up datasets and result-attributes for this ensemble
     # First do bosonic action to set Ntraj
@@ -157,9 +157,9 @@ for Nc_mu in glob.glob('Nc*'):
     # Internal energy also measured every trajectory=MDTU
     # Want two data per line: E/N^2 and E_prime (normalized while parsing)
     # Only internal energy is averaged
-    for obs in ['poly_mod']:
+    for obs in ['energy']:
       obsfile = 'data/' + obs + '.csv'
-      name = 'Polyakov_loop'
+      name = 'Internal_energy'
 
       dset = this_grp.create_dataset(name, (Ntraj,2,), dtype='f')
       dset.attrs['columns'] = ['E/N^2', 'E_prime']
@@ -182,8 +182,8 @@ for Nc_mu in glob.glob('Nc*'):
         if line.startswith('#'):
           continue
         temp = line.split()
-        dset.attrs['energy ave'] = float(temp[0])
-        dset.attrs['energy err'] = float(temp[1])
+        dset.attrs['E/N^2 ave'] = float(temp[0])
+        dset.attrs['E/N^2 err'] = float(temp[1])
         if not int(temp[-1]) == Nblocks:
           print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
           print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
@@ -274,7 +274,7 @@ for Nc_mu in glob.glob('Nc*'):
       print("%d vs %d expected" % (TrXSq_tot, expect))
       sys.exit(1)
 
-    dset = this_grp.create_dataset('Scalar_squares', data=TrXSq)
+    dset = this_grp.create_dataset('Scalar_squares (Tr[X^2])', data=TrXSq)
 
     # Results as attributes, checking Nblocks
     resfile = 'results/scalarsquares.dat'
@@ -286,8 +286,8 @@ for Nc_mu in glob.glob('Nc*'):
         TrXSq_ave[j] = float(temp[2 * j])
         TrXSq_err[j] = float(temp[2 * j + 1])
 
-      dset.attrs['magnitude ave'] = TrXSq_ave
-      dset.attrs['magnitude err'] = TrXSq_err
+      dset.attrs['ave'] = TrXSq_ave
+      dset.attrs['err'] = TrXSq_err
       if not int(temp[-1]) == Nblocks:
         print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
         print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
