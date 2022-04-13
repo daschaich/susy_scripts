@@ -296,7 +296,7 @@ for temp_tag in open('list.txt'):
         print >> ACCP, "%d,0" % traj
         print >> SB, "%g,%g" % (MDTU, bAct[0])
         Myers[0] *= norm_Myers
-        print >> MYERS, "%g,%g" % (MDTU, norm_Myers * Myers[0])
+        print >> MYERS, "%g,%g" % (MDTU, Myers[0])
         print >> RATIO, "%g,%g" % (MDTU, ratio[0])
         energy[0] *= norm_energy
         prime[0] *= norm_prime

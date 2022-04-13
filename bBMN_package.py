@@ -320,5 +320,4 @@ for Nc_mu in glob.glob('Nc*'):
       sys.exit(1)
 
     dset = this_grp.create_dataset('PLeig_phases', data=PLeig)
-    sys.exit(0)
 # ------------------------------------------------------------------
