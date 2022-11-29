@@ -8,7 +8,7 @@ fi
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
 inpath=/raidc/users/schaich/SYM/$dir        # Customized for Liverpool
-outpath=/raid1/backup/schaich/SYM/$dir
+outpath=/raide/www/people/staff/schaich/SYM/$dir
 # ------------------------------------------------------------------
 
 
@@ -24,13 +24,13 @@ rm -f temp
 
 # Use list of files in given ensemble to extract time series data
 rm -f $outpath/data/*.csv $outpath/ERRORS
-echo "python ~schaich/scripts/parse_SYM.py"
-python ~schaich/scripts/parse_SYM.py
+echo "python2 ~schaich/scripts/parse_SYM.py"
+python2 ~schaich/scripts/parse_SYM.py
 chmod 664 $outpath/data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
-python ~schaich/scripts/check_eig_pairs.py >> $outpath/ERRORS
+python2 ~schaich/scripts/check_eig_pairs.py >> $outpath/ERRORS
 
 # Replace Web page to update timestamp
 date=`date`
