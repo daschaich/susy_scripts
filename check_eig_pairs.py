@@ -4,8 +4,9 @@ import sys
 import glob
 import numpy as np
 # ------------------------------------------------------------------
-# Check that D.D^dag eigenvalues come in pairs
-TOL = 1e-6
+# Check that D.D^dag eigenvalues come in pairs up to this tolerance:
+TOL = 1e-6      # Relative difference between eigenvalues
+MAG = 1e-12     # Absolute magnitude below which roundoff acceptable
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
@@ -33,7 +34,7 @@ for filename in glob.glob('Out/*eig.*'):
         even = float(temp[2])
       elif evenodd == 1:
         diff = np.fabs(float(temp[2]) - even)
-        if diff / even > TOL:
+        if diff / even > TOL and diff > MAG:
           print "Apparent pairing breakdown for", filename
           check = 1   # Avoid spurious non-completion error
           break       # Move on to next file

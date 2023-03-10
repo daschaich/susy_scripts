@@ -185,6 +185,13 @@ for temp_tag in open('list.txt'):
       goodtogo = False
       break
 
+    # Check for unitarity problem
+    # Report for info, but don't skip if found
+    if line.startswith('Unitarity problem'):
+      print infile, "reports unitarity problem"
+      print >> ERRFILE, infile, "reports unitarity problem"
+      break
+
   if not goodtogo:
     continue        # Skip this file, which appears malformed
 
@@ -403,7 +410,7 @@ for temp_tag in open('list.txt'):
 
     # ------------------------------------------------------------
     # Scalar eigenvalues
-    # Some hacky backspaces for output formatting...
+    # Only look at largest and smallest (most negative) to keep this manageable
     elif line.startswith('POLAR_EIG '):
       NEED_SCALAR_EIGS = -1
       temp = line.split()
@@ -629,7 +636,7 @@ for temp_tag in open('list.txt'):
 
       # ----------------------------------------------------------
       # Scalar eigenvalues
-      # Some hacky backspaces for output formatting...
+      # Only look at largest and smallest (most negative) to keep this manageable
       elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
         temp = line.split()
         index = int(temp[1])

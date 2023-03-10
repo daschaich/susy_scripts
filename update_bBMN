@@ -1,0 +1,35 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+if [ $# != 0 ]; then
+  echo "Usage: $0"
+  exit 1
+fi
+
+temp=`pwd`
+dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
+path=/raidc/users/schaich/SYM/$dir        # Customized for Liverpool
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# Construct list of files in given ensemble, for parse_bBMN.py
+rm -f list.txt
+for i in $path/Out/out.* ; do
+  echo ${i##*.} >> temp    # Strip everything up to and including the last "."
+done
+sort temp -n | uniq > list.txt
+rm -f temp
+
+# Use list of files in given ensemble to extract time series data
+rm -f $path/data/*.csv $path/ERRORS
+echo "python ~schaich/scripts/parse_bBMN.py"
+python ~schaich/scripts/parse_bBMN.py
+chmod 644 $path/data/*.csv
+rm -f list.txt            # Done with this
+
+# I like to monitor this (looks better without $path)
+wc -l M*
+wc -l E*
+echo
+# ------------------------------------------------------------------

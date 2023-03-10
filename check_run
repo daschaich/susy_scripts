@@ -1,0 +1,50 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <dir> <range of last traj to check>"
+  exit 1
+fi
+
+dir=$1
+len=$2
+
+if [ -f $dir/data/TU.csv ] ; then # Make sure data directory present
+  echo -ne "Checking $dir --- "
+  temp=`tail -n $len $dir/data/TU.csv | head -n 1`
+  start=${temp%%,*}   # Strip everything after and including ","
+  temp=`tail -n 1 $dir/data/TU.csv`
+  end=${temp%%,*}     # Strip everything after and including ","
+  echo "$len trajectories $start through $end"
+
+  # Acceptance
+  tail -n $len $dir/data/accP.csv | awk -F',' '{print $2}' > TEMP
+  echo -ne " Accept rate: "
+  average TEMP | awk '{print $3}'
+
+  # Average |dS|
+  tail -n $len $dir/data/deltaS.csv | awk -F',' '{print $2*$2}' > TEMP
+  echo -ne "  RMS DeltaH: "
+  average TEMP | awk '{print sqrt($3)}'
+
+  # Maximum |dS|
+  tail -n $len $dir/data/abs_dS.csv | awk -F',' '{print $2}' > TEMP
+  echo -ne "Max |DeltaH|: "
+  sort -g TEMP | tail -n 1
+
+  rm -f TEMP
+
+  # Might as well check this while we're at it
+  miss=`wc -l $dir/M* | awk '{print $1}'`
+  if [ miss ] ; then
+    echo "     MISSING: $miss"
+  fi
+  err=`wc -l $dir/E* | awk '{print $1}'`
+  if [ err ] ; then
+    echo "      ERRORS: $err"
+  fi
+else
+  echo "Error: $dir/data/TU.csv not found"
+  exit 1
+fi
+echo
+# ------------------------------------------------------------------

@@ -1,10 +1,10 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 import os
 import sys
 import glob
 import math
 # ------------------------------------------------------------------
-# Parse BMN output files for a single ensemble,
+# Parse bosonic BMN output files for a single ensemble,
 # shuffling the extracted data into dedicated files for plotting
 # Normalize the Polyakov loop data by Nc and the bosonic action by Nc^2-1
 
@@ -23,12 +23,15 @@ MYERS = open('data/Myers.csv', 'w')
 print >> MYERS, "MDTU,Myers/Nt"
 RATIO = open('data/ratio.csv', 'w')
 print >> RATIO, "MDTU,Ratio(SO6/SO3)"
-SF = open('data/SF.csv', 'w')
-print >> SF, "MDTU,S_F"
+EXTENT = open('data/extent.csv', 'w')
+print >> EXTENT, "MDTU,Extent"
+ENERGY = open('data/energy.csv', 'w')
+print >> ENERGY, "MDTU,E/N^2,E_prime"
 POLY = open('data/poly.csv', 'w')
 print >> POLY, "ReTr(L),ImTr(L)"
 POLY_MOD = open('data/poly_mod.csv', 'w')
 print >> POLY_MOD, "MDTU,|Tr(L)|,ReTr(L),ImTr(L)"
+PL_EIG = open('data/PLeig.csv', 'w')
 SCALAR_SQUARES = open('data/scalarsquares.csv', 'w')
 print >> SCALAR_SQUARES, "MDTU,Tr(X1^2),Tr(X2^2),Tr(X3^2),Tr(X4^2),Tr(X5^2),Tr(X6^2),Tr(X7^2),Tr(X8^2),Tr(X9^2)"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
@@ -37,8 +40,6 @@ SCALAR_EIG = open('data/scalar_eig.csv', 'w')
 print >> SCALAR_EIG, "MDTU,min_min,min_max,max_min,max_max"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
-EIG = open('data/eig.csv', 'w')
-print >> EIG, "MDTU,min_eig"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -50,23 +51,17 @@ print >> DELTAS, "t,deltaS"
 ABS_DS = open('data/abs_dS.csv', 'w')
 print >> ABS_DS, "t,|deltaS|"
 FORCE = open('data/force.csv', 'w')
-print >> FORCE, "t,G,F1,F2,F3"
-CG_ITERS = open('data/cg_iters.csv', 'w')
-print >> CG_ITERS, "t,cg_iters"
+print >> FORCE, "t,B"
 WALLTIME = open('data/walltime.csv', 'w')
 print >> WALLTIME, "t,walltime"
 WALLTU = open('data/wallTU.csv', 'w')
 print >> WALLTU, "t,cost"
-COND_NUM = open('data/cond_num.csv', 'w')
-print >> COND_NUM, "t,cond_num"
 
 # Run parameters
 NSTEP = open('data/Nstep.csv', 'w')
 print >> NSTEP, "t,N_f,N_g"
 STEPSIZE = open('data/stepsize.csv', 'w')
 print >> STEPSIZE, "t,eps_f,eps_g"
-NORDER = open('data/Norder.csv', 'w')
-print >> NORDER, "t,Norder"
 TLENGTH = open('data/tlength.csv', 'w')
 print >> TLENGTH, "t,L"
 KEY = open('data/key.csv', 'w')
@@ -75,13 +70,13 @@ TU = open('data/TU.csv', 'w')
 print >> TU, "t,MDTU"
 
 # Status checks and running sums for the ensemble as a whole
-fermAct = [-1.0, -1.0]
 bAct = [-1.0, -1.0]
 Myers = [-1.0, -1.0]
 ratio = [-1.0, -1.0]
+energy = [-1.0, -1.0]
+prime = [-1.0, -1.0]
 oldcfg = 0
 oldstamp = "start"
-CG = 1
 traj = 0
 MDTU = 0
 # ------------------------------------------------------------------
@@ -133,13 +128,31 @@ for temp_tag in open('list.txt'):
       Nc = float(((temp[1]).split())[2])
       DIMF = Nc**2 - 1.0
 
-    # Extract Nt
+      # Set up PL_EIG header if this is the first file
+      if traj == 0:
+        toprint = ''
+        for i in range(int(Nc)):
+          toprint += ',eig' + str(i)
+        print >> PL_EIG, "MDTU%s" % (toprint)
+
+    # Extract Nt, lambda_lat and mu_lat for other normalizations
     elif line.startswith('nt '):
       Nt = float((line.split())[1])
 
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
+
+    elif line.startswith('lambda '):
+      lambda_lat = float((line.split())[1])
+      cube_root = lambda_lat**(1.0 / 3.0)
+      norm_extent = 0.5 / (cube_root * cube_root)
+      norm_energy = 1.0 / (Nt * Nc * Nc * cube_root)
+      norm_prime = 1.0 / (Nt * Nt * cube_root * cube_root)
+
+    elif line.startswith('mu '):
+      mu_lat = float((line.split())[1])
+      norm_Myers = 1.0 / (mu_lat * Nc * Nc)
       break       # Don't go through whole file yet
 
   if traj_per_file < 0:
@@ -186,38 +199,13 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
-  Nroot = 1   # Default
-  min_eig = 1
-  max_eig = -1
   SCALAR_SQUARES_READY = -1     # To skip duplicate
   scalar_eig_ave = ''
   scalar_eig_ext = ''
   scalar_eig_width = ''
   for line in open(infile):
-    # See how many fermion forces we will have below
-    # Retain case insensitivity for now
-    if line.lower().startswith('using nroot '):
-      Nroot = int((line.split())[3])
-
-    # Extract spectral range for eigenvalues
-    # Format: RHMC Norder # for spectral range [min, max]
-    elif line.startswith('RHMC Norder '):
-      if 'spectral' in line:
-        temp = line.rstrip()       # Kill newline
-        Norder = int(temp.split()[2])
-        temp2 = temp.rstrip(']')   # Kill ]
-        temp = (temp2.split('['))[-1]
-        temp2 = temp.split(',')
-        min_eig = float(temp2[0])
-        max_eig = float(temp2[1])
-        print >> NORDER, "%d,%d" % (endtraj, Norder)
-      else:         # Original 15-pole format didn't state spectral range
-        min_eig = 1.0e-7
-        max_eig = 1000.0
-        print >> NORDER, "%d,%d" % (endtraj, 15)
-
     # Extract constant run parameters
-    elif line.startswith('traj_length '):
+    if line.startswith('traj_length '):
       tlength = float((line.split())[1])
       print >> TLENGTH, "%d,%g" % (endtraj, tlength)
     elif line.startswith('nstep '):
@@ -248,23 +236,29 @@ for temp_tag in open('list.txt'):
     # ------------------------------------------------------------
     # Now extract evolution observables and physical observables
     # Acceptance comes before (most) measurements
-    # The exception is the fermion action
+    # The exception is the action
     # This is always measured twice (before and after the trajectory)
     # and which value we want depends on the accept/reject step...
     # Normalize using Nt and DIMF = Nc**2 - 1
     elif line.startswith('action: so3 '):
-      if fermAct[0] < 0:
+      if bAct[0] < 0:
         split = line.split()
-        fermAct[0] = float(split[12]) / (16.0 * Nt * DIMF)
         bAct[0] = float(split[10]) / (DIMF * Nt)
-        Myers[0] = float(split[8]) / Nt
-        ratio[0] = float(split[4]) / float(split[2])
-      elif fermAct[1] < 0:
+        td = [float(split[2]), float(split[4]), \
+              float(split[6]), float(split[8])]
+        Myers[0] = td[3] / Nt
+        ratio[0] = td[1] / td[0]
+        energy[0] = 3.0 * td[2] + 2.0 * (td[0] + td[1]) + 2.5 * td[3]
+        prime[0] = 6.0 * td[2] + 2.0 * (td[0] + td[1]) + 3.75 * td[3]
+      elif bAct[1] < 0:
         split = line.split()
-        fermAct[1] = float(split[12]) / (16.0 * Nt * DIMF)
         bAct[1] = float(split[10]) / (DIMF * Nt)
-        Myers[1] = float(split[8]) / Nt
-        ratio[1] = float(split[4]) / float(split[2])
+        td = [float(split[2]), float(split[4]), \
+              float(split[6]), float(split[8])]
+        Myers[1] = td[3] / Nt
+        ratio[1] = td[1] / td[0]
+        energy[1] = 3.0 * td[2] + 2.0 * (td[0] + td[1]) + 2.5 * td[3]
+        prime[1] = 6.0 * td[2] + 2.0 * (td[0] + td[1]) + 3.75 * td[3]
       else:
         print infile, "lists too many action computations"
         print >> ERRFILE, infile, "lists too many action computations"
@@ -291,51 +285,59 @@ for temp_tag in open('list.txt'):
       # Acceptance is smeared out by running averages
       if line.startswith('ACCEPT'):
         print >> ACCP, "%d,1" % traj
-        print >> SF, "%d,%g" % (MDTU, fermAct[1])   # New action
         print >> SB, "%g,%g" % (MDTU, bAct[1])
+        Myers[1] *= norm_Myers
         print >> MYERS, "%g,%g" % (MDTU, Myers[1])
         print >> RATIO, "%g,%g" % (MDTU, ratio[1])
+        energy[1] *= norm_energy
+        prime[1] *= norm_prime
+        print >> ENERGY, "%g,%g,%g" % (MDTU, energy[1], prime[1])
       else:
         print >> ACCP, "%d,0" % traj
-        print >> SF, "%d,%g" % (MDTU, fermAct[0])   # Original action
         print >> SB, "%g,%g" % (MDTU, bAct[0])
+        Myers[0] *= norm_Myers
         print >> MYERS, "%g,%g" % (MDTU, Myers[0])
         print >> RATIO, "%g,%g" % (MDTU, ratio[0])
-      fermAct = [-1.0, -1.0]                        # Reset
-      bAct = [-1.0, -1.0]
+        energy[0] *= norm_energy
+        prime[0] *= norm_prime
+        print >> ENERGY, "%g,%g,%g" % (MDTU, energy[0], prime[0])
+      bAct = [-1.0, -1.0]                          # Reset
       Myers = [-1.0, -1.0]
       ratio = [-1.0, -1.0]
+      energy = [-1.0, -1.0]
+      prime = [-1.0, -1.0]
 
     # Forces -- take maxima rather than average if possible
     elif line.startswith('MONITOR_FORCE_GAUGE '):
       force_g = float((line.split())[-1])
-    elif line.startswith('MONITOR_FORCE_FERMION0 '):
-      force_f = float((line.split())[-1])
-      if Nroot == 1:
-        print >> FORCE, "%d,%g,%g,null,null" % (traj, force_g, force_f)
-    elif line.startswith('MONITOR_FORCE_FERMION1 '):
-      force_f2 = float((line.split())[-1])
-      if Nroot == 2:
-        print >> FORCE, "%d,%g,%g,%g,null" % (traj, force_g, force_f, force_f2)
-    elif line.startswith('MONITOR_FORCE_FERMION2 '):
-      force_f3 = float((line.split())[-1])
-      if Nroot == 3:
-        print >> FORCE, "%d,%g,%g,%g,%g" \
-                        % (traj, force_g, force_f, force_f2, force_f3)
+      print >> FORCE, "%d,%g" % (traj, force_g)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # Polyakov loop and CG iterations
+    # Polyakov loop and PL eigenvalues
     # First normalized using Nc extracted above
     elif line.startswith('GMES '):
       temp = line.split()
-      print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
-
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc
       print >> POLY, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
+
+    # Format: LINES_EIG {Nc x phase}
+    # Check that all phases are within [-pi, pi),
+    # accounting for rounding in output files
+    # Can be commented out to speed up analysis
+    elif line.startswith('LINES_EIG '):
+      PL_EIG.write("%g," % (MDTU))
+      temp = line.split()
+      for i in range(int(Nc - 1)):
+        phase = float(temp[1 + i])
+        if phase > 3.142 or phase < -3.142:
+          print infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+          print >> ERRFILE, infile, "phase %.4g exceeds [-pi, pi)" % (phase)
+        PL_EIG.write("%g," % (phase))
+      print >> PL_EIG, "%g" % (float(temp[-1]))
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -354,6 +356,8 @@ for temp_tag in open('list.txt'):
       X9 = float(temp[10])
       print >> SCALAR_SQUARES, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g" \
                                % (MDTU, X1, X2, X3, X4, X5, X6, X7, X8, X9)
+      extent = norm_extent * (X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8 + X9)
+      print >> EXTENT, "%g,%g" % (MDTU, extent)
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -375,10 +379,6 @@ for temp_tag in open('list.txt'):
         scalar_eig_width = ''
     # ------------------------------------------------------------
 
-    # Check to make sure CG always converged
-    elif 'CONGRAD' in line:
-      CG = -1
-
     # Store total walltime to average at the end
     elif line.startswith('Time = '):
       walltime = float((line.split())[2])
@@ -388,17 +388,13 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Check to see if run seems to have finished properly
-  if CG == -1:
-    print infile, "encountered CG non-convergence"
-    print >> ERRFILE, infile, "encountered CG non-convergence"
-    CG = 1
   if walltime == -1:
     print infile, "didn't print final timing"
     print >> ERRFILE, infile, "didn't print final timing"
   elif walltime == -2:
     # Placeholder file -- error has been addressed as well as possible,
     # but don't print nonsense wall clock time
-    fermAct = [-1.0, -1.0]                        # Reset
+    bAct = [-1.0, -1.0]                          # Reset
     pass
   else:   # We are good to go
     ave_time = walltime / traj_per_file
@@ -406,60 +402,6 @@ for temp_tag in open('list.txt'):
     TUtime = walltime * float(cpus) / (60.0 * tlength * traj_per_file)
     print >> WALLTU, "%d,%g" % (traj, TUtime)
   # ----------------------------------------------------------------
-
-
-
-  # ----------------------------------------------------------------
-  # Now deal with the corresponding "eig" file, if it is present
-  # These seem to come in sets of 16 (which we don't check too carefully)
-  # For now only consider the smallest
-  infile = 'Out/eig.' + cfg
-  if not os.path.isfile(infile):
-    print >> MISSINGFILES, infile
-  else:
-    check = -1    # Check whether file completed successfully
-
-    # Go
-    for line in open(infile):
-      if line.startswith('Time stamp '):
-        stamp = line.rstrip()
-        if stamp != oldstamp:
-          print infile, "time stamp doesn't match final", oldstamp
-          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
-
-      elif line.startswith('EIGENVALUE 0 '):
-        eig = float((line.split())[2])
-        if eig < min_eig:        # Check spectral range
-          print infile, "exceeds RHMC spectral range:",
-          print "%.4g not in [%.4g, %.4g]" % (eig, min_eig, max_eig)
-          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
-          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (eig, min_eig, max_eig)
-
-      elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
-        dat = float((line.split())[2])
-        if dat > max_eig:
-          print infile, "exceeds RHMC spectral range:",
-          print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
-          print >> ERRFILE, infile, "exceeds RHMC spectral range:",
-          print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
-
-        # Monitor (log of) condition number
-        cond_num = math.log(dat / eig)
-        print >> COND_NUM, "%d,%g" % (traj, cond_num)
-
-      elif 'WARNING' in line:
-        print infile, "saturated eigenvalue iterations"
-        print >> ERRFILE, infile, "saturated eigenvalue iterations"
-      elif line.startswith('RUNNING COMPLETED'):
-        if check == 1:    # Check that we have one measurement per file
-          print infile, "reports two measurements"
-          print >> ERRFILE, infile, "reports two measurements"
-        check = 1
-    if check == -1:
-      print infile, "did not complete"
-      print >> ERRFILE, infile, "did not complete"
-
-    print >> EIG, "%g,%g" % (MDTU, eig)
 # ------------------------------------------------------------------
 
 
@@ -471,26 +413,24 @@ MISSINGFILES.close()
 SB.close()
 MYERS.close()
 RATIO.close()
-SF.close()
+EXTENT.close()
+ENERGY.close()
 POLY.close()
 POLY_MOD.close()
+PL_EIG.close()
 SCALAR_SQUARES.close()
 SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
-EIG.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
 ABS_DS.close()
 FORCE.close()
-CG_ITERS.close()
 WALLTIME.close()
 WALLTU.close()
-COND_NUM.close()
 NSTEP.close()
 STEPSIZE.close()
-NORDER.close()
 TLENGTH.close()
 KEY.close()
 TU.close()

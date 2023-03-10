@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Keep resubmitting from start to end in sets of per_job
+if [ $# -lt 6 ]; then
+  echo "Usage: $0 <start> <end> <per_job> nsteps:{<fermion> <gauge>} <time>"
+  exit 1
+fi
+
+# Input parameters
+first=$1
+last=$2
+batch=$3
+fsteps=$4
+gsteps=$5
+time=$6
+
+# Check whether we've correctly set $batch to evenly divide ($last-$first)
+iter=0
+count=$first
+for(( i=$first ; $i<$last ; i+=$batch )); do
+  iter=$[$iter + 1]
+  count=$[$count + $batch]
+done
+echo "Will submit $iter jobs and end up at $count MDTU"
+
+# Adjustable parameters
+node=16
+node=8 # For icelake...
+cpus=512
+node=32
+node=16 # For icelake...
+cpus=1024
+Ntraj=10
+traj_length=1
+skip=`echo $Ntraj | awk -v tau="$traj_length" '{print($1*tau)}'`
+
+# Parameters fixed by the path
+temp=`pwd`
+path=${temp##*APBC/Nc}  # Strip everything up to and including "APBC/Nc"
+Ncvol=${path%%/*}       # Strip everything after and including "/"
+Nc=${Ncvol%%_*}         # Strip everything after and including "_"
+vol=${Ncvol##*_}        # Strip everything up to and including "_"
+L=${vol%%nt*}           # Strip everything after and including "nt"
+Nt=${vol##*nt}          # Strip everything up to and including "nt"
+tag=${path##*/l}        # Strip everything up to and including "/l"
+lambda=${tag%%_b*}      # Strip everything after and including "_b"
+temp=${tag##*_b}        # Strip everything up to and including "_b"
+bmass=${temp%%_G*}      # Strip everything after and including "_G"
+G=${tag##*_G}           # Strip everything up to and including "_G"
+
+# Common parameters for all jobs
+echo "#!/bin/bash" > temp
+echo "#SBATCH -A dirac-dp162-SL4-CPU" >> temp
+#echo "#SBATCH -p skylake,cclake" >> temp
+echo "#SBATCH -p icelake" >> temp
+echo "#SBATCH -N $node" >> temp
+echo "#SBATCH --ntasks-per-node=64" >> temp
+echo "#SBATCH --cpus-per-task=1" >> temp
+echo "#SBATCH -t $time" >> temp
+echo "#SBATCH -J ${Nc}_${L}_l$tag" >> temp
+echo "#SBATCH -o hmc.%j.out" >> temp
+echo "#SBATCH -e hmc.%j.out" >> temp
+echo "#SBATCH --no-requeue" >> $temp
+echo "#SBATCH --mail-user=daschaich@gmail.com" >> $temp
+echo "#SBATCH --mail-type=END,FAIL" >> $temp
+
+# Diagnostic information
+echo "echo '=====================JOB DIAGNOTICS========================'" >> temp
+echo "date" >> temp
+echo "echo -n 'This machine is ';hostname" >> temp
+echo "echo -n 'My jobid is '; echo \$SLURM_JOBID" >> temp
+echo "echo 'My path is:' " >> temp
+echo "echo \$PATH" >> temp
+echo "echo 'My job info:'" >> temp
+echo "squeue -j \$SLURM_JOBID" >> temp
+echo "echo 'Machine info'" >> temp
+echo "sinfo -s" >> temp
+
+echo "echo '=====================JOB STARTING=========================='" >> temp
+
+# Seems okay to have this in home directory
+# Compiled with default modules (intel/bundles/complib/2017.4)
+bin=/home/dc-scha3/dev/susy/4d_Q16/bins/susy_hmc-U$Nc
+
+# Check that we're not going to break anything,
+# either through this job or the subsequent jobs it will submit
+lat=Configs/gauge.$first
+if [ ! -f $lat ]; then
+  echo "ERROR: LATTICE $lat NOT FOUND, SUBMISSION ABORTED"
+  rm -f temp
+  exit 1
+fi
+for(( i=$first ; $i<$last ; i+=$skip )); do
+  next=$[$i + $skip]
+  out=Out/out.$i-$next
+  lat=Configs/gauge.$next
+  if [ -f $out ]; then
+    echo "ERROR: OUTPUT FILE $out EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+  if [ -f $lat ]; then
+    echo "ERROR: LATTICE $lat EXISTS, SUBMISSION ABORTED"
+    rm -f temp
+    exit 1
+  fi
+done
+
+# Write this job's evolution tasks to run in a single job
+iter=0
+this_sub=$[$first + $batch]
+for(( i=$first ; $i<$this_sub ; i+=$skip )); do
+  iter=$[$iter + 1]
+  next=$[$i + $skip]
+  out=Out/out.$i-$next
+  lat=Configs/gauge
+
+  echo "echo \"Job \$SLURM_JOB_NAME started \"\`date\`\" jobid \$SLURM_JOB_ID\" >> $out" >> temp
+  echo "echo \"=== Running MPI application on $cpus cpus ===\" >> $out" >> temp
+  echo "echo \"srun -n $cpus $bin\" >> $out" >> temp
+  echo "srun -n $cpus $bin << EOF >> $out" >> temp
+#  echo "srun -n $cpus $bin --shm 2048 << EOF >> $out" >> temp
+  echo "prompt 0" >> temp
+  echo "nx $L" >> temp
+  echo "ny $L" >> temp
+  echo "nz $L" >> temp
+  echo "nt $Nt" >> temp
+  echo "PBC -1" >> temp
+  echo "iseed ${last}${lambda/\./1}${L}${Nt}$i" >> temp
+
+  echo "Nroot 1" >> temp
+  echo "Norder 18" >> temp
+
+  echo "warms 0" >> temp
+  echo "trajecs $Ntraj" >> temp
+  echo "traj_length $traj_length" >> temp
+  echo "nstep $fsteps" >> temp
+  echo "nstep_gauge $gsteps" >> temp
+  echo "traj_between_meas $Ntraj" >> temp
+
+  echo "lambda $lambda" >> temp
+  echo "kappa_u1 0.0" >> temp
+  echo "bmass $bmass" >> temp
+  echo "fmass 0.0" >> temp
+  echo "G $G" >> temp
+
+  echo "max_cg_iterations 5000" >> temp
+  echo "error_per_site 1e-5" >> temp
+
+  echo "reload_serial $lat.$i" >> temp
+  echo "save_serial $lat.$next" >> temp
+  echo "EOF" >> temp
+
+  echo "echo \"=== MPI application finished at \"\`date\`\" ===\" >> $out" >> temp
+  echo "chmod 664 $out $lat.$i* $lat.$next*" >> temp
+  echo "" >> temp
+done
+
+# Submit next job, if applicable
+# Warned above about possibility of ending up between $last and $last+$batch
+if [ $this_sub -lt $last ] ; then
+  echo "echo \"./runCam $this_sub $last $batch $fsteps $gsteps $time\"" >> temp
+  echo "./runCam $this_sub $last $batch $fsteps $gsteps $time" >> temp
+fi
+
+sbatch temp
+rm -f temp
+echo "Requested $time to save $iter configs ($first--$this_sub by $skip)"

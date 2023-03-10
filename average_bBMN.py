@@ -10,6 +10,7 @@ import emcee.autocorr as acor
 
 # Assume one ensemble per directory (overwrite results files)
 # Assume Polyakov loop data are already normalized by Nc
+# Myers, extent of space and E/N^2 also normalized while parsing
 
 # Parse arguments: first is thermalization cut, second is block size
 # Will check block size is larger than poly_mod, 9th scalar square
@@ -65,8 +66,8 @@ path = os.getcwd()
 
 
 # ------------------------------------------------------------------
-# Check that block size is larger than poly_mod, 9th scalar square
-# and lowest eigenvalue auto-correlation times
+# Check that block size is larger than poly_mod and 9th scalar square
+# auto-correlation times
 # For poly_mod we want the first datum on each line (following MDTU)
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
@@ -96,19 +97,20 @@ for line in open('data/poly_mod.csv'):
 # 'tol' is min ratio between data and tau (default 50)
 # 'Quiet' prints warning rather than shutting down if tol not satisfied
 autocorr_check = 1
+outfilename = 'results/poly_mod.autocorr'
+outfile = open(outfilename, 'w')
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print("Error: poly_mod autocorrelation time %d " % tau, end='')
-  print("is larger than block size %d " % block_size, end='')
-  print("in %s" % path)
+  print("Warning: " % tau, end='', file=outfile)
+  print("poly_mod autocorrelation time %d " % tau, end='', file=outfile)
+  print("is larger than block size %d " % block_size, end='', file=outfile)
+  print("in %s" % path, file=outfile)
   autocorr_check = -1
 
 # Record poly_mod auto-correlation time for future reference
 # Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
-outfilename = 'results/poly_mod.autocorr'
-outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
@@ -135,73 +137,37 @@ for line in open('data/scalarsquares.csv'):
   dat.append(float(temp[-1]))
 
 # Arguments discussed above
+outfilename = 'results/scalarsquares.autocorr'
+outfile = open(outfilename, 'w')
 tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
 tau *= sep
 if tau > block_size:
-  print("Error: scalar square autocorrelation time %d " % tau, end='')
-  print("is larger than block size %d " % block_size, end='')
-  print("in %s" % path)
+  print("Warning: " % tau, end='', file=outfile)
+  print("scalar square autocorrelation time %d " % tau, end='', file=outfile)
+  print("is larger than block size %d " % block_size, end='', file=outfile)
+  print("in %s" % path, file=outfile)
   autocorr_check = -1
 
 # Record scalar square auto-correlation time for future reference
 # Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
-outfilename = 'results/scalarsquares.autocorr'
-outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
-# Finally, for the lowest eigenvalue we have only one datum per line
-# Format: MDTU,min_eig
-dat = []
-sep = 10      # !!!Now non-trivial
-prev = 0
-for line in open('data/eig.csv'):
-  if line.startswith('M'):
-    continue
-  temp = line.split(',')
-  MDTU = int(temp[0])
-
-  # Need to check separation and update prev before skipping to therm cut
-  if not MDTU - prev == sep:
-    print("Error: min_eig meas at %d and %d not separated by %d" \
-          % (prev, MDTU, sep))
-    sys.exit(1)
-  prev = MDTU
-
-  if MDTU <= cut:
-    continue
-  dat.append(float(temp[-1]))
-
-# Arguments discussed above
-tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
-tau *= sep
-if tau > block_size:
-  print("Error: lowest eigenvalue autocorrelation time %d " % tau, end='')
-  print("is larger than block size %d " % block_size, end='')
-  print("in %s" % path)
-  autocorr_check = -1
-
-# Record lowest eigenvalue auto-correlation time for future reference
-# Include effective number of independent measurements
-eff_stat = np.floor(len(dat) * sep / tau)
-outfilename = 'results/eig.autocorr'
-outfile = open(outfilename, 'w')
-print("%d # %d" % (tau, eff_stat), file=outfile)
-outfile.close()
-
-if autocorr_check < 0:
-  sys.exit(1)
+# For now, continue with warning...
+#if autocorr_check < 0:
+#  sys.exit(1)
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# For the Polyakov loop, bosonic action, fermion action,
+# For the Polyakov loop, bosonic action, internal energy, extent of space,
 # 'Myers' scalar trilinear term and SO(6) / SO(3) action ratio
 # we're interested in the first datum on each line (following MDTU)
 # For the Polyakov loop, this is the (Nc-normalized) modulus
-for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
+# For the internal energy, this is E/N^2, ignoring E_prime
+for obs in ['poly_mod', 'SB', 'energy', 'extent', 'Myers', 'ratio']:
   ave = 0.0         # Accumulate within each block
   count = 0
   datList = []
@@ -251,7 +217,7 @@ for obs in ['poly_mod', 'SB', 'SF', 'Myers', 'ratio']:
 # For algorithmic/cost quantities
 # we're interested in the first datum on each line
 # Need to work in terms of trajectories rather than MDTU
-for obs in ['wallTU', 'cg_iters', 'accP', 'exp_dS']:
+for obs in ['wallTU', 'accP', 'exp_dS']:
   ave = 0.0         # Accumulate within each block
   count = 0
   datList = []

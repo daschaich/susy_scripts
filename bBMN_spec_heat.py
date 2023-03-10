@@ -4,9 +4,9 @@ import sys
 import glob
 import numpy as np
 # ------------------------------------------------------------------
-# Parse dygraph data file to compute susceptibility
-# for the unitarized spatial Wilson line
-# (Other targets may be added in the future)
+# Parse dygraph data file to compute specific heat
+# for the bosonic BMN model
+# !!! As with bBMN_package.py, fixing Nt=24
 
 # Parse arguments: first is thermalization cut,
 # second is block size (should be larger than autocorrelation time)
@@ -26,24 +26,34 @@ if not os.path.isdir('data'):
   print("ERROR: data/ does not exist")
   sys.exit(1)
 
-# Extract Nc from path -- it's after 'Nc' then before '_'
+# Extract Nc from path --- it's after 'Nc' then before '_'
+Nt = 24.0
 cwd = os.getcwd()
 temp = (cwd.split('Nc'))[1]
-Nc = int((temp.split('_'))[0])
-norm = Nc * Nc
+Nc = float((temp.split('_'))[0])
+
+# Extract t from path --- it's everything after 't'
+t = float((cwd.split('t'))[-1])
+cube_root = 1.0 / (Nt * t)              # lambda_lat^{1/3}
+
+# Overall normalization factor
+norm = cube_root * cube_root * Nt * Nt / (Nc * Nc)
 # ------------------------------------------------------------------
 
 
 
 # ------------------------------------------------------------------
-# We're interested in the third datum on each line
-# This is the z-direction modulus (following those for x and y)
-for obs in ['lines_mod_polar']:
+# We're interested in both data on each line
+# The first is E/N^2 while the second is E_prime
+# We want to compute <E^2> - <E>^2 - <E_prime>, with no 1/N^2 factors
+for obs in ['energy']:
   ave = 0.0         # Accumulate within each block
   aveSq = 0.0
+  aveP = 0.0        # For E_prime
   count = 0
   datList = []
   sqList = []
+  pList = []
   begin = cut       # Where each block begins, to be incremented
   obsfile = 'data/' + obs + '.csv'
   for line in open(obsfile):
@@ -56,9 +66,10 @@ for obs in ['lines_mod_polar']:
 
     # Accumulate within each block
     elif MDTU > begin and MDTU <= (begin + block_size):
-      tr = float(temp[3])
+      tr = Nc * Nc * float(temp[1])     # Convert from E/N^2
       ave += tr
       aveSq += tr * tr
+      aveP += float(temp[2])
       count += 1
 
       # If that "<=" is really "==" then we are done with this block
@@ -66,9 +77,11 @@ for obs in ['lines_mod_polar']:
       if MDTU >= (begin + block_size):
         datList.append(ave / count)
         sqList.append(aveSq / count)
+        pList.append(aveP / count)
         begin += block_size
         ave = 0.0
         aveSq = 0.0
+        aveP = 0.0
         count = 0
 
     # This doesn't happen for ensembles I generate
@@ -78,22 +91,25 @@ for obs in ['lines_mod_polar']:
       sys.exit(1)
 
   # Now construct jackknife samples through single-block elimination
-  #   chi = N^2 * [<WL^2> - <WL>^2]
+  #   C_v = (lalat^{2/3} Nt^2 / Nc^2) [<E^2> - <E>^2 - <E_prime>]
   dat = np.array(datList, dtype = np.float64)
   N = np.size(dat)
   tot = sum(dat)
   sq = np.array(sqList, dtype = np.float64)
   totSq = sum(sq)
-  chi = np.zeros_like(dat)
+  p = np.array(pList, dtype = np.float64)
+  totP = sum(p)
+  Cv = np.zeros_like(dat)
   for i in range(N):    # Jackknife samples
     vev = (tot - dat[i]) / (N - 1.0)
     sq_vev = (totSq - sq[i]) / (N - 1.0)
-    chi[i] = sq_vev - vev * vev
+    p_vev = (totP - p[i]) / (N - 1.0)
+    Cv[i] = sq_vev - vev * vev - p_vev
 
   # Now we can average over jackknife samples and print out results
-  ave = np.mean(chi)
-  var = (N - 1.0) * np.sum((chi - ave)**2) / float(N)
-  outfilename = 'results/' + obs + '.suscept'
+  ave = np.mean(Cv)
+  var = (N - 1.0) * np.sum((Cv - ave)**2) / float(N)
+  outfilename = 'results/' + obs + '.specheat'
   outfile = open(outfilename, 'w')
   print("%.8g %.4g # %d" % (norm * ave, norm * np.sqrt(var), N), file=outfile)
   outfile.close()
