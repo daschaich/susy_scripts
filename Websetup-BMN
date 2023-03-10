@@ -1,28 +1,28 @@
 #!/bin/bash
 
-if [ ! -d /raid1/backup/schaich/SYM/BMN ] ; then
-  echo "Error: /raid1 doesn't seem to be mounted"
+if [ ! -d /raide/www/people/staff/schaich/SYM/BMN ] ; then
+  echo "Error: /raide doesn't seem to be mounted"
   exit 1
 fi
 
 cd ~/SYM/BMN
 for i in N*/g* ; do
-  if [ -d /raid1/backup/schaich/SYM/BMN/$i/data ] ; then
+  if [ -d /raide/www/people/staff/schaich/SYM/BMN/$i/data ] ; then
     echo "$i already done"
     continue
   fi
 
   echo "Doing $i"
-  mkdir /raid1/backup/schaich/SYM/BMN/$i
-  mkdir /raid1/backup/schaich/SYM/BMN/$i/data
-  touch /raid1/backup/schaich/SYM/BMN/$i/ERRORS
-  touch /raid1/backup/schaich/SYM/BMN/$i/MISSING
+  mkdir /raide/www/people/staff/schaich/SYM/BMN/$i
+  mkdir /raide/www/people/staff/schaich/SYM/BMN/$i/data
+  touch /raide/www/people/staff/schaich/SYM/BMN/$i/ERRORS
+  touch /raide/www/people/staff/schaich/SYM/BMN/$i/MISSING
 
   cd $i
   rm -f data ERRORS MISSING
-  ln -s /raid1/backup/schaich/SYM/BMN/$i/data
-  ln -s /raid1/backup/schaich/SYM/BMN/$i/ERRORS
-  ln -s /raid1/backup/schaich/SYM/BMN/$i/MISSING
+  ln -s /raide/www/people/staff/schaich/SYM/BMN/$i/data
+  ln -s /raide/www/people/staff/schaich/SYM/BMN/$i/ERRORS
+  ln -s /raide/www/people/staff/schaich/SYM/BMN/$i/MISSING
   ls -l
   cd ../..
 done

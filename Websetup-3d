@@ -1,29 +1,29 @@
 #!/bin/bash
 
-if [ ! -d /raid1/backup/schaich/SYM/3d ] ; then
-  echo "Need to mount /raid1..."
-  sudo mount rafa.amtp:/raid1 /raid1
+if [ ! -d /raide/www/people/staff/schaich/SYM/3d ] ; then
+  echo "Need to mount /raide..."
+  sudo mount sune.amtp:/raide /raide
 fi
 
 cd ~/SYM/3d
-#for i in N*/rt* ; do
-for i in N*/l* ; do
-  if [ -d /raid1/backup/schaich/SYM/3d/$i/data ] ; then
+for i in N*/rt* ; do
+#for i in N*/l* ; do
+  if [ -d /raide/www/people/staff/schaich/SYM/3d/$i/data ] ; then
     echo "$i already done"
     continue
   fi
 
   echo "Doing $i"
-  mkdir /raid1/backup/schaich/SYM/3d/$i
-  mkdir /raid1/backup/schaich/SYM/3d/$i/data
-  touch /raid1/backup/schaich/SYM/3d/$i/ERRORS
-  touch /raid1/backup/schaich/SYM/3d/$i/MISSING
+  mkdir /raide/www/people/staff/schaich/SYM/3d/$i
+  mkdir /raide/www/people/staff/schaich/SYM/3d/$i/data
+  touch /raide/www/people/staff/schaich/SYM/3d/$i/ERRORS
+  touch /raide/www/people/staff/schaich/SYM/3d/$i/MISSING
 
   cd $i
   rm -f data ERRORS MISSING
-  ln -s /raid1/backup/schaich/SYM/3d/$i/data
-  ln -s /raid1/backup/schaich/SYM/3d/$i/ERRORS
-  ln -s /raid1/backup/schaich/SYM/3d/$i/MISSING
+  ln -s /raide/www/people/staff/schaich/SYM/3d/$i/data
+  ln -s /raide/www/people/staff/schaich/SYM/3d/$i/ERRORS
+  ln -s /raide/www/people/staff/schaich/SYM/3d/$i/MISSING
   ls -l
   cd ../..
 done
