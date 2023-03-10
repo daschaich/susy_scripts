@@ -26,7 +26,7 @@ p_in = np.array([0.1, 1.0])
 
 # Define corresponding Jacobian matrix
 def jac(p, x, y, err):
-  J = np.empty((x.size, p.size), dtype = np.float)
+  J = np.empty((x.size, p.size), dtype = float)
   J[:, 0] = 1.0 / err
   J[:, 1] = x / err
   return J

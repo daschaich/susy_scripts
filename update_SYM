@@ -8,7 +8,7 @@ fi
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
 inpath=/raidc/users/schaich/SYM/$dir        # Customized for Liverpool
-outpath=/raid1/backup/schaich/SYM/$dir
+outpath=/raide/www/people/staff/schaich/SYM/$dir
 # ------------------------------------------------------------------
 
 
@@ -24,19 +24,24 @@ rm -f temp
 
 # Use list of files in given ensemble to extract time series data
 rm -f $outpath/data/*.csv $outpath/ERRORS
-echo "python ~schaich/scripts/parse_SYM.py"
-python ~schaich/scripts/parse_SYM.py
+echo "python2 ~schaich/scripts/parse_SYM.py"
+python2 ~schaich/scripts/parse_SYM.py
 chmod 664 $outpath/data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
-python ~schaich/scripts/check_eig_pairs.py >> $outpath/ERRORS
+# This script checks more than pairing, but pairing is all we care about here
+python2 ~schaich/scripts/check_eig_pairs.py | grep pairing >> $outpath/ERRORS
 
-# Replace Web page to update timestamp
+# Either write Web page or update its timestamp using sed
 date=`date`
-rm -f $outpath/index.html
-echo writeSYM $dir "$date"
-~schaich/scripts/writeSYM $dir "$date"
+if [ -f $outpath/index.html ] ; then
+  echo "Update timestamp"
+  sed -i -E "s/(Last update:) .*/\1 $date/" $outpath/index.html
+else
+  echo writeSYM $dir "$date"
+  ~schaich/scripts/writeSYM $dir "$date"
+fi
 chmod 664 $outpath/index.html
 
 # I like to monitor this (looks better without $outpath)
