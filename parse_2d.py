@@ -57,6 +57,8 @@ MONO = open('data/mono.csv', 'w')
 print >> MONO , "MDTU,rho_M"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
+BIGEIG = open('data/bigeig.csv', 'w')
+print >> BIGEIG, "MDTU,0,2,4,6,8,10"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -152,6 +154,12 @@ for temp_tag in open('list.txt'):
     elif line.startswith('nt '):
       vol *= float((line.split())[1])
 
+    # Make sure no overflow errors parsing seed
+    elif line.startswith('iseed '):
+      if int((line.split())[1]) == -1:
+        print infile, "has suspicious seed -1"
+        print >> ERRFILE, infile, "has suspicious seed -1"
+
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
@@ -197,6 +205,7 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
+  fresh = 1
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
@@ -243,6 +252,10 @@ for temp_tag in open('list.txt'):
       Nstep_gauge *= 2 * Nstep
       print >> NSTEP, "%d,%d,%d" % (endtraj, Nstep, Nstep_gauge)
       print >> STEPSIZE, "%d,%g,%g" % (endtraj, stepsize, stepsize_gauge)
+
+    # Check whether this is a fresh start
+    elif line.startswith('reload_serial'):
+      fresh = 0
 
     elif line.startswith('Machine '):
       cpus = int((line.split())[5])
@@ -325,7 +338,7 @@ for temp_tag in open('list.txt'):
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
-      if starting == 1:
+      if fresh == 0 and starting == 1:
         starting = 0
         link_width = float('nan')
       else:
@@ -346,13 +359,19 @@ for temp_tag in open('list.txt'):
       print >> PLAQ, "%g,%g" % (MDTU, float(temp[4]) / Nc)
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
 
-      print >> SB, "%g,%g" % (MDTU, float(temp[5]) / (1.5 * Nc**2))
+      print >> SB, "%g,%g" % (MDTU, float(temp[5]) / (1.5 * DIMF))
 
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc
       print >> POLY, "%g,%g" % (poly_r, poly_i)
       poly_mod = math.sqrt(poly_r**2 + poly_i**2)
       print >> POLY_MOD, "%g,%g,%g,%g" % (MDTU, poly_mod, poly_r, poly_i)
+
+      # Hack to account for failed polar decomposition
+      # if first traj(s) after fresh start are rejected
+      if fresh == 1 and poly_r == 1 and poly_i == 0:
+        print >> POLY_MOD_POLAR, "%g,1,1,0" % MDTU
+        print >> LINES_MOD_POLAR, "%g,1,1,1,1" % MDTU
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
@@ -473,6 +492,7 @@ for temp_tag in open('list.txt'):
     check = -1    # Check whether file completed successfully
     temp = float('nan')
     eig = [temp, temp, temp, temp, temp, temp]
+    big = [temp, temp, temp, temp, temp, temp]
 
     # Go
     for line in open(infile):
@@ -494,17 +514,17 @@ for temp_tag in open('list.txt'):
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
 
-      elif line.startswith('BIGEIGVAL  0 '):    # Check spectral range
-        dat = float((line.split())[2])
-        if dat > max_eig:
+      elif line.startswith('BIGEIGVAL  '):
+        temp = line.split()
+        index = int(temp[1])
+        dat = float(temp[2])
+        if index < 11 and index % 2 == 0:
+          big[index / 2] = dat
+        if index == 0 and dat > max_eig:        # Check spectral range
           print infile, "exceeds RHMC spectral range:",
           print "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
           print >> ERRFILE, infile, "exceeds RHMC spectral range:",
           print >> ERRFILE, "%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig)
-
-        # Monitor (log of) condition number
-        cond_num = math.log(dat / eig[0])
-        print >> COND_NUM, "%d,%g" % (traj, cond_num)
 
       elif 'WARNING' in line:
         print infile, "saturated eigenvalue iterations"
@@ -520,14 +540,20 @@ for temp_tag in open('list.txt'):
 
     print >> EIG, "%g,%g,%g,%g,%g,%g,%g" \
                   % (MDTU, eig[0], eig[1], eig[2], eig[3], eig[4], eig[5])
+    print >> BIGEIG, "%g,%g,%g,%g,%g,%g,%g" \
+                     % (MDTU, big[0], big[1], big[2], big[3], big[4], big[5])
+
+    # Monitor (log of) condition number
+    cond_num = math.log(big[0] / eig[0])
+    print >> COND_NUM, "%d,%g" % (traj, cond_num)
   # ----------------------------------------------------------------
 
 
 
   # ----------------------------------------------------------------
-  # Now deal with the corresponding "corr" file, if it is present
+  # Now deal with the corresponding "meas" file, if it is present
   # For now just care about fermion bilinears and related quantities
-  infile = 'Out/corr.' + cfg
+  infile = 'Out/meas.' + cfg
   if not os.path.isfile(infile):
     print >> MISSINGFILES, infile
   else:
@@ -580,8 +606,8 @@ for temp_tag in open('list.txt'):
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
       elif line.startswith('MONOPOLE '):
-        mono = float((line.split())[6])
-        print >> MONO, "%g,%g" % (MDTU, mono / (2.0 * vol))
+        mono = float((line.split())[4])
+        print >> MONO, "%g,%g" % (MDTU, mono / vol)
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
@@ -695,6 +721,7 @@ SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
 EIG.close()
+BIGEIG.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()
