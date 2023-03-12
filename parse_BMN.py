@@ -186,6 +186,7 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
+  fresh = -1
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
@@ -230,6 +231,10 @@ for temp_tag in open('list.txt'):
       print >> NSTEP, "%d,%d,%d" % (endtraj, Nstep, Nstep_gauge)
       print >> STEPSIZE, "%d,%g,%g" % (endtraj, stepsize, stepsize_gauge)
 
+    # Check whether this is a fresh start
+    elif line.startswith('fresh'):
+      fresh = 1
+
     elif line.startswith('Machine '):
       cpus = int((line.split())[5])
 
@@ -237,6 +242,8 @@ for temp_tag in open('list.txt'):
     elif line.startswith('Time stamp '):
       if stamp == "start":    # Loading configuration
         stamp = line.rstrip()
+        if fresh > 0:         # Ensure checks pass for fresh start
+          oldstamp = stamp
         if stamp != oldstamp and oldstamp != "start":
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp

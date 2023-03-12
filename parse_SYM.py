@@ -219,7 +219,7 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
-  fresh = 1
+  fresh = -1
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
@@ -268,8 +268,8 @@ for temp_tag in open('list.txt'):
       print >> STEPSIZE, "%d,%g,%g" % (endtraj, stepsize, stepsize_gauge)
 
     # Check whether this is a fresh start
-    elif line.startswith('reload_serial'):
-      fresh = 0
+    elif line.startswith('fresh'):
+      fresh = 1
 
     elif line.startswith('Machine '):
       cpus = int((line.split())[5])
@@ -278,6 +278,8 @@ for temp_tag in open('list.txt'):
     elif line.startswith('Time stamp '):
       if stamp == "start":    # Loading configuration
         stamp = line.rstrip()
+        if fresh > 0:         # Ensure checks pass for fresh start
+          oldstamp = stamp
         if stamp != oldstamp and oldstamp != "start":
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
@@ -352,7 +354,7 @@ for temp_tag in open('list.txt'):
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
-      if fresh == 0 and starting == 1:
+      if fresh == 1 and starting == 1:
         starting = 0
         link_width = float('nan')
       else:
@@ -385,7 +387,7 @@ for temp_tag in open('list.txt'):
 
       # Hack to account for failed polar decomposition
       # if first traj(s) after fresh start are rejected
-      if fresh == 1 and poly_r == 1 and poly_i == 0:
+      if fresh < 0 and poly_r == 1 and poly_i == 0:
         print >> POLY_MOD_POLAR, "%g,1,1,0" % MDTU
         print >> LINES_MOD_POLAR, "%g,1,1,1,1" % MDTU
     # ------------------------------------------------------------
