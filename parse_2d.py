@@ -6,7 +6,7 @@ import math
 # ------------------------------------------------------------------
 # Parse N=(2, 2) SYM output files for a single ensemble,
 # shuffling the extracted data into dedicated files for plotting
-# Normalize the Polyakov loop data by Nc and the bosonic action by 3Nc^2 / 2
+# Normalize the Wilson line data by Nc and the bosonic action by 3Nc^2 / 2
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
@@ -59,6 +59,10 @@ EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 BIGEIG = open('data/bigeig.csv', 'w')
 print >> BIGEIG, "MDTU,0,2,4,6,8,10"
+ENERGY = open('data/energy.csv', 'w')
+print >> ENERGY, "MDTU,energy"
+SCALARSQ = open('data/scalar_sq.csv', 'w')
+print >> SCALARSQ, "MDTU,tr_xsq"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -137,6 +141,7 @@ for temp_tag in open('list.txt'):
   # guess approximate starting trajectory
   traj_per_file = -1
   vol = -1
+  lam = -1
   for line in open(infile):
     if line.startswith('PLACEHOLDER'):
       # Placeholder file -- error has been addressed as well as possible,
@@ -148,7 +153,7 @@ for temp_tag in open('list.txt'):
       temp = line.split(',')
       Nc = float(((temp[2]).split())[2])
       DIMF = Nc**2
-    # Extract volume for monopole world line density
+    # Extract volume for fermion action and monopole normalizations
     elif line.startswith('nx '):
       vol = float((line.split())[1])
     elif line.startswith('nt '):
@@ -163,6 +168,8 @@ for temp_tag in open('list.txt'):
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
+    elif line.startswith('lambda '):
+      lam = float((line.split())[1])
       break       # Don't go through whole file yet
 
   if traj_per_file < 0:
@@ -172,6 +179,10 @@ for temp_tag in open('list.txt'):
   elif vol < 0:
     print infile, "never defines lattice volume"
     print >> ERRFILE, infile, "never defines lattice volume"
+    continue    # Skip to next file
+  elif lam < 0:
+    print infile, "never defines lattice lambda"
+    print >> ERRFILE, infile, "never defines lattice lambda"
     continue    # Skip to next file
 
   if (traj == 0 and int(load) > 0) or (int(load) != oldcfg):
@@ -205,7 +216,7 @@ for temp_tag in open('list.txt'):
 
   # At this point we should be able to begin
   oldcfg = int(cfg)
-  fresh = 1
+  fresh = -1
   Nroot = 1   # Default
   min_eig = 1
   max_eig = -1
@@ -255,7 +266,7 @@ for temp_tag in open('list.txt'):
 
     # Check whether this is a fresh start
     elif line.startswith('reload_serial'):
-      fresh = 0
+      fresh = 1
 
     elif line.startswith('Machine '):
       cpus = int((line.split())[5])
@@ -264,6 +275,8 @@ for temp_tag in open('list.txt'):
     elif line.startswith('Time stamp '):
       if stamp == "start":    # Loading configuration
         stamp = line.rstrip()
+        if fresh > 0:         # Ensure checks pass for fresh start
+          oldstamp = stamp
         if stamp != oldstamp and oldstamp != "start":
           print infile, "time stamp doesn't match final", oldstamp
           print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
@@ -338,7 +351,7 @@ for temp_tag in open('list.txt'):
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
-      if fresh == 0 and starting == 1:
+      if fresh == 1 and starting == 1:
         starting = 0
         link_width = float('nan')
       else:
@@ -358,8 +371,9 @@ for temp_tag in open('list.txt'):
       temp = line.split()
       print >> PLAQ, "%g,%g" % (MDTU, float(temp[4]) / Nc)
       print >> CG_ITERS, "%g,%g" % (traj, float(temp[3]))
-
-      print >> SB, "%g,%g" % (MDTU, float(temp[5]) / (1.5 * DIMF))
+      sB = float(temp[5]) / (1.5 * DIMF)
+      print >> SB, "%g,%g" % (MDTU, sB)
+      print >> ENERGY, "%g,%g" % (MDTU, 3.0 * (1.0 - sB) / lam)
 
       poly_r = float(temp[1]) / Nc
       poly_i = float(temp[2]) / Nc
@@ -369,7 +383,7 @@ for temp_tag in open('list.txt'):
 
       # Hack to account for failed polar decomposition
       # if first traj(s) after fresh start are rejected
-      if fresh == 1 and poly_r == 1 and poly_i == 0:
+      if fresh < 0 and poly_r == 1 and poly_i == 0:
         print >> POLY_MOD_POLAR, "%g,1,1,0" % MDTU
         print >> LINES_MOD_POLAR, "%g,1,1,1,1" % MDTU
     # ------------------------------------------------------------
@@ -737,4 +751,6 @@ NORDER.close()
 TLENGTH.close()
 KEY.close()
 TU.close()
+ENERGY.close()
+SCALARSQ.close()
 # ------------------------------------------------------------------
