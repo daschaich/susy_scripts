@@ -265,7 +265,7 @@ for temp_tag in open('list.txt'):
       print >> STEPSIZE, "%d,%g,%g" % (endtraj, stepsize, stepsize_gauge)
 
     # Check whether this is a fresh start
-    elif line.startswith('reload_serial'):
+    elif line.startswith('fresh'):
       fresh = 1
 
     elif line.startswith('Machine '):
