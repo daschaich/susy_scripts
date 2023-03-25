@@ -53,8 +53,6 @@ SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
 BILIN = open('data/bilin.csv', 'w')
 print >> BILIN, "MDTU,susyTrans,Im(bilin)"
-MONO = open('data/mono.csv', 'w')
-print >> MONO , "MDTU,rho_M"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,0,2,4,6,8,10"
 BIGEIG = open('data/bigeig.csv', 'w')
@@ -615,16 +613,6 @@ for temp_tag in open('list.txt'):
       # ----------------------------------------------------------
 
       # ----------------------------------------------------------
-      # Monopole world line density
-      elif 'WARNING' in line:
-        print infile, "has total_mono mismatch"
-        print >> ERRFILE, infile, "has total_mono mismatch"
-      elif line.startswith('MONOPOLE '):
-        mono = float((line.split())[4])
-        print >> MONO, "%g,%g" % (MDTU, mono / vol)
-      # ----------------------------------------------------------
-
-      # ----------------------------------------------------------
       # Wilson lines in other directions
       elif NEED_LINES > 0 and line.startswith('LINES '):
         temp = line.split()
@@ -729,7 +717,6 @@ LINES_MOD_POLAR.close()
 FLINK.close()
 DET.close()
 BILIN.close()
-MONO.close()
 WIDTHS.close()
 SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()

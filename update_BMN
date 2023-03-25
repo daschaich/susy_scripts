@@ -36,7 +36,7 @@ python2 ~schaich/scripts/check_eig_pairs.py | grep pairing >> $outpath/ERRORS
 # Either write Web page or update its timestamp using sed
 date=`date`
 if [ -f $outpath/index.html ] ; then
-  echo "Update timestamp"
+  echo "Update timestamp $dir"
   sed -i -E "s/(Last update:) .*/\1 $date/" $outpath/index.html
 else
   echo writeBMN $dir "$date"

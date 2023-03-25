@@ -645,7 +645,7 @@ for temp_tag in open('list.txt'):
 
       # ----------------------------------------------------------
       # Monopole world line density
-      elif 'WARNING' in line:
+      elif 'WARNING: total_mono mismatch' in line:
         print infile, "has total_mono mismatch"
         print >> ERRFILE, infile, "has total_mono mismatch"
       elif line.startswith('MONOPOLE '):
