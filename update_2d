@@ -39,8 +39,8 @@ if [ -f $outpath/index.html ] ; then
   echo "Update timestamp"
   sed -i -E "s/(Last update:) .*/\1 $date/" $outpath/index.html
 else
-  echo writeSYM $dir "$date"
-  ~schaich/scripts/writeSYM $dir "$date"
+  echo write_2d $dir "$date"
+  ~schaich/scripts/write_2d $dir "$date"
 fi
 chmod 664 $outpath/index.html
 

@@ -151,7 +151,7 @@ for temp_tag in open('list.txt'):
       temp = line.split(',')
       Nc = float(((temp[2]).split())[2])
       DIMF = Nc**2
-    # Extract volume for fermion action and monopole normalizations
+    # Extract volume for fermion action normalization
     elif line.startswith('nx '):
       vol = float((line.split())[1])
     elif line.startswith('nt '):
