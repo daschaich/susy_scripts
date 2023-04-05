@@ -139,6 +139,12 @@ for temp_tag in open('list.txt'):
     elif line.startswith('nt '):
       Nt = float((line.split())[1])
 
+    # Make sure no overflow errors parsing seed
+    elif line.startswith('iseed '):
+      if int((line.split())[1]) == -1:
+        print infile, "has suspicious seed -1"
+        print >> ERRFILE, infile, "has suspicious seed -1"
+
     elif line.startswith('trajecs '):
       traj_per_file = int((line.split())[1])
       endtraj = traj + traj_per_file
