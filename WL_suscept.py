@@ -39,7 +39,7 @@ norm = Nc * Nc
 # ------------------------------------------------------------------
 # We're interested in the given datum on each line
 # For dir=1,2,3 this is the x,y,z-direction modulus, respectively
-# TODO: Make it possible to combine multiple directions
+# For dir=5 we combine the y- and z-directions
 for obs in ['lines_mod_polar']:
   ave = 0.0         # Accumulate within each block
   aveSq = 0.0
@@ -58,10 +58,21 @@ for obs in ['lines_mod_polar']:
 
     # Accumulate within each block
     elif MDTU > begin and MDTU <= (begin + block_size):
-      tr = float(temp[direction])
-      ave += tr
-      aveSq += tr * tr
-      count += 1
+      if direction < 4:
+        tr = float(temp[direction])
+        ave += tr
+        aveSq += tr * tr
+        count += 1
+      elif direction == 5:
+        tr = float(temp[2])
+        ave += tr
+        aveSq += tr * tr
+        tr = float(temp[3])
+        ave += tr
+        aveSq += tr * tr
+        count += 2
+      else:
+        print("Error: Unrecognized dir %d" % direction)
 
       # If that "<=" is really "==" then we are done with this block
       # Record it and re-initialize for the next block
