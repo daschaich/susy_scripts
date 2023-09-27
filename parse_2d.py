@@ -357,14 +357,15 @@ for temp_tag in open('list.txt'):
         ave_link = float(temp[3])
         print >> FLINK, "%g,%g" % (MDTU, ave_link)
         if len(temp) > 4:
-          link_width = float(temp[4]) # To be printed with other widths
+          link_width = float(temp[4])   # To be printed with other widths
         else:
           link_width = float('nan')
     # ------------------------------------------------------------
 
     # ------------------------------------------------------------
-    # plaquette, Polyakov loop, bosonic action... and CG iterations
-    # Normalize first three using Nc extracted above
+    # plaquette, Polyakov loop, bosonic action, energy and CG iterations
+    # Print both bosonic action and energy since lambda non-trivial
+    # First four need Nc and DIMF extracted above
     elif line.startswith('GMES '):
       temp = line.split()
       print >> PLAQ, "%g,%g" % (MDTU, float(temp[4]) / Nc)
@@ -564,137 +565,139 @@ for temp_tag in open('list.txt'):
 
   # ----------------------------------------------------------------
   # Now deal with the corresponding "meas" file, if it is present
-  # For now just care about fermion bilinears and related quantities
+  # Main targens are Tr[X^2] and fermion-bilinear Ward identity
   infile = 'Out/meas.' + cfg
   if not os.path.isfile(infile):
     print >> MISSINGFILES, infile
-  else:
-    # Need to worry about C2 in gauge action
-    # which wasn't always printed in output (though it is now)
-    # For now, extract it from the path
-    C2 = 1.0
-    temp = os.getcwd()
-    if '-c' in temp:
-      temp2 = temp.split('-c')
-      C2 = float(((temp2[1]).split('/'))[0])
+    print >> ERRFILE, "Problem opening", infile
+    continue
 
-    # We have a file, so let's cycle over its lines
-    check = -1
-    for line in open(infile):
-      if line.startswith('Time stamp '):
-        stamp = line.rstrip()
-        if stamp != oldstamp:
-          print infile, "time stamp doesn't match final", oldstamp
-          print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
+  # We have a file, so let's cycle over its lines
+  check = -1
+  for line in open(infile):
+    if line.startswith('Time stamp '):
+      stamp = line.rstrip()
+      if stamp != oldstamp:
+        print infile, "time stamp doesn't match final", oldstamp
+        print >> ERRFILE, infile, "time stamp doesn't match final", oldstamp
 
-      elif line.startswith('FLINK '): # Will be printed with other widths
-        temp = line.split()
-        if len(temp) > 7:
-          link_width = float(temp[7])
-        else:
-          link_width = float('nan')
+    # Need to worry about C2 in gauge action for Ward identity
+    elif line.startswith('C2='):
+      temp = line.split('=')
+      C2 = float(temp[1])
 
-      # ----------------------------------------------------------
-      # Fermion bilinear Ward identity
-      elif 'CONGRAD' in line:
-        CG = -1
-      elif line.startswith('SUSY '):
-        temp = line.split()
-        trace = float(temp[1])
-        gauge = float(temp[3])
-        a = C2 * gauge
-        b = trace
-        susy = (a - b) / math.sqrt(a * a + b * b)
+    elif line.startswith('FLINK '): # Will be printed with other widths
+      temp = line.split()
+      if len(temp) > 7:
+        link_width = float(temp[7])
+      else:
+        link_width = float('nan')
 
-        # The imaginary part of the bilinear should vanish on average,
-        # but large fluctuations may signal pathology
-        zero = float(temp[2])
-        print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
-      # ----------------------------------------------------------
+    # Scalar square Tr[X^2]
+    elif line.startswith('TR_XSQ '):
+      temp = line.split()
+      tr_xsq = float(temp[1])
+      print >> SCALARSQ, "%g,%g" % (MDTU, tr_xsq )
 
-      # ----------------------------------------------------------
-      # Wilson lines in other directions
-      elif NEED_LINES > 0 and line.startswith('LINES '):
-        temp = line.split()
-        x_r = float(temp[1]) / Nc
-        x_i = float(temp[2]) / Nc
-        print >> LINES, "%g,%g" % (x_r, x_i)
-        x_mod = math.sqrt(x_r**2 + x_i**2)
-        print >> LINES_MOD, "%g,%g" % (MDTU, x_mod)
+    # ----------------------------------------------------------
+    # Fermion bilinear Ward identity
+    elif 'CONGRAD' in line:
+      CG = -1
+    elif line.startswith('SUSY '):
+      temp = line.split()
+      trace = float(temp[1])
+      gauge = float(temp[3])
+      a = C2 * gauge
+      b = trace
+      susy = (a - b) / math.sqrt(a * a + b * b)
 
-      # Unitarized Polyakov loop and Wilson lines in other directions
-      elif NEED_LINES > 0 and line.startswith('LINES_POLAR '):
-        temp = line.split()
-        poly_r = float(temp[3]) / Nc
-        poly_i = float(temp[4]) / Nc
-        print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
-        poly_mod = math.sqrt(poly_r**2 + poly_i**2)
-        print >> POLY_MOD_POLAR, "%g,%g,%g,%g" \
-                                 % (MDTU, poly_mod, poly_r, poly_i)
+      # The imaginary part of the bilinear should vanish on average,
+      # but large fluctuations may signal pathology
+      zero = float(temp[2])
+      print >> BILIN, "%g,%g,%g" % (MDTU, susy, zero)
+    # ----------------------------------------------------------
 
-        x_r = float(temp[1]) / Nc
-        x_i = float(temp[2]) / Nc
-        print >> LINES_POLAR, "%g,%g" % (x_r, x_i)
-        x_mod = math.sqrt(x_r**2 + x_i**2)
-        print >> LINES_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
-      # ----------------------------------------------------------
+    # ----------------------------------------------------------
+    # Wilson lines in the spatial direction
+    elif NEED_LINES > 0 and line.startswith('LINES '):
+      temp = line.split()
+      x_r = float(temp[1]) / Nc
+      x_i = float(temp[2]) / Nc
+      print >> LINES, "%g,%g" % (x_r, x_i)
+      x_mod = math.sqrt(x_r**2 + x_i**2)
+      print >> LINES_MOD, "%g,%g" % (MDTU, x_mod)
 
-      # ----------------------------------------------------------
-      # Plaquette determinant and widths
-      elif NEED_DET > 0 and line.startswith('DET '):
-        temp = line.split()
-        det_r = float(temp[1])
-        det_i = float(temp[2])
-        # !!! Site-by-site |1-det|^2 not measured on all ensembles
-        # If it's missing, for now use volume average instead
-        if len(temp) == 6:
-          det = float(temp[5])
-        else:
-          det = (1.0 - det_r)**2 + det_i**2
-        print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
+    # Unitarized Polyakov loop and Wilson lines in other directions
+    elif NEED_LINES > 0 and line.startswith('LINES_POLAR '):
+      temp = line.split()
+      poly_r = float(temp[3]) / Nc
+      poly_i = float(temp[4]) / Nc
+      print >> POLY_POLAR, "%g,%g" % (poly_r, poly_i)
+      poly_mod = math.sqrt(poly_r**2 + poly_i**2)
+      print >> POLY_MOD_POLAR, "%g,%g,%g,%g" \
+                               % (MDTU, poly_mod, poly_r, poly_i)
 
-      elif NEED_WIDTHS > 0 and line.startswith('WIDTHS '):
-        temp = line.split()
-        plaq_width = float(temp[1])
-        re_width = float(temp[2])
-        im_width = float(temp[3])
-        print >> WIDTHS, "%g,%g,%g,%g,%g" \
-                         % (MDTU, plaq_width, re_width, im_width, link_width)
-      # ----------------------------------------------------------
+      x_r = float(temp[1]) / Nc
+      x_i = float(temp[2]) / Nc
+      print >> LINES_POLAR, "%g,%g" % (x_r, x_i)
+      x_mod = math.sqrt(x_r**2 + x_i**2)
+      print >> LINES_MOD_POLAR, "%g,%g" % (MDTU, x_mod)
+    # ----------------------------------------------------------
 
-      # ----------------------------------------------------------
-      # Scalar eigenvalues
-      # Only look at largest and smallest (most negative) to keep this manageable
-      elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
-        temp = line.split()
-        index = int(temp[1])
-        if index == 0 or index == Nc - 1:
-          scalar_eig_ave += ',' + str(temp[2])
-          scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
-          scalar_eig_width += ',' + str(temp[3])
-        if index == Nc - 1:
-          print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
-          print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
-          print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
-          scalar_eig_ave = ''
-          scalar_eig_ext = ''
-          scalar_eig_width = ''
-      # ---------------------------------------------------------
+    # ----------------------------------------------------------
+    # Plaquette determinant and widths
+    elif NEED_DET > 0 and line.startswith('DET '):
+      temp = line.split()
+      det_r = float(temp[1])
+      det_i = float(temp[2])
+      # !!! Site-by-site |1-det|^2 not measured on all ensembles
+      # If it's missing, for now use volume average instead
+      if len(temp) == 6:
+        det = float(temp[5])
+      else:
+        det = (1.0 - det_r)**2 + det_i**2
+      print >> DET, "%g,%g,%g,%g" % (MDTU, det, 1.0 - det_r, det_i)
 
+    elif NEED_WIDTHS > 0 and line.startswith('WIDTHS '):
+      temp = line.split()
+      plaq_width = float(temp[1])
+      re_width = float(temp[2])
+      im_width = float(temp[3])
+      print >> WIDTHS, "%g,%g,%g,%g,%g" \
+                       % (MDTU, plaq_width, re_width, im_width, link_width)
+    # ----------------------------------------------------------
 
+    # ----------------------------------------------------------
+    # Scalar eigenvalues
+    # Only look at largest and smallest (most negative) to keep this manageable
+    elif NEED_SCALAR_EIGS > 0 and line.startswith('POLAR_EIG '):
+      temp = line.split()
+      index = int(temp[1])
+      if index == 0 or index == Nc - 1:
+        scalar_eig_ave += ',' + str(temp[2])
+        scalar_eig_ext += ',' + str(temp[4]) + ',' + str(temp[5])
+        scalar_eig_width += ',' + str(temp[3])
+      if index == Nc - 1:
+        print >> SCALAR_EIG_AVE, "%g%s" % (MDTU, scalar_eig_ave)
+        print >> SCALAR_EIG, "%g%s" % (MDTU, scalar_eig_ext)
+        print >> SCALAR_EIG_WIDTHS, "%g%s" % (MDTU, scalar_eig_width)
+        scalar_eig_ave = ''
+        scalar_eig_ext = ''
+        scalar_eig_width = ''
+    # ---------------------------------------------------------
 
-      elif line.startswith('RUNNING COMPLETED'):
-        if check == 1:    # Check that we have one measurement per file
-          print infile, "reports two measurements"
-          print >> ERRFILE, infile, "reports two measurements"
-        check = 1
-    if CG == -1:
-      print infile, "encountered CG non-convergence"
-      print >> ERRFILE, infile, "encountered CG non-convergence"
-      CG = 1
-    if check == -1:
-      print infile, "did not complete"
-      print >> ERRFILE, infile, "did not complete"
+  elif line.startswith('RUNNING COMPLETED'):
+    if check == 1:    # Check that we have one measurement per file
+      print infile, "reports two measurements"
+      print >> ERRFILE, infile, "reports two measurements"
+    check = 1
+  if CG == -1:
+    print infile, "encountered CG non-convergence"
+    print >> ERRFILE, infile, "encountered CG non-convergence"
+    CG = 1
+  if check == -1:
+    print infile, "did not complete"
+    print >> ERRFILE, infile, "did not complete"
 # ------------------------------------------------------------------
 
 
