@@ -686,11 +686,11 @@ for temp_tag in open('list.txt'):
         scalar_eig_width = ''
     # ---------------------------------------------------------
 
-  elif line.startswith('RUNNING COMPLETED'):
-    if check == 1:    # Check that we have one measurement per file
-      print infile, "reports two measurements"
-      print >> ERRFILE, infile, "reports two measurements"
-    check = 1
+    elif line.startswith('RUNNING COMPLETED'):
+      if check == 1:    # Check that we have one measurement per file
+        print infile, "reports two measurements"
+        print >> ERRFILE, infile, "reports two measurements"
+      check = 1
   if CG == -1:
     print infile, "encountered CG non-convergence"
     print >> ERRFILE, infile, "encountered CG non-convergence"
