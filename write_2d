@@ -334,7 +334,7 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>Average link ('$tag')</th><th>Plaq det ('$tag')</th></tr>' >> $out
+echo '      <tr><th>Average link ('$tag')</th><th>Average scalar Tr[X^2] ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="Flink"></div>' >> $out
@@ -352,10 +352,10 @@ echo '                            });' >> $out
 echo '          </script>' >> $out
 echo '        </td>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
-echo '          <div id="det"></div>' >> $out
+echo '          <div id="scalar_sq"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
-echo '            g = new Dygraph(document.getElementById("det"),' >> $out
-echo '                            "data/det.csv",' >> $out
+echo '            g = new Dygraph(document.getElementById("scalar_sq"),' >> $out
+echo '                            "data/scalar_sq.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
 echo '                              colors: ["blue", "red", "green"],' >> $out
 echo '                              showRoller: true,' >> $out
@@ -413,7 +413,8 @@ echo '  <br><br>' >> $out
 
 echo '  <div style="width:880px; height:330px;">' >> $out
 echo '    <table>' >> $out
-echo '      <tr><th>ln[condition#] ('$tag')</th><th>Widths ('$tag')</th></tr>' >> $out
+#echo '      <tr><th>ln[condition#] ('$tag')</th><th>Widths ('$tag')</th></tr>' >> $out
+echo '      <tr><th>ln[condition#] ('$tag')</th><th>Plaq det ('$tag')</th></tr>' >> $out
 echo '      <tr>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
 echo '          <div id="cond_num"></div>' >> $out
@@ -431,12 +432,16 @@ echo '                            });' >> $out
 echo '          </script>' >> $out
 echo '        </td>' >> $out
 echo '        <td style="width:400px; height:300px;">' >> $out
-echo '          <div id="widths"></div>' >> $out
+#echo '          <div id="widths"></div>' >> $out
+echo '          <div id="det"></div>' >> $out
 echo '          <script type="text/javascript">' >> $out
-echo '            g = new Dygraph(document.getElementById("widths"),' >> $out
-echo '                            "data/widths.csv",' >> $out
+#echo '            g = new Dygraph(document.getElementById("widths"),' >> $out
+#echo '                            "data/widths.csv",' >> $out
+echo '            g = new Dygraph(document.getElementById("det"),' >> $out
+echo '                            "data/det.csv",' >> $out
 echo '                            { rollPeriod: 5,' >> $out
-echo '                              colors: ["blue", "green", "red", "black"],' >> $out
+#echo '                              colors: ["blue", "green", "red", "black"],' >> $out
+echo '                              colors: ["blue", "red", "green"],' >> $out
 echo '                              showRoller: true,' >> $out
 echo '                              yValueFormatter: function(x) {' >> $out
 echo '                                var shift = Math.pow(10, 4)' >> $out

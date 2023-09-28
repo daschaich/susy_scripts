@@ -9,11 +9,12 @@ import emcee.autocorr as acor
 # with given thermalization cut and block size
 
 # Assume one ensemble per directory (overwrite results files)
-# Assume Polyakov loop and Wilson line data are already normalized by Nc
+# Assume Polyakov loop, Wilson line and bosonic action ~ energy data
+# are already normalized using Nc
 
 # Parse arguments: first is thermalization cut, second is block size
-# Will check block size is larger than poly_mod, bilinear QWard
-# and lowest eigenvalue auto-correlation times
+# Will check block size is larger than poly_mod, bilinear QWard,
+# lowest eigenvalue and scalar Tr[X^2] auto-correlation times
 # We discard any partial blocks at the end
 if len(sys.argv) < 3:
   print("Usage:", str(sys.argv[0]), "<cut> <block>")
@@ -65,8 +66,8 @@ path = os.getcwd()
 
 
 # ------------------------------------------------------------------
-# Check that block size is larger than poly_mod, bilinear QWard
-# and lowest eigenvalue auto-correlation times
+# Check that block size is larger than poly_mod, bilinear QWard,
+# lowest eigenvalue and scalar Tr[X^2] auto-correlation times
 # For poly_mod we want the first datum on each line (following MDTU)
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
@@ -116,7 +117,7 @@ outfile.close()
 # we also want the first datum after MDTU on each line
 # Format: MDTU,QWard,Im(bilin)
 dat = []
-sep = 10      # !!!Now non-trivial
+sep = 10      # Now non-trivial
 prev = 0
 for line in open('data/bilin.csv'):
   if line.startswith('M'):
@@ -152,10 +153,10 @@ outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
 
-# Finally, for the lowest eigenvalue we also want the first datum after MDTU
+# Third, for the lowest eigenvalue we also want the first datum after MDTU
 # Format: MDTU,eig0,eig2,eig4,eig6,eig8,eig10
 dat = []
-sep = 10      # !!!Now non-trivial
+sep = 10      # Again non-trivial
 prev = 0
 for line in open('data/eig.csv'):
   if line.startswith('M'):
@@ -187,6 +188,45 @@ if tau > block_size:
 # Include effective number of independent measurements
 eff_stat = np.floor(len(dat) * sep / tau)
 outfilename = 'results/eig.autocorr'
+outfile = open(outfilename, 'w')
+print("%d # %d" % (tau, eff_stat), file=outfile)
+outfile.close()
+
+# Finally, for the scalar Tr[X^2] we also want the first datum after MDTU
+# Format: MDTU,Tr[X^2]
+dat = []
+sep = 10      # Again non-trivial
+prev = 0
+for line in open('data/scalar_sq.csv'):
+  if line.startswith('M'):
+    continue
+  temp = line.split(',')
+  MDTU = int(temp[0])
+
+  # Need to check separation and update prev before skipping to therm cut
+  if not MDTU - prev == sep:
+    print("Error: Tr[X^2] meas at %d and %d not separated by %d" \
+          % (prev, MDTU, sep))
+    sys.exit(1)
+  prev = MDTU
+
+  if MDTU <= cut:
+    continue
+  dat.append(float(temp[1]))
+
+# Arguments discussed above
+tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
+tau *= sep
+if tau > block_size:
+  print("Error: Tr[X^2] autocorrelation time %d " % tau, end='')
+  print("is larger than block size %d " % block_size, end='')
+  print("in %s" % path)
+  autocorr_check = -1
+
+# Record scalar Tr[X^2] auto-correlation time for future reference
+# Include effective number of independent measurements
+eff_stat = np.floor(len(dat) * sep / tau)
+outfilename = 'results/scalar_sq.autocorr'
 outfile = open(outfilename, 'w')
 print("%d # %d" % (tau, eff_stat), file=outfile)
 outfile.close()
