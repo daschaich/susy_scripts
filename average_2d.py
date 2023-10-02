@@ -68,7 +68,7 @@ path = os.getcwd()
 # ------------------------------------------------------------------
 # Check that block size is larger than poly_mod, bilinear QWard,
 # lowest eigenvalue and scalar Tr[X^2] auto-correlation times
-# For poly_mod we want the first datum on each line (following MDTU)
+# For poly_mod we want the first datum after MDTU on each line
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
 sep = 1
@@ -238,12 +238,14 @@ if autocorr_check < 0:
 
 
 # ------------------------------------------------------------------
-# For the plaquette, Polyakov loop, spatial Wilson line, bosonic action,
-# fermion action and average link
-# we're interested in the first datum on each line
-# For the Polyakov loop, this is the (Nc-normalized) modulus
-for obs in ['plaq', 'poly_mod', 'poly_mod_polar', \
-                    'lines_mod', 'lines_mod_polar', 'SB', 'SF', 'Flink']:
+# For the plaquette, bosonic action, energy density, fermion action,
+# average link, scalar Tr[X^2], fermion bilinear Ward identity,
+# Polyakov loop and spatial Wilson line,
+# we're interested in the first datum after MDTU on each line
+# Assume these are already normalized using Nc
+for obs in ['plaq', 'SB', 'energy', 'SF', 'Flink', 'scalar_sq', 'bilin',
+            'poly_mod', 'poly_mod_polar', \
+            'lines_mod', 'lines_mod_polar']:
   ave = 0.0         # Accumulate within each block
   count = 0
   datList = []
@@ -398,7 +400,7 @@ outfile.close()
 
 # ------------------------------------------------------------------
 # For the plaq, Re(det), Im(det) and Tr[U.Udag]/N widths
-# we're interested in all four data on each line
+# we're interested in all four data after MDTU on each line
 for obs in ['widths']:
   ave = [0.0, 0.0, 0.0, 0.0]      # Accumulate within each block
   count = 0
@@ -455,7 +457,8 @@ for obs in ['widths']:
 
 
 # ------------------------------------------------------------------
-# For the scalar eigenvalues we're interested in Nc data on each line
+# For the scalar eigenvalues
+# we're interested in Nc data on each line (after MDTU)
 for obs in ['scalar_eig_ave']:
   # Figure out Nc from number of points on first non-trivial line
   Nc = -1
