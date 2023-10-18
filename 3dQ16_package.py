@@ -7,9 +7,9 @@ import h5py
 # ------------------------------------------------------------------
 # Package 3d SYM data and results/attributes into HDF5 file
 
-# Cycle over ensembles and write to ~/SYM/3d/3dSYM_data.hdf5
-# 78 N=8 ensembles plus one N=4 12nt12 ensemble and one N=6 12nt12 ensemble
-# Group paths will specify N, L=Nt,
+# Cycle over ensembles and write to ~/SYM/3d/3dSYM_data.h5
+# 78 Nc=8 ensembles plus one Nc=4 12nt12 ensemble and one Nc=6 12nt12 ensemble
+# Group paths will specify Nc, L=Nt,
 #   rt = lambda_lat * Nt = 4 / (t * sqrt(3)),
 #   and g = mu / lambda_lat
 # Attributes for each ensemble:
@@ -98,7 +98,6 @@ for Nc in ['Nc4', 'Nc6', 'Nc8']:
     vol_dir = Nc + '_' + i + 'nt' + i + '/'
     this_vol = Nc + '/' + Nt + '/' + L
     f.create_group(this_vol)
-
 
     # Fourth- and fifth-level groups for each (rt, g) ensemble
     # Set up ensemble lists depending on Nc and L=Nt
