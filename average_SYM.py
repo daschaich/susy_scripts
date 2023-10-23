@@ -67,7 +67,7 @@ path = os.getcwd()
 # ------------------------------------------------------------------
 # Check that block size is larger than poly_mod, bilinear QWard
 # and lowest eigenvalue auto-correlation times
-# For poly_mod we want the first datum after MDTU on each line
+# For poly_mod we want the first datum on each line (following MDTU)
 # Format: MDTU,|Tr(L)|,ReTr(L),ImTr(L)
 dat = []
 sep = 1
@@ -116,7 +116,7 @@ outfile.close()
 # we also want the first datum after MDTU on each line
 # Format: MDTU,QWard,Im(bilin)
 dat = []
-sep = 10      # Now non-trivial
+sep = 10      # !!!Now non-trivial
 prev = 0
 for line in open('data/bilin.csv'):
   if line.startswith('M'):
@@ -155,7 +155,7 @@ outfile.close()
 # Finally, for the lowest eigenvalue we also want the first datum after MDTU
 # Format: MDTU,eig0,eig2,eig4,eig6,eig8,eig10
 dat = []
-sep = 10      # Now non-trivial
+sep = 10      # !!!Now non-trivial
 prev = 0
 for line in open('data/eig.csv'):
   if line.startswith('M'):
@@ -262,7 +262,7 @@ outfile.close()
 # ------------------------------------------------------------------
 # For the Polyakov loop, bosonic action, fermion action, average link,
 # and monopole world line density
-# we're interested in the first datum after MDTU on each line
+# we're interested in the first datum on each line
 # For the Polyakov loop, this is the (Nc-normalized) modulus
 for obs in ['poly_mod', 'poly_mod_polar', 'SB', 'SF', 'Flink', 'mono']:
   ave = 0.0         # Accumulate within each block
@@ -419,7 +419,7 @@ outfile.close()
 
 # ------------------------------------------------------------------
 # For the widths and Wilson lines
-# we're interested in all four data after MDTU on each line
+# we're interested in all four data on each line
 # These widths are for plaq, Re(det), Im(det) and Tr[U.Udag]/N
 for obs in ['widths', 'lines_mod', 'lines_mod_polar']:
   ave = [0.0, 0.0, 0.0, 0.0]      # Accumulate within each block
@@ -477,8 +477,7 @@ for obs in ['widths', 'lines_mod', 'lines_mod_polar']:
 
 
 # ------------------------------------------------------------------
-# For the scalar eigenvalues
-# we're interested in Nc data on each line (after MDTU)
+# For the scalar eigenvalues we're interested in Nc data on each line
 for obs in ['scalar_eig_ave']:
   # Figure out Nc from number of points on first non-trivial line
   Nc = -1

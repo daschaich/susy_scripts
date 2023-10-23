@@ -7,9 +7,9 @@ import h5py
 # ------------------------------------------------------------------
 # Package 3d SYM data and results/attributes into HDF5 file
 
-# Cycle over ensembles and write to ~/SYM/3d/3dSYM_data.h5
-# 78 Nc=8 ensembles plus one Nc=4 12nt12 ensemble and one Nc=6 12nt12 ensemble
-# Group paths will specify Nc, L=Nt,
+# Cycle over ensembles and write to ~/SYM/3d/3dSYM_data.hdf5
+# 78 N=8 ensembles plus one N=4 12nt12 ensemble and one N=6 12nt12 ensemble
+# Group paths will specify N, L=Nt,
 #   rt = lambda_lat * Nt = 4 / (t * sqrt(3)),
 #   and g = mu / lambda_lat
 # Attributes for each ensemble:
@@ -99,6 +99,7 @@ for Nc in ['Nc4', 'Nc6', 'Nc8']:
     this_vol = Nc + '/' + Nt + '/' + L
     f.create_group(this_vol)
 
+
     # Fourth- and fifth-level groups for each (rt, g) ensemble
     # Set up ensemble lists depending on Nc and L=Nt
     os.chdir(path + vol_dir)
@@ -170,7 +171,7 @@ for Nc in ['Nc4', 'Nc6', 'Nc8']:
         this_grp.attrs['autocorrelation time (bilin)'] = float(temp[0])
 
       # Now set up datasets and result-attributes for this ensemble
-      # First do plaq, averaging ss & st and also setting Ntraj
+      # First do plaquette, averaging ss & st and also setting Ntraj
       plaq_arr = []
       for line in open('data/plaq.csv'):
         if line.startswith('M'):
@@ -197,7 +198,7 @@ for Nc in ['Nc4', 'Nc6', 'Nc8']:
 
       # ------------------------------------------------------------
       # Simple observables measured every trajectory=MDTU
-      # Bosonic action, link trace, exp(-Delta S)
+      # Bosonic action, Tr[U.Ubar]/N and exp(-Delta S)
       # Only want one datum per line from each of these
       # Skipping cg_iters, wall_time
       for obs in ['SB', 'Flink', 'exp_dS']:
