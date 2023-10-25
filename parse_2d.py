@@ -48,7 +48,7 @@ print >> WIDTHS, "MDTU,plaq,Re(det),Im(det),link"
 SCALAR_EIG_AVE = open('data/scalar_eig_ave.csv', 'w')
 print >> SCALAR_EIG_AVE, "MDTU,min_ave,max_ave"
 SCALAR_EIG = open('data/scalar_eig.csv', 'w')
-print >> SCALAR_EIG, "MDTU,min_min,min_max,max_min,max_max5"
+print >> SCALAR_EIG, "MDTU,min_min,min_max,max_min,max_max"
 SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
 BILIN = open('data/bilin.csv', 'w')

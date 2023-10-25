@@ -107,12 +107,10 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
     elif Nc == 'Nc12':
       if Nt == '6':
         allNx = ['24']
-      elif Nt == '12':
+      elif Nt == '12' or Nt == '24':
         allNx = ['12', '24']
       elif Nt == '16':
-        allNx = ['12', '24']
-      elif Nt == '24':
-        allNx = ['24']
+        allNx = ['16', '24']
       elif Nt == '32':
         allNx = ['32']
       else:
@@ -217,7 +215,8 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
       # and complexified and unitarized Wilson line magnitudes
       # Only want one datum per line from each of these
       # Skipping cg_iters, wall_time
-      for obs in ['SB', 'energy', 'Flink', 'exp_dS', 'lines_mod', 'lines_mod_polar']:
+      for obs in ['SB', 'energy', 'Flink', 'exp_dS', \
+                  'lines_mod', 'lines_mod_polar']:
         obsfile = 'data/' + obs + '.csv'
         if obs == 'Flink':
           name = 'link_trace'
@@ -309,50 +308,167 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
             sys.exit(1)
       # ------------------------------------------------------------
 
-    # ------------------------------------------------------------
-    # Extremal scalar eigenvalues also measured every trajectory=MDTU
-    # Want four data per line (extremal minimum and maximum eigenvalues)
-    for obs in ['scalar_eig']:
-      obsfile = 'data/' + obs + '.csv'
-
-      dset = this_grp.create_dataset(obs, (Ntraj,4,), dtype='f')
-      dset.attrs['columns'] = ['min_min', 'min_max', 'max_min', 'max_max']
+      # ------------------------------------------------------------
+      # Extremal scalar eigenvalues also measured every trajectory=MDTU
+      # Want two data per line (average minimum and maximum eigenvalues)
+      dset = this_grp.create_dataset(obs, (Ntraj,2,), dtype='f')
+      dset.attrs['columns'] = ['min', 'max']
       traj = 0
-      for line in open(obsfile):
+      for line in open('data/scalar_eig_ave.csv'):
         temp = line.split(',')
         if line.startswith('M') or line.startswith('t'):
           continue
-        dset[traj] = [float(temp[1]), float(temp[2]), float(temp[3]), float(temp[4])]
+        dset[traj] = [float(temp[1]), float(temp[2])]
         traj += 1
 
       if traj != Ntraj:
         print("ERROR: Ntraj mismatch in %s, " % this_ens, end='')
-        print("%d vs %d in %s" % (traj, Ntraj, obsfile))
+        print("%d vs %d in scalar_eig_ave" % (traj, Ntraj))
         sys.exit(1)
-    # ------------------------------------------------------------
 
-    # ------------------------------------------------------------
-    # Now observables which are observed every 10 MDTU
-    # First do scalar squares to set new Ntraj
-    scalarsq_arr = []
-    for line in open('data/scalar_sq.csv'):
-      if line.startswith('M'):
-        continue
-      temp = line.split(',')
-      scalarsq_arr.append(float(temp[1]))
-    Ntraj = len(scalarsq_arr)
-    this_grp.attrs['Ntraj'] = Ntraj
+      # Results as attributes, checking Nblocks
+      for line in open('results/scalar_eig_ave.dat'):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['min ave'] = float(temp[0])
+        dset.attrs['min err'] = float(temp[1])
+        dset.attrs['max ave'] = float(temp[2])
+        dset.attrs['max err'] = float(temp[3])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+          print("%s vs %d in scalar_eig_ave" % (temp[-1], Nblocks))
+          sys.exit(1)
+      # ------------------------------------------------------------
 
-    scalarsq = np.array(scalarsq_arr)
-    dset = this_grp.create_dataset('scalarsq', data=scalarsq)
+      # ------------------------------------------------------------
+      # Violations of fermion bilinear Q-susy Ward identity
+      # Save (and count) trajectories at which measurements were run
+      bilin_arr = []
+      meas_arr = []
+      for line in open('data/bilin.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        meas_arr.append(int(temp[0]))
+        bilin_arr.append(float(temp[1]))
+      Nmeas = len(meas_arr)
+      meas = np.array(meas_arr)
+      bilin = np.array(bilin_arr)
+      this_grp.create_dataset('meas', data=meas)
+      dset = this_grp.create_dataset('bilin', data=bilin)
 
-    # Record ensemble average as an attribute of the dataset
-    for line in open('results/scalar_sq.dat'):
-      temp = line.split()
-      dset.attrs['ave'] = float(temp[0])
-      dset.attrs['err'] = float(temp[1])
-      if not int(temp[-1]) == Nblocks:
-        print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
-        print("%s vs %d in SB.dat" % (temp[-1], Nblocks))
+      # Results as attributes, checking Nblocks
+      for line in open('results/bilin.dat'):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['ave'] = float(temp[0])
+        dset.attrs['err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+          print("%s vs %d in bilin" % (temp[-1], Nblocks))
+          sys.exit(1)
+      # ------------------------------------------------------------
+
+      # ------------------------------------------------------------
+      # Next do average Tr[X^2]
+      dset = this_grp.create_dataset('scalar_sq', (Nmeas,), dtype='f')
+      meas = 0
+      for line in open('data/scalar_sq.csv'):
+        temp = line.split(',')
+        if line.startswith('M'):
+          continue
+        dset[meas] = float(temp[1])
+        meas += 1
+
+      if meas != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_ens, end='')
+        print("%d vs %d in scalar_sq" % (meas, Nmeas))
         sys.exit(1)
-    # ------------------------------------------------------------
+
+      # Results as attributes, checking Nblocks
+      for line in open('results/scalar_sq.dat'):
+        if line.startswith('#'):
+          continue
+        temp = line.split()
+        dset.attrs['ave'] = float(temp[0])
+        dset.attrs['err'] = float(temp[1])
+        if not int(temp[-1]) == Nblocks:
+          print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
+          print("%s vs %d in scalar_sq" % (temp[-1], Nblocks))
+          sys.exit(1)
+      # ------------------------------------------------------------
+
+      # ------------------------------------------------------------
+      # Fermion operator eigenvalues and RHMC spectral range
+      # Format: min_eig, max_eig, log(cond_num), min_range, max_range
+      # No averaging so attributes are only column labels
+      eig = np.empty((Nmeas, 5), dtype = np.float)
+
+      # Minimum eigenvalue from eig.csv
+      meas = 0
+      for line in open('data/eig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        eig[meas][0] = float(temp[1])
+        meas += 1
+      if meas != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in min_eig" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Maximum eigenvalue from bigeig.csv
+      meas = 0
+      for line in open('data/bigeig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        eig[meas][1] = float(temp[1])
+        meas += 1
+      if meas != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in max_eig" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Logarithm of condition number
+      meas = 0
+      for line in open('data/cond_num.csv'):
+        if line.startswith('t'):
+          continue
+        temp = line.split(',')
+        eig[meas][2] = float(temp[1])
+        meas += 1
+      if meas != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in cond_num" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Spectral range from order of rational approximation
+      meas = 0
+      for line in open('data/Norder.csv'):
+        if line.startswith('t'):
+          continue
+        temp = line.split(',')
+        srange = spect_range(int(temp[1]))
+        eig[meas][3] = float(srange[0])
+        eig[meas][4] = float(srange[1])
+        meas += 1
+      if meas != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in spectral range" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Sanity checks on eigenvalue measurements
+      for j in range(Nmeas):
+        if eig[j][0] < eig[j][3] or eig[j][1] > eig[j][4]:
+          print("ERROR: Spectral range problem in %s, " % this_ens, end='')
+          print("[%.4g, %.4g] vs " % (eig[j][0], eig[j][1]), end='')
+          print("[%.4g, %.4g] vs " % (eig[j][3], eig[j][4]), end='')
+          sys.exit(1)
+
+      dset = this_grp.create_dataset('Fermion_op_eig', data=eig)
+      dset.attrs['columns'] = ['min_eig', 'max_eig', 'log(cond_num)', \
+                               'min_range', 'max_range']
+# ------------------------------------------------------------

@@ -522,4 +522,3 @@ for obs in ['scalar_eig_ave']:
   print("# %d" % N, file=outfile)
   outfile.close()
 # ------------------------------------------------------------------
-
