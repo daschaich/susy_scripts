@@ -253,19 +253,20 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
             print("ERROR: Nblocks mismatch in %s, " % this_ens, end='')
             print("%s vs %d in %s" % (temp[-1], Nblocks, resfile))
             sys.exit(1)
+
         # Include unitarized Wilson line susceptibility
-        elif obs == 'lines_mod_polar':
-        suscfile = 'results/' + obs + '.suscept'
-        for line in open(suscfile):
-          if line.startswith('#'):
-            continue
-          temp = line.split()
-          dset.attrs['suscept'] = float(temp[0])
-          dset.attrs['suscept_err'] = float(temp[1])
-        if not int(temp[-1]) == Nblocks:
-          print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
-          print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
-          sys.exit(1)
+        if obs == 'lines_mod_polar':
+          suscfile = 'results/' + obs + '.suscept'
+          for line in open(suscfile):
+            if line.startswith('#'):
+              continue
+            temp = line.split()
+            dset.attrs['suscept'] = float(temp[0])
+            dset.attrs['suscept_err'] = float(temp[1])
+          if not int(temp[-1]) == Nblocks:
+            print("ERROR: Nblocks mismatch in %s: " % this_ens, end='')
+            print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
+            sys.exit(1)
       # ------------------------------------------------------------
 
       # ------------------------------------------------------------
