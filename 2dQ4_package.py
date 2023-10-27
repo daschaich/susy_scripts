@@ -117,15 +117,15 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
         print("ERROR: Unrecognized Nt=%s for Nc=" % (Nt, Nc))
         sys.exit(1)
 
-    Nt = 'Nt' + Nt
+    Nt_tag = 'Nt' + Nt
     for Nx in allNx:
-      Nx = 'Nx' + Nx
+      Nx_tag = 'Nx' + Nx
       vol_dir = Nc + '_' + Nx + 'nt' + Nt + '/'
-      this_vol = Nc + '/' + Nt + '/' + Nx
+      this_vol = Nc + '/' + Nt_tag + '/' + Nx_tag
       f.create_group(this_vol)
 
       # Fourth- and fifth-level groups for each (rt, g) ensemble
-      # Set up ensemble lists depending on Nc and L=Nt
+      # Set up ensemble lists for each Nc and volume
       os.chdir(path + vol_dir)
       ens_list = glob.glob('rt*')
       for ens in glob.glob('rt*'):
