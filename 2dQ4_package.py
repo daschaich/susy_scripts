@@ -142,8 +142,8 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
         this_grp = f.create_group(this_ens)
 
         # Record alpha, t, lambda_lat and mu based on Nt, Nx, rt and zeta
-        Nt_float = float(Nt.split('Nt')[1])
-        Nx_float = float(Nx.split('Nx')[1])
+        Nt_float = float(Nt_tag.split('Nt')[1])
+        Nx_float = float(Nx_tag.split('Nx')[1])
         rt_float = float(rt.split('rt')[1])
         zeta_float = float(zeta.split('zeta')[1])
         this_grp.attrs['alpha'] = Nx_float / Nt_float
