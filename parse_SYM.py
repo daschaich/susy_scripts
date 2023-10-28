@@ -354,7 +354,7 @@ for temp_tag in open('list.txt'):
     elif line.startswith('START '):
       starting = 1
     elif line.startswith('FLINK '):
-      if starting == 1:
+      if fresh < 0 and starting == 1:
         starting = 0
         link_width = float('nan')
       else:
