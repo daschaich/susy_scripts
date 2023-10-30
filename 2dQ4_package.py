@@ -9,31 +9,23 @@ import h5py
 
 # Cycle over ensembles and write to /mnt/lustre/users/anosh/susy_bound/susy_bound/2dQ4_data.h5
 # 207 Nc=12 ensembles plus 12 Nc=16 12nt12 and 12 Nc=20 12nt12 ensembles
-# Group paths will specify Nc, Nx, Nt,
-#   rt = Nt * sqrt(lambda_lat) = 1 / t,
+# Group paths will specify Nc, Nx, Nt, rt = Nt * sqrt(lambda_lat),
 #   and zeta = 'g' = mu / sqrt(lambda_lat) = mu * Nt / rt
 # Attributes for each ensemble:
-#   t = 1 / rt, lambda_lat, mu, number of trajectories,
-#   aspect ratio Nx / Nt, lambda_lat...,
-#   mu, number of trajectories,
-#   thermalization cut...,
-#   block size...,
-#   number of blocks, acceptance rate,
-#   autocorrelation times for |ML|, bilinear Ward identity,
-#   Tr[X^2] and lowest eigenvalue...
-#   Datasets for each ensemble, most with ave and err as attributes:
-#   plaquette...,
-#   bosonic action, Tr[U.Ubar]/N...,
-#   exp(-Delta S), energy density, scalar squares Tr[X^2],
+#   aspect ratio Nx / Nt, t = 1 / rt, lambda_lat, mu, number of trajectories,
+#   thermalization cut, block size, number of blocks, acceptance rate,
+#   and autocorrelation times for |ML|, lowest fermion operator eigenvalue,
+#     bilinear Ward identity and Tr[X^2]
+# Datasets for each ensemble, most with ave and err as attributes:
+#   plaquette, bosonic action, energy density, Tr[U.Ubar]/N, exp(-Delta S),
+#   mag of (complexified and unitarized) spatial Wilson line
+#     (with unitarized susceptibility as attribute),
 #   real, imag and mag of Maldacena (ML) and Polyakov (PL) loops,
-#   real, imag and mag of (complexified and unitarized) spatial Wilson line
-#   [with magnitude susceptibility as attribute],
-#   fermion bilinear Q-susy Ward identify violation..., [to add]
-#   extremal eigenvalues..., [to add]
-#   condition number..., [to add]
-#   spectral range..., [to add]
-#   phases of Wilson line eigenvalues..., [to add]
-#   lists of analyzed configurations [to add]
+#   extremal scalar eigenvalues,
+#   fermion bilinear Q-susy Ward identify violation,
+#   list of analyzed configurations,
+#   scalar square Tr[X^2], extremal fermion operator eigenvalues,
+#   condition number and spectral range
 # ------------------------------------------------------------------
 
 
@@ -313,7 +305,7 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
         # ------------------------------------------------------------
         # Extremal scalar eigenvalues also measured every trajectory=MDTU
         # Want two data per line (average minimum and maximum eigenvalues)
-        dset = this_grp.create_dataset(obs, (Ntraj,2,), dtype='f')
+        dset = this_grp.create_dataset('scalar_eig_ave', (Ntraj,2,), dtype='f')
         dset.attrs['columns'] = ['min', 'max']
         traj = 0
         for line in open('data/scalar_eig_ave.csv'):
