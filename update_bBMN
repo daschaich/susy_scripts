@@ -7,7 +7,7 @@ fi
 
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
-path=/raidc/users/schaich/SYM/$dir        # Customized for Liverpool
+path=/raidc/schaich/SYM/$dir        # Customized for Liverpool
 # ------------------------------------------------------------------
 
 
