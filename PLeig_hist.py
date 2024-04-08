@@ -77,11 +77,11 @@ for dirname in dirnames:
 nbins = 10
 plt.figure(figsize=(6.40, 3.84))    # Gnuplot default
 plt.hist(dat[0], nbins, log=False, density=True, align='mid',
-         edgecolor='red', label='SU(8)', histtype='step', hatch='|')
+         edgecolor='red', label='SU(8)', histtype='step', hatch='||')
 plt.hist(dat[1], nbins, log=False, density=True, align='mid',
-         edgecolor='green', label='SU(12)', histtype='step', hatch='\\')
+         edgecolor='green', label='SU(12)', histtype='step', hatch='\\\\')
 plt.hist(dat[2], nbins, log=False, density=True, align='mid',
-         edgecolor='blue', label='SU(16)', histtype='step', hatch='/')
+         edgecolor='blue', label='SU(16)', histtype='step', hatch='//')
 
 plt.axis([-np.pi, np.pi, 0.0, ymax])
 plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
