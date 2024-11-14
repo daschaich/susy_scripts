@@ -119,7 +119,6 @@ for Nc in ['Nc12', 'Nc16', 'Nc20']:
       # Fourth- and fifth-level groups for each (rt, g) ensemble
       # Set up ensemble lists for each Nc and volume
       os.chdir(path + vol_dir)
-      ens_list = glob.glob('rt*')
       for ens in glob.glob('rt*'):
         os.chdir(path + vol_dir + ens)
         toCheck = 'results/poly_mod.autocorr'

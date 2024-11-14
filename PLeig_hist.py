@@ -89,7 +89,8 @@ plt.xticks([-np.pi, -0.5 * np.pi, 0.0, 0.5 * np.pi, np.pi],
                       r'$\frac{\pi}{2}$', r'$\pi$'])
 plt.grid(False)
 
-plt.title('Phase of Polyakov loop eigenvalues, ' + title)
+#plt.title('Phase of Polyakov loop eigenvalues, ' + title)
+plt.title('Phase of PL eigenvalues, ' + title)
 plt.xlabel('Phase')
 plt.ylabel('Relative frequency')
 plt.legend()

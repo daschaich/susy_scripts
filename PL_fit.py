@@ -30,7 +30,7 @@ p_in = np.array([0.9, 0.9, 100.0, 0.1])
 
 # Define corresponding Jacobian matrix
 def jac(p, x, y, err):
-  J = np.empty((x.size, p.size), dtype = np.float)
+  J = np.empty((x.size, p.size), dtype = float)
   num = np.exp(p[2] * (x - p[3]))
   den = 1.0 + np.exp(p[2] * (x - p[3]))
   J[:, 0] = 1.0
