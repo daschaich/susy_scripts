@@ -40,6 +40,8 @@ SCALAR_EIG_WIDTHS = open('data/scalar_eig_widths.csv', 'w')
 print >> SCALAR_EIG_WIDTHS, "MDTU,min_width,max_width"
 EIG = open('data/eig.csv', 'w')
 print >> EIG, "MDTU,min_eig"
+BIGEIG = open('data/bigeig.csv', 'w')
+print >> BIGEIG, "MDTU,max_eig"
 
 # Evolution observables
 ACCP = open('data/accP.csv', 'w')
@@ -496,6 +498,7 @@ for temp_tag in open('list.txt'):
       print >> ERRFILE, infile, "did not complete"
 
     print >> EIG, "%g,%g" % (MDTU, eig)
+    print >> BIGEIG, "%g,%g" % (MDTU, dat)
 # ------------------------------------------------------------------
 
 
@@ -516,6 +519,7 @@ SCALAR_EIG_AVE.close()
 SCALAR_EIG.close()
 SCALAR_EIG_WIDTHS.close()
 EIG.close()
+BIGEIG.close()
 ACCP.close()
 EXP_DS.close()
 DELTAS.close()

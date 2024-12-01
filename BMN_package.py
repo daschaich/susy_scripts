@@ -67,7 +67,7 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
       if not os.path.isfile(toCheck):     # Skip unfinished ensembles
         print("Skipping %s" % top_dir + ens)
         continue
-        
+
       temp = ens.split('_')
       g = temp[0]
       T_ov_mu = temp[1]
@@ -296,97 +296,149 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
       # ------------------------------------------------------------
 
       # ------------------------------------------------------------
+      # Polyakov loop eigenvalue phases
+      # Nc phases measured every trajectory=MDTU, not averaged
+      # Here it is more convenient to collect the phases in a numpy array
+      Nc_int = int(Nc.split('Nc')[1])
+      PLeig = np.empty((Ntraj, Nc_int), dtype = np.float)
+
+      PLeig_tot = 0
+      for line in open('data/PLeig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        index = int(temp[0]) - 1
+        for j in range(Nc_int):
+          PLeig[index][j] = float(temp[j + 1])
+          PLeig_tot += 1
+
+      # Check to make sure no measurements are missing
+      expect = Ntraj * Nc_int
+      if PLeig_tot != expect:
+        print("ERROR: PLeig mismatch in %s: " % this_ens, end='')
+        print("%d vs %d expected" % (PLeig_tot, expect))
+        sys.exit(1)
+
+      dset = this_grp.create_dataset('PLeig_phases', data=PLeig)
+      # ------------------------------------------------------------
+
+      # ------------------------------------------------------------
       # Fermion operator eigenvalues and RHMC spectral range
       # Format: min_eig, max_eig, log(cond_num), min_range, max_range
       # No averaging so attributes are only column labels
-      # TODO: Need different Nmeas vs. pfaffian phase below
-        eig = np.empty((Nmeas, 5), dtype = np.float)
+      # Save (and count) trajectories at which measurements were run
+      meas_arr = []
 
-        # Minimum eigenvalue from eig.csv
-        meas = 0
-        for line in open('data/eig.csv'):
-          if line.startswith('M'):
-            continue
-          temp = line.split(',')
-          eig[meas][0] = float(temp[1])
-          meas += 1
-        if meas != Nmeas:
-          print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
-          print("%d vs %d in min_eig" % (meas, Nmeas))
+      # First pass through to count number of measurements
+      for line in open('data/eig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        meas_arr.append(int(temp[0]))
+      Nmeas = len(meas_arr)
+      eig = np.empty((Nmeas, 5), dtype = np.float)
+
+      # Minimum eigenvalue from eig.csv
+      eig_count = 0
+      for line in open('data/eig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        eig[eig_count][0] = float(temp[1])
+        eig_count += 1
+      if eig_count != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in min_eig" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Dataset for measurements
+      meas = np.array(meas_arr)
+      this_grp.create_dataset('Fermion_op_eig measurements', data=meas)
+
+      # Maximum eigenvalue from bigeig.csv
+      eig_count = 0
+      for line in open('data/bigeig.csv'):
+        if line.startswith('M'):
+          continue
+        temp = line.split(',')
+        eig[eig_count][1] = float(temp[1])
+        eig_count += 1
+      if eig_count != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in max_eig" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Logarithm of condition number
+      eig_count = 0
+      for line in open('data/cond_num.csv'):
+        if line.startswith('t'):
+          continue
+        temp = line.split(',')
+        eig[eig_count][2] = float(temp[1])
+        eig_count += 1
+      if eig_count != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in cond_num" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Spectral range from order of rational approximation
+      eig_count = 0
+      for line in open('data/Norder.csv'):
+        if line.startswith('t'):
+          continue
+        temp = line.split(',')
+        srange = spect_range(int(temp[1]))
+        eig[eig_count][3] = float(srange[0])
+        eig[eig_count][4] = float(srange[1])
+        eig_count += 1
+      if eig_count != Nmeas:
+        print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
+        print("%d vs %d in spectral range" % (meas, Nmeas))
+        sys.exit(1)
+
+      # Sanity checks on eigenvalue measurements
+      for j in range(Nmeas):
+        if eig[j][0] < eig[j][3] or eig[j][1] > eig[j][4]:
+          print("ERROR: Spectral range problem in %s, " % this_ens, end='')
+          print("[%.4g, %.4g] vs " % (eig[j][0], eig[j][1]), end='')
+          print("[%.4g, %.4g] vs " % (eig[j][3], eig[j][4]), end='')
           sys.exit(1)
 
-        # Maximum eigenvalue from bigeig.csv
-        meas = 0
-        for line in open('data/bigeig.csv'):
-          if line.startswith('M'):
-            continue
-          temp = line.split(',')
-          eig[meas][1] = float(temp[1])
-          meas += 1
-        if meas != Nmeas:
-          print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
-          print("%d vs %d in max_eig" % (meas, Nmeas))
-          sys.exit(1)
-
-        # Logarithm of condition number
-        meas = 0
-        for line in open('data/cond_num.csv'):
-          if line.startswith('t'):
-            continue
-          temp = line.split(',')
-          eig[meas][2] = float(temp[1])
-          meas += 1
-        if meas != Nmeas:
-          print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
-          print("%d vs %d in cond_num" % (meas, Nmeas))
-          sys.exit(1)
-
-        # Spectral range from order of rational approximation
-        meas = 0
-        for line in open('data/Norder.csv'):
-          if line.startswith('t'):
-            continue
-          temp = line.split(',')
-          srange = spect_range(int(temp[1]))
-          eig[meas][3] = float(srange[0])
-          eig[meas][4] = float(srange[1])
-          meas += 1
-        if meas != Nmeas:
-          print("ERROR: Nmeas mismatch in %s, " % this_str, end='')
-          print("%d vs %d in spectral range" % (meas, Nmeas))
-          sys.exit(1)
-
-        # Sanity checks on eigenvalue measurements
-        for j in range(Nmeas):
-          if eig[j][0] < eig[j][3] or eig[j][1] > eig[j][4]:
-            print("ERROR: Spectral range problem in %s, " % this_ens, end='')
-            print("[%.4g, %.4g] vs " % (eig[j][0], eig[j][1]), end='')
-            print("[%.4g, %.4g] vs " % (eig[j][3], eig[j][4]), end='')
-            sys.exit(1)
-
-        dset = this_grp.create_dataset('Fermion_op_eig', data=eig)
-        dset.attrs['columns'] = ['min_eig', 'max_eig', 'log(cond_num)', \
-                                 'min_range', 'max_range']
+      dset = this_grp.create_dataset('Fermion_op_eig', data=eig)
+      dset.attrs['columns'] = ['min_eig', 'max_eig', 'log(cond_num)', \
+                               'min_range', 'max_range']
       # ------------------------------------------------------------
 
       # ------------------------------------------------------------
       # Finally pfaffian phase measurements when present
       # (typically for small Nc and Nt)
-      # Save (and count) trajectories at which measurements were run
+      # Save (and count) configurations on which measurements were run
       pfile = 'results/pfaffian.dat'
       if os.path.isfile(pfile):        # Not present for most groups
         pfaff_arr = []
-        meas_arr = []
+        conf_arr = []
         files = glob.glob('Out/phase.*')
-        Nmeas = len(files)
-        NMeas 
-        for line in open(pfile):
-          temp = line.split()
-          dset.attrs['c=0.5 ' + temp[0]] = float(temp[1])
-          dset.attrs['c=0.5 ' + temp[0] + '_err'] = float(temp[2])
-          if not int(temp[-1]) == Nblocks:
-            print("ERROR: Nblocks mismatch in %s: " % this_str, end='')
-            print("%s vs %d in %s.suscept" % (temp[-1], Nblocks, obs))
-            sys.exit(1)
+        Npfaff = len(files)
+        for file in files:
+          conf_arr.append(int(file.split('phase.')[1]))
+          for line in open(file):
+            # Format: PFAFF log_mag phase |cos(phase)| |sin(phase)|
+            if line.startswith('PFAFF '):
+              temp = line.split()
+              pfaff_arr.append(float(temp[2]))
 
+        conf = np.array(conf_arr)
+        this_grp.create_dataset('Pfaffian measurements', data=conf)
+        pfaff = np.array(conf_arr)
+        this_grp.create_dataset('Pfaffian phase', data=pfaff)
+        
+        # Check that all files have a measurement
+        if not len(conf) == Npfaff:
+          print("ERROR: Npfaff conf mismatch: %d vs %d in %s" \
+                % (len(conf), Npfaff, top_dir + ens))
+          sys.exit(1)
+        if not len(pfaff) == Npfaff:
+          print("ERROR: Npfaff phase mismatch: %d vs %d in %s" \
+                % (len(pfaff), Npfaff, top_dir + ens))
+          sys.exit(1)
 # ------------------------------------------------------------------
