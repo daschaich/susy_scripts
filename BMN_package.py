@@ -11,16 +11,58 @@ import h5py
 # Total of 292 ensembles: {31, 121, 104, 36} for Nc={4, 8, 12, 16}, resp.
 # Group paths will specify Nc, Nt, g=lambda/mu^3 and f=T/mu
 # Attributes for each ensemble:
-#   lambda_lat, mu, number of trajectories, thermalization cut, block size,
+#   mu_lat, lambda_lat, number of trajectories, thermalization cut, block size,
 #   number of blocks, acceptance rate, and three autocorrelation times:
 #     for |PL|, lowest fermion operator eigenvalue, and Tr[X_9^2]
 # Datasets for each ensemble, most with ave and err as attributes:
-#   bosonic action, exp(-Delta S), Myers term, all scalar squares Tr[X^2],
+#   bosonic action, ratio of SO(6) and SO(3) Tr[X^2] action contributions,
+#   Myers term in the action, exp(-Delta S), extremal scalar eigenvalues,
 #   real, imag and magnitude of Polyakov loop (PL)
 #     (magnitude with susceptibility as attribute),
-#   extremal scalar eigenvalues, list of analyzed configurations,
-#   scalar square Tr[X^2], extremal fermion operator eigenvalues,
-#   condition number and spectral range
+#   all scalar squares Tr[X^2], PL eigenvalue phases,
+#   extremal fermion operator eigenvalues, condition number, spectral range,
+#   list of configurations for which eigenvalues computed,
+#   pfaffian phase and list of configs for which it was measured
+# ------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------
+# Helper function to map rational approximation order to its spectral range
+def spect_range(N):
+  if N == 5:
+    return (0.1, 50)
+  elif N == 6:
+    return (0.02, 50)
+  elif N == 7:
+    return (0.01, 150)
+  elif N == 8:
+    return (0.001, 50)
+  elif N == 9:
+    return (1e-4, 45)
+  elif N == 10:
+    return (5e-4, 1000)
+  elif N == 11:
+    return (1e-5, 50)
+  elif N == 12:
+    return (5e-5, 2500)
+  elif N == 13:
+    return (5e-5, 5000)
+  elif N == 14:
+    return (1e-6, 1900)
+  elif N == 15:
+    return (1e-7, 1000)
+  elif N == 16:
+    return (1e-8, 500)
+  elif N == 17:
+    return (5e-8, 2500)
+  elif N == 18:
+    return (1e-9, 1000)
+  elif N == 19:
+    return (1e-8, 50000)
+  else:
+    print("ERROR: Unrecognized Norder %d" % Norder)
+    sys.exit(1)
 # ------------------------------------------------------------------
 
 
@@ -417,7 +459,7 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
       if os.path.isfile(pfile):        # Not present for most groups
         pfaff_arr = []
         conf_arr = []
-        files = glob.glob('Out/phase.*')
+        files = sorted(glob.glob('Out/phase.*'))
         Npfaff = len(files)
         for file in files:
           conf_arr.append(int(file.split('phase.')[1]))
@@ -429,8 +471,8 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
 
         conf = np.array(conf_arr)
         this_grp.create_dataset('Pfaffian measurements', data=conf)
-        pfaff = np.array(conf_arr)
-        this_grp.create_dataset('Pfaffian phase', data=pfaff)
+        pfaff = np.array(pfaff_arr)
+        dset = this_grp.create_dataset('Pfaffian phase', data=pfaff)
         
         # Check that all files have a measurement
         if not len(conf) == Npfaff:
@@ -441,4 +483,25 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
           print("ERROR: Npfaff phase mismatch: %d vs %d in %s" \
                 % (len(pfaff), Npfaff, top_dir + ens))
           sys.exit(1)
+
+        # Results as attributes, checking Nblocks
+        for line in open(pfile):
+          if line.startswith('From'):
+            temp = line.split()
+            if not int(temp[1]) == Npfaff:
+              print("ERROR: Npfaff ave mismatch: %d vs %d in %s" \
+                    % (len(conf), Npfaff, top_dir + ens))
+              sys.exit(1)
+          elif line.startswith('Real: '):
+            temp = line.split()
+            dset.attrs['Real ave'] = float(temp[1])
+            dset.attrs['Real err'] = float(temp[3].replace(";", ""))
+            dset.attrs['Imag ave'] = float(temp[5])
+            dset.attrs['Imag err'] = float(temp[7].replace(";", ""))
+          elif line.startswith('Mag: '):
+            temp = line.split()
+            dset.attrs['Magnitude ave'] = float(temp[1])
+            dset.attrs['Magnitude err'] = float(temp[3].replace(";", ""))
+            dset.attrs['Phase ave'] = float(temp[5])
+            dset.attrs['Phase err'] = float(temp[7].replace(";", ""))
 # ------------------------------------------------------------------
