@@ -99,7 +99,11 @@ for Nc in ['Nc4', 'Nc8', 'Nc12', 'Nc16']:
 
     # Third- and fourth-level groups for each (g, f=T/mu) ensemble
     os.chdir(path + top_dir)
-    if top_dir == 'Nc8_nt8/' or top_dir == 'Nc12_nt8/':
+    if top_dir == 'Nc8_nt8/':
+      ens_list = glob.glob('g0.000*[0-9]') \
+               + glob.glob('g0.001_f0.0[789]') \
+               + glob.glob('g0.001_f0.1')
+    elif top_dir == 'Nc12_nt8/':
       ens_list = glob.glob('g0.000*[0-9]')
     else:
       ens_list = glob.glob('g0.0*[0-9]')
