@@ -23,14 +23,14 @@ rm -f temp
 
 # Use list of files in given ensemble to extract time series data
 rm -f $path/data/*.csv $path/ERRORS
-echo "python2 ~schaich/scripts/parse_SYM.py"
-python2 ~schaich/scripts/parse_SYM.py
+echo "python ~schaich/scripts/parse_SYM.py"
+python ~schaich/scripts/parse_SYM.py
 chmod 664 $path/data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
 # This script checks more than pairing, but pairing is all we care about here
-python2 ~schaich/scripts/check_eig_pairs.py | grep pairing >> $path/ERRORS
+python ~schaich/scripts/check_eig_pairs.py | grep pairing >> $path/ERRORS
 
 # Either write Web page or update its timestamp using sed
 date=`date`

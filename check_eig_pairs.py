@@ -10,7 +10,7 @@ MAG = 1e-12     # Absolute magnitude below which roundoff acceptable
 
 # First make sure we're calling this from the right place
 if not os.path.isdir('Out'):
-  print "ERROR: Out/ does not exist"
+  print("ERROR: Out/ does not exist")
   sys.exit(1)
 
 # For BMN, should suffice to check only first pair
@@ -35,15 +35,15 @@ for filename in glob.glob('Out/*eig.*'):
       elif evenodd == 1:
         diff = np.fabs(float(temp[2]) - even)
         if diff / even > TOL and diff > MAG:
-          print "Apparent pairing breakdown for", filename
+          print("Apparent pairing breakdown for", filename)
           check = 1   # Avoid spurious non-completion error
           break       # Move on to next file
       else:
-        print "Something weird happened: evenodd =", evenodd
+        print("Something weird happened: evenodd =", evenodd)
     elif line.startswith('RUNNING COMPLETED'):
       if check == 1:    # Check that we have one measurement per file
-        print filename, "reports two measurements"
+        print(filename, "reports two measurements")
       check = 1
   if check == -1:
-    print filename, "did not complete"
+    print(filename, "did not complete")
 # ------------------------------------------------------------------
