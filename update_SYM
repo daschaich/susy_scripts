@@ -7,8 +7,7 @@ fi
 
 temp=`pwd`
 dir=${temp##*SYM/}   # Strip everything up to and including "SYM/"
-inpath=/raidc/schaich/SYM/$dir        # Customized for Liverpool
-outpath=/raide/www/people/staff/schaich/SYM/$dir
+path=/users/schaich/SYM/$dir        # Customized for Barkla
 # ------------------------------------------------------------------
 
 
@@ -16,35 +15,35 @@ outpath=/raide/www/people/staff/schaich/SYM/$dir
 # ------------------------------------------------------------------
 # Construct list of files in given ensemble, for parse_SYM.py
 rm -f list.txt
-for i in $inpath/Out/out.* ; do
+for i in $path/Out/out.* ; do
   echo ${i##*.} >> temp    # Strip everything up to and including the last "."
 done
 sort temp -n | uniq > list.txt
 rm -f temp
 
 # Use list of files in given ensemble to extract time series data
-rm -f $outpath/data/*.csv $outpath/ERRORS
+rm -f $path/data/*.csv $path/ERRORS
 echo "python2 ~schaich/scripts/parse_SYM.py"
 python2 ~schaich/scripts/parse_SYM.py
-chmod 664 $outpath/data/*.csv
+chmod 664 $path/data/*.csv
 rm -f list.txt            # Done with this
 
 # Check eigenvalue measurements
 # This script checks more than pairing, but pairing is all we care about here
-python2 ~schaich/scripts/check_eig_pairs.py | grep pairing >> $outpath/ERRORS
+python2 ~schaich/scripts/check_eig_pairs.py | grep pairing >> $path/ERRORS
 
 # Either write Web page or update its timestamp using sed
 date=`date`
-if [ -f $outpath/index.html ] ; then
+if [ -f $path/index.html ] ; then
   echo "Update timestamp"
-  sed -i -E "s/(Last update:) .*/\1 $date/" $outpath/index.html
+  sed -i -E "s/(Last update:) .*/\1 $date/" $path/index.html
 else
   echo writeSYM $dir "$date"
   ~schaich/scripts/writeSYM $dir "$date"
 fi
-chmod 664 $outpath/index.html
+chmod 664 $path/index.html
 
-# I like to monitor this (looks better without $outpath)
+# I like to monitor this (looks better without $path)
 grep Apparent ERRORS
 wc -l M*
 wc -l E*

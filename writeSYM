@@ -8,10 +8,12 @@ fi
 tag=$1
 date=$2
 
-out="/raide/www/people/staff/schaich/SYM/$tag/index.html"    # Customized for Liverpool
+out="/users/schaich/SYM/$tag/index.html"    # Customized for Barkla
 
 echo '<html><head>' > $out
-echo '<script type="text/javascript" src="http://www.maths.liv.ac.uk/TheorPhys/people/staff/schaich/dygraph-combined.js"></script>' >> $out
+#echo '<script type="text/javascript" src="http://www.maths.liv.ac.uk/TheorPhys/people/staff/schaich/dygraph-combined.js"></script>' >> $out
+echo '<script type="text/javascript" src="http://www-hep.colorado.edu/~schaich/dygraph-combined.js"></script>' >> $out # !!!
+#echo '<script type="text/javascript" src="../../../dygraph-combined.js"></script>' >> $out # !!!
 echo '<style type="text/css">' >> $out
 echo '  #main{' >> $out
 echo '    margin-right:19em;' >> $out
