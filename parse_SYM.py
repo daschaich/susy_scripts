@@ -555,7 +555,7 @@ for temp_tag in open('list.txt'):
         index = int(temp[1])
         dat = float(temp[2])
         if index < 11 and index % 2 == 0:
-          eig[index / 2] = dat
+          eig[int(index / 2)] = dat
         if index == 0 and dat < min_eig:        # Check spectral range
           print(infile, "exceeds RHMC spectral range:", end=' ')
           print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig))
@@ -568,7 +568,7 @@ for temp_tag in open('list.txt'):
         index = int(temp[1])
         dat = float(temp[2])
         if index < 11 and index % 2 == 0:
-          big[index / 2] = dat
+          big[int(index / 2)] = dat
         if index == 0 and dat > max_eig:        # Check spectral range
           print(infile, "exceeds RHMC spectral range:", end=' ')
           print("%.4g not in [%.4g, %.4g]" % (dat, min_eig, max_eig))
