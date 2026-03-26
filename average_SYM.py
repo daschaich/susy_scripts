@@ -96,8 +96,8 @@ for line in open('data/poly_mod.csv'):
 # 'tol' is min ratio between data and tau (default 50)
 # 'Quiet' prints warning rather than shutting down if tol not satisfied
 autocorr_check = 1
-tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
-tau *= sep
+acor_out = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
+tau = acor_out[0] * sep
 if tau > block_size:
   print("Error: poly_mod autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
@@ -136,8 +136,8 @@ for line in open('data/bilin.csv'):
   dat.append(float(temp[1]))
 
 # Arguments discussed above
-tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
-tau *= sep
+acor_out = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
+tau = acor_out[0] * sep
 if tau > block_size:
   print("Error: QWard autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
@@ -175,8 +175,8 @@ for line in open('data/eig.csv'):
   dat.append(float(temp[1]))
 
 # Arguments discussed above
-tau = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
-tau *= sep
+acor_out = acor.integrated_time(np.array(dat), c=5, tol=10, quiet=True)
+tau = acor_out[0] * sep
 if tau > block_size:
   print("Error: lowest eigenvalue autocorrelation time %d " % tau, end='')
   print("is larger than block size %d " % block_size, end='')
